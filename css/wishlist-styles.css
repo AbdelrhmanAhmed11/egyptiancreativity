@@ -2023,6 +2023,7 @@ a:focus {
   background: transparent;
   color: var(--pyramid-gold);
   border: 2px solid var(--pyramid-gold);
+  margin-right: 1.2rem;
 }
 .wishlist-card-btn:hover, .wishlist-card-btn-primary:hover {
   background: var(--pyramid-gold);
