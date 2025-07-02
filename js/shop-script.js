@@ -941,7 +941,7 @@ class ShopManager {
 
     renderWishlist() {
         const wishlistContent = document.getElementById('wishlistContent');
-        
+        const viewWishlistBtn = document.getElementById('viewWishlistBtn');
         if (!wishlistContent) return;
 
         if (this.wishlist.length === 0) {
@@ -956,6 +956,7 @@ class ShopManager {
                     <p>Save items you love for later</p>
                 </div>
             `;
+            if (viewWishlistBtn) viewWishlistBtn.style.display = 'none';
             return;
         }
 
@@ -974,6 +975,7 @@ class ShopManager {
                 </button>
             </div>
         `).join('');
+        if (viewWishlistBtn) viewWishlistBtn.style.display = '';
     }
 
     // Quick view functionality

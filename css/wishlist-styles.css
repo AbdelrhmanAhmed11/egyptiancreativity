@@ -2038,3 +2038,19 @@ a:focus {
   color: var(--pyramid-gold);
   border-color: var(--pyramid-gold);
 }
+
+/* --- Force wishlist buttons to be clickable --- */
+.wishlist-card-btn,
+.wishlist-card-btn-primary,
+.wishlist-card-btn-outline {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+  position: relative;
+}
+.wishlist-card,
+.wishlist-card-content,
+.wishlist-card-actions {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+  position: relative;
+}

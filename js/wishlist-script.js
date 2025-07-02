@@ -198,6 +198,40 @@ class EgyptianWishlist {
                 cartSidebar.classList.add('active');
             });
         }
+
+        // Delegated event listeners for wishlist actions
+        if (this.elements.wishlistGrid) {
+            this.elements.wishlistGrid.addEventListener('click', (e) => {
+                const addBtn = e.target.closest('.wishlist-card-btn-primary');
+                const removeBtn = e.target.closest('.wishlist-card-btn-outline');
+                if (addBtn) {
+                    const card = addBtn.closest('.wishlist-card');
+                    if (card) {
+                        const id = parseInt(card.getAttribute('data-id'));
+                        if (!isNaN(id)) this.addToCart(id);
+                    }
+                } else if (removeBtn) {
+                    const card = removeBtn.closest('.wishlist-card');
+                    if (card) {
+                        const id = parseInt(card.getAttribute('data-id'));
+                        if (!isNaN(id)) this.removeFromWishlist(id);
+                    }
+                }
+            });
+        }
+        // Delegated event listener for recommended heart icon
+        if (this.elements.recommendedGrid) {
+            this.elements.recommendedGrid.addEventListener('click', (e) => {
+                const heartBtn = e.target.closest('.rec-add-btn');
+                if (heartBtn && !heartBtn.disabled) {
+                    const recItem = heartBtn.closest('.recommended-item');
+                    if (recItem) {
+                        const id = parseInt(recItem.getAttribute('data-id'));
+                        if (!isNaN(id)) this.addToWishlist(id, true);
+                    }
+                }
+            });
+        }
     }
 
     setupIntersectionObserver() {
@@ -535,23 +569,26 @@ class EgyptianWishlist {
     renderRecommended() {
         if (!this.elements.recommendedGrid) return;
 
-        this.elements.recommendedGrid.innerHTML = this.recommendedItems.map((item, index) => `
-            <div class="recommended-item" data-id="${item.id}" style="animation-delay: ${index * 0.1}s;">
-                <div class="rec-image">
-                    <img src="${item.image}" alt="${item.name}" loading="lazy">
-                    <button class="rec-add-btn" onclick="wishlist.addToWishlist(${item.id}, true)" 
-                            title="Add to wishlist" aria-label="Add ${item.name} to wishlist">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                        </svg>
-                    </button>
+        this.elements.recommendedGrid.innerHTML = this.recommendedItems.map((item, index) => {
+            const isInWishlist = this.wishlistItems.some(w => w.id === item.id);
+            return `
+                <div class="recommended-item" data-id="${item.id}" style="animation-delay: ${index * 0.1}s;">
+                    <div class="rec-image">
+                        <img src="${item.image}" alt="${item.name}" loading="lazy">
+                        <button class="rec-add-btn" onclick="${isInWishlist ? '' : `wishlist.addToWishlist(${item.id}, true)`}" 
+                                title="${isInWishlist ? 'Already in wishlist' : 'Add to wishlist'}" aria-label="${isInWishlist ? 'Already in wishlist' : `Add ${item.name} to wishlist`}" ${isInWishlist ? 'disabled' : ''}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="rec-content">
+                        <h4>${item.name}</h4>
+                        <div class="rec-price">$${item.price.toLocaleString()}</div>
+                    </div>
                 </div>
-                <div class="rec-content">
-                    <h4>${item.name}</h4>
-                    <div class="rec-price">$${item.price.toLocaleString()}</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Observe recommended items for animation
         this.observeItems('.recommended-item');
