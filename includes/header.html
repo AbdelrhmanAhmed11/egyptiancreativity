@@ -1,0 +1,101 @@
+<!-- Header -->
+<header class="header" id="header">
+    <div class="header-content">
+        <a href="index.html" class="logo">
+            <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+        </a>
+        
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="about.html" class="nav-link">About us</a>
+            <a href="gallery.html" class="nav-link">Gallery</a>
+            <a href="blog.html" class="nav-link">Blogs</a>
+            <a href="shop.html" class="nav-link">Shop</a>
+            <a href="contact.html" class="nav-link">Contact</a>
+            <a href="auth.html" class="nav-link" id="loginLogoutBtn">Login</a>
+        </nav>
+        
+        <div class="header-actions">
+            <div class="header-icon" id="searchBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <div class="icon-ripple"></div>
+            </div>
+            <div class="header-icon" id="userBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <div class="icon-ripple"></div>
+            </div>
+            <div class="header-icon" id="wishlistBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span class="wishlist-badge" data-count="0">0</span>
+                <div class="icon-ripple"></div>
+            </div>
+            <div class="header-icon" id="cartBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                <span class="cart-badge" data-count="0">0</span>
+                <div class="icon-ripple"></div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Search Modal -->
+<div class="search-modal" id="searchModal">
+    <div class="search-modal-content">
+        <div class="search-header">
+            <h3>Search Our Collection</h3>
+            <button class="close-btn" id="closeSearch">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <form class="search-form">
+            <input type="text" placeholder="Type to search..." class="search-input">
+            <button type="submit" class="search-submit">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </button>
+        </form>
+        <div class="search-suggestions">
+            <div class="suggestion-item">Pharaoh's Treasure</div>
+            <div class="suggestion-item">Sacred Scarab Collection</div>
+            <div class="suggestion-item">Royal Canopic Jars</div>
+            <div class="suggestion-item">Ancient Ankh Pendant</div>
+        </div>
+    </div>
+</div>
+<!-- Cart Sidebar -->
+<div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+        <h3>Shopping Cart</h3>
+        <button class="close-btn" id="closeCart">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+        <div class="cart-total">
+            <span>Total: $0.00</span>
+        </div>
+        <button class="checkout-btn">Proceed to Checkout</button>
+    </div>
+</div>
+

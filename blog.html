@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Egyptian Creativity | Ancient Wisdom & Modern Stories</title>
+    <meta name="description" content="Explore ancient Egyptian history, culture, and timeless wisdom through our carefully curated articles">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/go3ran_.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/blog-styles.css">
+    <link rel="stylesheet" href="css/sidebar-styles.css">
+</head>
+<body>
+    <!-- Animated Background (Same as Index Page) -->
+    <div class="animated-bg">
+        <div class="pyramid-bg"></div>
+        <div class="sand-particles"></div>
+        <div class="hieroglyph-symbols">
+            <span class="symbol">𓋹</span>
+            <span class="symbol">𓂀</span>
+            <span class="symbol">𓊃</span>
+            <span class="symbol">𓈖</span>
+            <span class="symbol">𓇯</span>
+            <span class="symbol">𓊪</span>
+        </div>
+        <div class="golden-rays"></div>
+        <div class="floating-artifacts">
+            <div class="artifact artifact-1">𓋹</div>
+            <div class="artifact artifact-2">𓂀</div>
+            <div class="artifact artifact-3">𓊃</div>
+            <div class="artifact artifact-4">𓈖</div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-pyramid">
+                <img src="images/go3ran_.png" alt="Egyptian Creativity Loading">
+            </div>
+            <div class="loading-text">Egyptian Creativity</div>
+            <div class="loading-subtitle">Loading Ancient Wonders...</div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <button class="skip-btn" id="skipBtn">Skip</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+            </a>
+            
+            <nav class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">HOME</a>
+                <a href="about.html" class="nav-link">ABOUT US</a>
+                <a href="gallery.html" class="nav-link">GALLERY</a>
+                <a href="blog.html" class="nav-link active">BLOGS</a>
+                <a href="shop.html" class="nav-link">SHOP</a>
+                <a href="contact.html" class="nav-link">CONTACT</a>
+                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+            </nav>
+            
+            <div class="header-actions">
+                <button class="header-icon" id="searchBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+                <button class="header-icon" id="userBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </button>
+                <button class="header-icon" id="wishlistBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span class="badge" id="wishlistBadge">0</span>
+                </button>
+                <button class="header-icon" id="cartBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span class="badge" id="cartBadge">0</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="modal-backdrop" id="searchBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Search Articles</h3>
+                <button class="modal-close" id="searchClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-input-container">
+                <input type="text" class="search-input" placeholder="Search for articles..." id="searchInput">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+            <div class="search-suggestions">
+                <div class="suggestion-item">Ancient Egyptian Queens</div>
+                <div class="suggestion-item">Tutankhamun Artifacts</div>
+                <div class="suggestion-item">Egyptian Mythology</div>
+                <div class="suggestion-item">Hieroglyphics</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">
+                    ✨ Ancient Wisdom & Modern Stories
+                </div>
+                <h1 class="hero-title">
+                    <span class="line">Discover the</span>
+                    <span class="line golden">Secrets of</span>
+                    <span class="line">Ancient Egypt</span>
+                </h1>
+                <p class="hero-description">
+                    Explore fascinating stories, historical insights, and timeless wisdom from the land of the pharaohs. 
+                    Our carefully curated articles bring ancient Egyptian culture to life.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" id="exploreBtn">
+                        Explore Articles
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-secondary" id="categoriesBtn">
+                        Browse Categories
+                    </button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">100+</div>
+                        <div class="stat-label">Articles</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">5K+</div>
+                        <div class="stat-label">Readers</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">Weekly</div>
+                        <div class="stat-label">Updates</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="featured-blog">
+                    <div class="blog-showcase">
+                        <div class="blog-image">
+                            <img src="images/5-1.jpg" alt="Featured Article" id="showcaseImage">
+                        </div>
+                        <div class="blog-info">
+                            <h3 id="showcaseTitle">The Queens of Ancient Egypt</h3>
+                            <p id="showcaseDesc">Legacies of Power and Beauty</p>
+                            <div class="blog-category" id="showcaseCategory">Featured Article</div>
+                        </div>
+                    </div>
+                    <div class="showcase-dots">
+                        <button class="dot active" onclick="changeShowcase(0)"></button>
+                        <button class="dot" onclick="changeShowcase(1)"></button>
+                        <button class="dot" onclick="changeShowcase(2)"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-line"></div>
+            <span>Scroll to explore</span>
+        </div>
+    </section>
+
+    <!-- Featured Article -->
+    <section class="featured-article" id="featured">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Featured Story</div>
+                <h2 class="section-title">Ancient Wisdom for Modern Times</h2>
+                <p class="section-description">
+                    Dive deep into the most captivating stories from ancient Egypt, 
+                    where history meets mystery and wisdom transcends time.
+                </p>
+            </div>
+            
+            <div class="featured-content">
+                <div class="featured-image">
+                    <img src="images/5-1.jpg" alt="The Queens of Ancient Egypt" loading="lazy">
+                    <div class="featured-overlay">
+                        <div class="featured-category">Featured</div>
+                    </div>
+                </div>
+                <div class="featured-text">
+                    <h2 class="featured-title">The Queens of Ancient Egypt: Legacies of Power and Beauty</h2>
+                    <div class="featured-meta">
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Admin
+                        </span>
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12,6 12,12 16,14"></polyline>
+                            </svg>
+                            5 min read
+                        </span>
+                        <span class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path>
+                            </svg>
+                            April 13, 2025
+                        </span>
+                    </div>
+                    <p class="featured-description">
+                        Ancient Egypt was home to numerous powerful queens who left an indelible mark on history. From Nefertiti to Cleopatra, these remarkable women wielded influence and authority alongside their pharaoh counterparts, shaping the destiny of one of history's greatest civilizations.
+                    </p>
+                    <a href="blog-details.html?id=3" class="read-more-btn">
+                        <span>Read Full Article</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12,5 19,12 12,19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section" id="filters">
+        <div class="container">
+            <div class="filter-header">
+                <div class="section-badge">Browse Articles</div>
+                <h2 class="section-title">Stories by Category</h2>
+                <p class="section-description">
+                    Explore our collection of articles organized by topics that fascinate and educate.
+                </p>
+            </div>
+            
+            <div class="filter-buttons" id="filterButtons">
+                <button class="filter-btn active" data-filter="all">
+                    <span>All Articles</span>
+                </button>
+                <button class="filter-btn" data-filter="history">
+                    <span>History</span>
+                </button>
+                <button class="filter-btn" data-filter="artifacts">
+                    <span>Artifacts</span>
+                </button>
+                <button class="filter-btn" data-filter="royalty">
+                    <span>Royalty</span>
+                </button>
+                <button class="filter-btn" data-filter="culture">
+                    <span>Culture</span>
+                </button>
+                <button class="filter-btn" data-filter="mythology">
+                    <span>Mythology</span>
+                </button>
+            </div>
+            
+            <div class="search-container">
+                <div class="search-box">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="blogSearchInput" placeholder="Search articles..." class="search-input">
+                    <div class="input-glow"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Articles Grid Section -->
+    <section class="articles-section" id="articles">
+        <div class="container">
+            <div class="articles-grid" id="articlesGrid">
+                <!-- Article Card 1 -->
+                <article class="article-card" data-category="history artifacts" data-id="1">
+                    <div class="card-image">
+                        <img src="images/1-7-scaled.jpg" alt="The Senet Games of King Tutankhamun" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="card-category">Artifacts</div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">The Senet Games of King Tutankhamun</h3>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Admin
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                3 min read
+                            </span>
+                        </div>
+                        <p class="card-excerpt">
+                            King Tutankhamun was buried with no fewer than five senet game boxes. Senet was an ancient Egyptian board game popular with all classes. Archaeological evidence reveals that senet was played by both royalty and commoners, and it was believed to have spiritual significance in the afterlife.
+                        </p>
+                        <a href="blog-details.html?id=1" class="card-link">
+                            <span>Read More</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12,5 19,12 12,19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Article Card 2 -->
+                <article class="article-card" data-category="history culture" data-id="2">
+                    <div class="card-image">
+                        <img src="images/10.jpg" alt="The Road of Rams" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="card-category">History</div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">The Road of Rams</h3>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Admin
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                4 min read
+                            </span>
+                        </div>
+                        <p class="card-excerpt">
+                            The Sphinx Avenue (the Rams Road) is a royal avenue that connects the Karnak Temple in the north with the Luxor Temple in the south. It was established for the purpose of witnessing the annual celebrations and religious processions in ancient Thebes.
+                        </p>
+                        <a href="blog-details.html?id=2" class="card-link">
+                            <span>Read More</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12,5 19,12 12,19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Article Card 3 -->
+                <article class="article-card" data-category="royalty history" data-id="3">
+                    <div class="card-image">
+                        <img src="images/4-5-scaled.jpg" alt="The Queens of Ancient Egypt" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="card-category">Royalty</div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">The Queens of Ancient Egypt</h3>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Admin
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                6 min read
+                            </span>
+                        </div>
+                        <p class="card-excerpt">
+                            Ancient Egypt was home to numerous powerful and influential queens who left an indelible mark on the land of the pharaohs. From the Old Kingdom to the New Kingdom, these queens held significant roles in Egyptian society, politics, and religion.
+                        </p>
+                        <a href="blog-details.html?id=3" class="card-link">
+                            <span>Read More</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12,5 19,12 12,19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Article Card 4 -->
+                <article class="article-card" data-category="royalty history" data-id="4">
+                    <div class="card-image">
+                        <img src="images/5-1.jpg" alt="Queen Nefertiti" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="card-category">Royalty</div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Queen Nefertiti: The Beautiful One</h3>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Admin
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                5 min read
+                            </span>
+                        </div>
+                        <p class="card-excerpt">
+                            Queen Nefertiti, whose name means "the beautiful one has come," was the wife of King Amenhotep IV, the famous pharaoh of the Eighteenth Dynasty, and the protector of Tutankhamun. Her legacy endures through her iconic bust and her influence on Egyptian art and culture.
+                        </p>
+                        <a href="blog-details.html?id=4" class="card-link">
+                            <span>Read More</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12,5 19,12 12,19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Article Card 5 -->
+                <article class="article-card" data-category="artifacts royalty" data-id="5">
+                    <div class="card-image">
+                        <img src="images/5-3.jpg" alt="Tutankhamun's Sandals" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="card-category">Artifacts</div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Sandals of Tutankhamun</h3>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Admin
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                4 min read
+                            </span>
+                        </div>
+                        <p class="card-excerpt">
+                            Among the many treasures found in Tutankhamun's tomb were his golden sandals. These exquisite pieces of footwear were crafted with incredible detail, featuring golden straps and soles, and were intended to accompany the young king into the afterlife.
+                        </p>
+                        <a href="blog-details.html?id=5" class="card-link">
+                            <span>Read More</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12,5 19,12 12,19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Article Card 6 -->
+                <article class="article-card" data-category="mythology culture" data-id="6">
+                    <div class="card-image">
+                        <img src="images/9-1.jpg" alt="Heka and the hammer Nakakha" loading="lazy">
+                        <div class="card-overlay">
+                            <div class="card-category">Mythology</div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Heka and the Hammer Nakakha</h3>
+                        <div class="card-meta">
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Admin
+                            </span>
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12,6 12,12 16,14"></polyline>
+                                </svg>
+                                4 min read
+                            </span>
+                        </div>
+                        <p class="card-excerpt">
+                            The stick (Heka) and the hammer (Nakakha) were originally attributes of the ancient Egyptian god. The shepherd's stick symbolized royalty and the hammer symbolized the fertility of the land and power...
+                        </p>
+                        <a href="blog-details.html?id=6" class="card-link">
+                            <span>Read More</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12,5 19,12 12,19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </article>
+            </div>
+
+            <div class="load-more-container">
+                <button class="btn btn-outline" id="loadMoreBtn">
+                    Load More Articles
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6,9 12,15 18,9"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cart Sidebar -->
+    <div class="sidebar-backdrop" id="cartBackdrop"></div>
+    <div class="sidebar" id="cartSidebar">
+        <div class="sidebar-header">
+            <h3>Shopping Cart</h3>
+            <button class="sidebar-close" id="cartClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="cartContent">
+            <div class="cart-empty" id="cartEmpty">
+                <div class="empty-icon">🛒</div>
+                <h4>Your cart is empty</h4>
+                <p>Add some treasures to get started</p>
+            </div>
+            <div class="cart-items" id="cartItems"></div>
+        </div>
+        <div class="sidebar-footer" id="cartFooter" style="display: none;">
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="cartSubtotal">$0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="cartTotal">$0</span>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <a class="btn btn-outline" href="cart.html">View Cart</a>
+                <a class="btn btn-primary" href="cart.html">Checkout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wishlist Sidebar -->
+    <div class="sidebar-backdrop" id="wishlistBackdrop"></div>
+    <div class="sidebar" id="wishlistSidebar">
+        <div class="sidebar-header">
+            <h3>Wishlist</h3>
+            <button class="sidebar-close" id="wishlistClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="wishlistContent">
+            <div class="wishlist-empty" id="wishlistEmpty">
+                <div class="empty-icon">💝</div>
+                <h4>Your wishlist is empty</h4>
+                <p>Save items you love for later</p>
+            </div>
+            <div class="wishlist-items" id="wishlistItems"></div>
+        </div>
+        <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
+            <div class="cart-actions">
+                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+                    </div>
+                    <p class="footer-description">
+                        Preserving the timeless artistry of ancient Egypt through contemporary luxury craftsmanship and storytelling.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Navigation</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="shop.html">shop</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Categories</h4>
+                    <ul class="footer-links">
+                        <li><a href="shop.html?category=jewelry">Jewelry</a></li>
+                        <li><a href="shop.html?category=decorations">Decorations</a></li>
+                        <li><a href="shop.html?category=boxes">Treasure Boxes</a></li>
+                        <li><a href="shop.html?category=accessories">Accessories</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Cairo, Egypt</a></li>
+                        <li><a href="#">+20 102 132 2002</a></li>
+                        <li><a href="#">info@egyptiantreasures.com</a></li>
+                        <li><a href="#">Support Center</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Egyptian Creativity. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <script src="js/auth-manager.js"></script>
+    <script src="js/sidebar-utils.js"></script>
+    <script src="js/products-data.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+    document.addEventListener('mousedown', (e) => {
+        const cartSidebar = document.getElementById('cartSidebar');
+        const wishlistSidebar = document.getElementById('wishlistSidebar');
+        if (cartSidebar && cartSidebar.classList.contains('active') &&
+            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
+            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
+            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
+            cartSidebar.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
+            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
+            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
+            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
+            wishlistSidebar.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+    </script>
+</body>
+</html>

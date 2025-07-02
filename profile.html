@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Egyptian Creativity - Ancient Artifacts Collection</title>
+    <meta name="description" content="Manage your Egyptian Creativity account and preferences.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/go3ran_.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/profile-styles.css">
+    <link rel="stylesheet" href="css/sidebar-styles.css">
+</head>
+<body>
+    <!-- Animated Background (Same as Index Page) -->
+    <div class="animated-bg">
+        <div class="pyramid-bg"></div>
+        <div class="sand-particles"></div>
+        <div class="hieroglyph-symbols">
+            <span class="symbol">𓋹</span>
+            <span class="symbol">𓂀</span>
+            <span class="symbol">𓊃</span>
+            <span class="symbol">𓈖</span>
+            <span class="symbol">𓇯</span>
+            <span class="symbol">𓊪</span>
+        </div>
+        <div class="golden-rays"></div>
+        <div class="floating-artifacts">
+            <div class="artifact artifact-1">𓋹</div>
+            <div class="artifact artifact-2">𓂀</div>
+            <div class="artifact artifact-3">𓊃</div>
+            <div class="artifact artifact-4">𓈖</div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-pyramid">
+                <img src="images/go3ran_.png" alt="Egyptian Creativity Loading">
+            </div>
+            <div class="loading-text">Egyptian Creativity</div>
+            <div class="loading-subtitle">Loading Ancient Wonders...</div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <button class="skip-btn" id="skipBtn">Skip</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+            </a>
+            
+            <nav class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">HOME</a>
+                <a href="about.html" class="nav-link">ABOUT US</a>
+                <a href="gallery.html" class="nav-link">GALLERY</a>
+                <a href="blog.html" class="nav-link">BLOGS</a>
+                <a href="shop.html" class="nav-link">SHOP</a>
+                <a href="contact.html" class="nav-link">CONTACT</a>
+                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+            </nav>
+            
+            <div class="header-actions">
+                <button class="header-icon" id="searchBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+                <button class="header-icon" id="userBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </button>
+                <button class="header-icon" id="wishlistBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span class="badge" id="wishlistBadge">0</span>
+                </button>
+                <button class="header-icon" id="cartBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span class="badge" id="cartBadge">0</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Profile Container -->
+    <main class="profile-main">
+        <div class="container">
+            <div class="profile-container">
+                <!-- Profile Sidebar -->
+                <aside class="profile-sidebar">
+                    <div class="profile-card">
+                        <div class="profile-avatar">
+                            <div class="avatar-image" id="avatarImage">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <button class="avatar-upload" id="avatarUpload">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="m9 9 3-3 3 3"></path>
+                                    <path d="M12 12V2.5"></path>
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                </svg>
+                            </button>
+                            <input type="file" id="avatarInput" accept="image/*" hidden>
+                        </div>
+                        
+                        <div class="profile-info">
+                            <h2 class="profile-name" id="profileName">John Doe</h2>
+                            <p class="profile-email" id="profileEmail">john.doe@example.com</p>
+                            <div class="profile-status">
+                                <span class="status-badge premium">Premium Member</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav class="profile-nav">
+                        <button class="nav-item active" data-section="overview">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="9"></rect>
+                                <rect x="14" y="3" width="7" height="5"></rect>
+                                <rect x="14" y="12" width="7" height="9"></rect>
+                                <rect x="3" y="16" width="7" height="5"></rect>
+                            </svg>
+                            <span>Overview</span>
+                        </button>
+                        <button class="nav-item" data-section="personal">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            <span>Personal Info</span>
+                        </button>
+                        <button class="nav-item" data-section="orders">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            <span>Order History</span>
+                            <span class="nav-badge">5</span>
+                        </button>
+                        <button class="nav-item" data-section="wishlist">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span>Wishlist</span>
+                            <span class="nav-badge" id="profileWishlistBadge">12</span>
+                        </button>
+                        <button class="nav-item" data-section="addresses">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            <span>Addresses</span>
+                        </button>
+                        <button class="nav-item" data-section="payment">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            <span>Payment Methods</span>
+                        </button>
+                        <button class="nav-item" data-section="preferences">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                            <span>Preferences</span>
+                        </button>
+                    </nav>
+                </aside>
+
+                <!-- Profile Content -->
+                <div class="profile-content">
+                    <!-- Overview Section -->
+                    <section class="content-section active" id="overview">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">Account Overview</h1>
+                                <p class="section-subtitle">Welcome back to your Egyptian Creativity collection</p>
+                            </div>
+                        </div>
+
+                        <div class="overview-grid">
+                            <div class="overview-card">
+                                <div class="card-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                    </svg>
+                                </div>
+                                <div class="card-content">
+                                    <h3>Total Orders</h3>
+                                    <p class="card-number">24</p>
+                                    <span class="card-change positive">+3 this month</span>
+                                </div>
+                            </div>
+
+                            <div class="overview-card">
+                                <div class="card-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                </div>
+                                <div class="card-content">
+                                    <h3>Total Spent</h3>
+                                    <p class="card-number">$45,750</p>
+                                    <span class="card-change positive">+$8,900 this month</span>
+                                </div>
+                            </div>
+
+                            <div class="overview-card">
+                                <div class="card-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                </div>
+                                <div class="card-content">
+                                    <h3>Wishlist Items</h3>
+                                    <p class="card-number">12</p>
+                                    <span class="card-change neutral">2 new items</span>
+                                </div>
+                            </div>
+
+                            <div class="overview-card">
+                                <div class="card-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="card-content">
+                                    <h3>Loyalty Points</h3>
+                                    <p class="card-number">2,450</p>
+                                    <span class="card-change positive">+150 this week</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="recent-activity">
+                            <h3>Recent Activity</h3>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p><strong>Order #EG-2024-001</strong> has been shipped</p>
+                                        <span class="activity-time">2 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p>Added <strong>Sacred Scarab Pendant</strong> to wishlist</p>
+                                        <span class="activity-time">1 day ago</span>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                        </svg>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p>Earned <strong>150 loyalty points</strong> from recent purchase</p>
+                                        <span class="activity-time">3 days ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Personal Info Section -->
+                    <section class="content-section" id="personal">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">Personal Information</h1>
+                                <p class="section-subtitle">Manage your account details and preferences</p>
+                            </div>
+                        </div>
+
+                        <form class="profile-form" id="personalInfoForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="firstName" class="form-label">First Name</label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <input type="text" id="firstName" name="firstName" class="form-input" value="John" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="lastName" class="form-label">Last Name</label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <input type="text" id="lastName" name="lastName" class="form-input" value="Doe" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                            <polyline points="22,6 12,13 2,6"></polyline>
+                                        </svg>
+                                        <input type="email" id="email" name="email" class="form-input" value="john.doe@example.com" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                        </svg>
+                                        <input type="tel" id="phone" name="phone" class="form-input" value="+1 (555) 123-4567">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="birthDate" class="form-label">Date of Birth</label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        <input type="date" id="birthDate" name="birthDate" class="form-input" value="1985-06-15">
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <div class="input-wrapper">
+                                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 5h4v4"></path>
+                                            <path d="M21 5l-6 6"></path>
+                                            <circle cx="9" cy="9" r="9"></circle>
+                                        </svg>
+                                        <select id="gender" name="gender" class="form-input">
+                                            <option value="">Select Gender</option>
+                                            <option value="male" selected>Male</option>
+                                            <option value="female">Female</option>
+                                            <option value="other">Other</option>
+                                            <option value="prefer-not-to-say">Prefer not to say</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bio" class="form-label">Bio</label>
+                                <textarea id="bio" name="bio" class="form-textarea" rows="4" placeholder="Tell us about your interest in Egyptian artifacts...">Passionate collector of ancient Egyptian artifacts with a focus on authentic pieces that tell the stories of pharaohs and ancient civilizations.</textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary">Cancel</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <span>Save Changes</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17,21 17,13 7,13 7,21"></polyline>
+                                        <polyline points="7,3 7,8 15,8"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <!-- Other sections (orders, wishlist, addresses, payment, preferences) -->
+                    <section class="content-section" id="orders">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">Order History</h1>
+                                <p class="section-subtitle">Track your purchases and view order details</p>
+                            </div>
+                        </div>
+
+                        <div class="orders-list">
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div class="order-info">
+                                        <h3>Order #EG-2024-001</h3>
+                                        <p>Placed on March 15, 2024</p>
+                                    </div>
+                                    <div class="order-status">
+                                        <span class="status-badge shipped">Shipped</span>
+                                    </div>
+                                </div>
+                                <div class="order-items">
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            <img src="images/1-7-scaled.jpg" alt="Golden Pharaoh Mask">
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>Golden Pharaoh Mask</h4>
+                                            <p>Exquisite reproduction with 24-karat gold</p>
+                                            <span class="item-price">$12,500</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="order-footer">
+                                    <div class="order-total">
+                                        <strong>Total: $12,500</strong>
+                                    </div>
+                                    <div class="order-actions">
+                                        <button class="btn btn-outline">Track Order</button>
+                                        <button class="btn btn-outline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="content-section" id="wishlist">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">My Wishlist</h1>
+                                <p class="section-subtitle">Save your favorite artifacts for later</p>
+                            </div>
+                        </div>
+
+                        <div class="wishlist-grid">
+                            <div class="wishlist-item">
+                                <div class="item-image">
+                                    <img src="images/4-5-scaled.jpg" alt="Ancient Ankh Pendant">
+                                    <button class="remove-wishlist">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="item-content">
+                                    <h3>Ancient Ankh Pendant</h3>
+                                    <p>Symbol of eternal life crafted from pure gold</p>
+                                    <div class="item-price">$2,850</div>
+                                    <div class="item-actions">
+                                        <button class="btn btn-primary">Add to Cart</button>
+                                        <button class="btn btn-outline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Additional sections would follow the same pattern -->
+                    <section class="content-section" id="addresses">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">Shipping Addresses</h1>
+                                <p class="section-subtitle">Manage your delivery locations</p>
+                            </div>
+                            <button class="btn btn-primary" id="addAddressBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Add New Address</span>
+                            </button>
+                        </div>
+                        <!-- Address content would be rendered here dynamically -->
+                    </section>
+
+                    <section class="content-section" id="payment">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">Payment Methods</h1>
+                                <p class="section-subtitle">Manage your payment options</p>
+                            </div>
+                            <button class="btn btn-primary" id="addPaymentBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Add Payment Method</span>
+                            </button>
+                        </div>
+                        <!-- Payment methods would be rendered here dynamically -->
+                    </section>
+
+                    <section class="content-section" id="preferences">
+                        <div class="section-header">
+                            <div>
+                                <h1 class="section-title">Preferences</h1>
+                                <p class="section-subtitle">Customize your Egyptian Creativity experience</p>
+                            </div>
+                        </div>
+                        <!-- Preferences content would be rendered here -->
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+                    </div>
+                    <p class="footer-description">
+                        Preserving the timeless artistry of ancient Egypt through contemporary luxury craftsmanship.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Navigation</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="shop.html">shop</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Categories</h4>
+                    <ul class="footer-links">
+                        <li><a href="shop.html?category=jewelry">Jewelry</a></li>
+                        <li><a href="shop.html?category=decorations">Decorations</a></li>
+                        <li><a href="shop.html?category=boxes">Treasure Boxes</a></li>
+                        <li><a href="shop.html?category=accessories">Accessories</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Cairo, Egypt</a></li>
+                        <li><a href="#">+20 102 132 2002</a></li>
+                        <li><a href="#">info@egyptiantreasures.com</a></li>
+                        <li><a href="#">Support Center</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Egyptian Creativity. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Avatar Upload Modal -->
+    <div class="modal avatar-modal" id="avatarModal">
+        <div class="modal-backdrop" id="avatarBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Profile Picture</h3>
+                <button class="modal-close" id="avatarClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="avatar-upload-area">
+                <div class="upload-preview" id="uploadPreview">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <input type="file" id="avatarFileInput" accept="image/*" hidden>
+                <button class="btn btn-primary" id="selectImageBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m9 9 3-3 3 3"></path>
+                        <path d="M12 12V2.5"></path>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    </svg>
+                    <span>Select Image</span>
+                </button>
+                <p>Recommended: Square image, at least 200x200px</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelUpload">Cancel</button>
+                <button class="btn btn-primary" id="saveAvatar">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="modal-backdrop" id="searchBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Search Our Collection</h3>
+                <button class="modal-close" id="searchClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-input-container">
+                <input type="text" class="search-input" placeholder="Search for ancient treasures..." id="searchInput">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+            <div class="search-suggestions">
+                <div class="suggestion-item">Ancient Artifacts</div>
+                <div class="suggestion-item">Pharaoh Masks</div>
+                <div class="suggestion-item">Sacred Jewelry</div>
+                <div class="suggestion-item">Egyptian Decor</div>
+                <div class="suggestion-item">Custom Orders</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Add Address Modal -->
+    <div class="modal" id="addressModal">
+        <div class="modal-backdrop" id="addressBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Address</h3>
+                <button class="modal-close" id="addressClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="addressForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="addressName" class="form-label">Address Nickname</label>
+                        <input type="text" id="addressName" class="form-input" placeholder="e.g., Home, Office" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addressFullName" class="form-label">Full Name</label>
+                        <input type="text" id="addressFullName" class="form-input" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="addressStreet" class="form-label">Street Address</label>
+                        <input type="text" id="addressStreet" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addressCity" class="form-label">City</label>
+                        <input type="text" id="addressCity" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addressState" class="form-label">State / Province</label>
+                        <input type="text" id="addressState" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addressZip" class="form-label">ZIP Code</label>
+                        <input type="text" id="addressZip" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="addressCountry" class="form-label">Country</label>
+                        <input type="text" id="addressCountry" class="form-input" required>
+                    </div>
+                     <div class="form-group">
+                        <label for="addressPhone" class="form-label">Phone Number</label>
+                        <input type="tel" id="addressPhone" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddress">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Address</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Payment Method Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-backdrop" id="paymentBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Payment Method</h3>
+                <button class="modal-close" id="paymentClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="paymentType" class="form-label">Card Type</label>
+                    <select id="paymentType" class="form-input" required>
+                        <option value="Visa">Visa</option>
+                        <option value="Mastercard">Mastercard</option>
+                        <option value="Amex">American Express</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentNumber" class="form-label">Card Number</label>
+                    <input type="text" id="paymentNumber" class="form-input" placeholder="•••• •••• •••• ••••" required>
+                </div>
+                <div class="form-group">
+                    <label for="paymentExpiry" class="form-label">Expiry Date</label>
+                    <input type="text" id="paymentExpiry" class="form-input" placeholder="MM/YY" required>
+                </div>
+                <div class="form-group">
+                    <label for="paymentCVC" class="form-label">CVC</label>
+                    <input type="text" id="paymentCVC" class="form-input" placeholder="•••" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelPayment">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Track Order Modal -->
+    <div class="modal" id="trackOrderModal">
+        <div class="modal-backdrop" id="trackOrderBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Track Order</h3>
+                <button class="modal-close" id="trackOrderClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body" id="trackOrderBody">
+                <!-- Tracking info will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="orderDetailsModal">
+        <div class="modal-backdrop" id="orderDetailsBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Order Details</h3>
+                <button class="modal-close" id="orderDetailsClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body" id="orderDetailsBody">
+                <!-- Order details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div class="sidebar-backdrop" id="cartBackdrop"></div>
+    <div class="sidebar" id="cartSidebar">
+        <div class="sidebar-header">
+            <h3>Shopping Cart</h3>
+            <button class="sidebar-close" id="cartClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="cartContent">
+            <div class="cart-empty" id="cartEmpty">
+                <div class="empty-icon">🛒</div>
+                <h4>Your cart is empty</h4>
+                <p>Add some treasures to get started</p>
+            </div>
+            <div class="cart-items" id="cartItems"></div>
+        </div>
+        <div class="sidebar-footer" id="cartFooter" style="display: none;">
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="cartSubtotal">$0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="cartTotal">$0</span>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <a class="btn btn-outline" href="cart.html">View Cart</a>
+                <a class="btn btn-primary" href="cart.html">Checkout</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wishlist Sidebar -->
+    <div class="sidebar-backdrop" id="wishlistBackdrop"></div>
+    <div class="sidebar" id="wishlistSidebar">
+        <div class="sidebar-header">
+            <h3>Wishlist</h3>
+            <button class="sidebar-close" id="wishlistClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="wishlistContent">
+            <div class="wishlist-empty" id="wishlistEmpty">
+                <div class="empty-icon">💝</div>
+                <h4>Your wishlist is empty</h4>
+                <p>Save items you love for later</p>
+            </div>
+            <div class="wishlist-items" id="wishlistItems"></div>
+        </div>
+        <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
+            <div class="cart-actions">
+                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth-manager.js"></script>
+    <script src="js/sidebar-utils.js"></script>
+    <script src="js/products-data.js"></script>
+    <script src="js/profile-script.js"></script>
+    <script>
+    document.addEventListener('mousedown', (e) => {
+        const cartSidebar = document.getElementById('cartSidebar');
+        const wishlistSidebar = document.getElementById('wishlistSidebar');
+        if (cartSidebar && cartSidebar.classList.contains('active') &&
+            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
+            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
+            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
+            cartSidebar.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
+            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
+            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
+            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
+            wishlistSidebar.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+    </script>
+</body>
+</html>

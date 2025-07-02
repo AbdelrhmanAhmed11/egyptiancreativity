@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Management Test</title>
+    <link rel="stylesheet" href="css/profile-styles.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Address Management Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Address Functionality</h2>
+            <button class="btn" onclick="testAddAddress()">Test Add Address</button>
+            <button class="btn" onclick="testEditAddress()">Test Edit Address</button>
+            <button class="btn" onclick="testDeleteAddress()">Test Delete Address</button>
+            <button class="btn" onclick="testSetDefault()">Test Set Default</button>
+            <button class="btn" onclick="showAddresses()">Show All Addresses</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Current Addresses</h2>
+            <div id="addressesDisplay"></div>
+        </div>
+    </div>
+
+    <script src="js/profile-script.js"></script>
+    <script>
+        // Test functions
+        function testAddAddress() {
+            openAddressModal();
+        }
+
+        function testEditAddress() {
+            if (addresses.length > 0) {
+                editAddress(addresses[0].id);
+            } else {
+                alert('No addresses to edit. Add one first.');
+            }
+        }
+
+        function testDeleteAddress() {
+            if (addresses.length > 0) {
+                deleteAddress(addresses[0].id);
+            } else {
+                alert('No addresses to delete. Add one first.');
+            }
+        }
+
+        function testSetDefault() {
+            if (addresses.length > 1) {
+                setDefaultAddress(addresses[1].id);
+            } else {
+                alert('Need at least 2 addresses to test set default.');
+            }
+        }
+
+        function showAddresses() {
+            const display = document.getElementById('addressesDisplay');
+            display.innerHTML = '<pre>' + JSON.stringify(addresses, null, 2) + '</pre>';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAddresses();
+            showAddresses();
+        });
+    </script>
+</body>
+</html> 

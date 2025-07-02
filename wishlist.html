@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Sacred Wishlist - Egyptian Creativity | Ancient Artifacts Collection</title>
+    <meta name="description" content="Your curated collection of ancient Egyptian artifacts and luxury treasures">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/go3ran_.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/sidebar-styles.css">
+    <link rel="stylesheet" href="css/wishlist-styles.css">
+
+    
+    
+</head>
+<body>
+    <!-- Animated Background (Same as Index Page) -->
+    <div class="animated-bg">
+        <div class="pyramid-bg"></div>
+        <div class="sand-particles"></div>
+        <div class="hieroglyph-symbols">
+            <span class="symbol">𓋹</span>
+            <span class="symbol">𓂀</span>
+            <span class="symbol">𓊃</span>
+            <span class="symbol">𓈖</span>
+            <span class="symbol">𓇯</span>
+            <span class="symbol">𓊪</span>
+        </div>
+        <div class="golden-rays"></div>
+        <div class="floating-artifacts">
+            <div class="artifact artifact-1">𓋹</div>
+            <div class="artifact artifact-2">𓂀</div>
+            <div class="artifact artifact-3">𓊃</div>
+            <div class="artifact artifact-4">𓈖</div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-pyramid">
+                <img src="images/go3ran_.png" alt="Egyptian Creativity Loading">
+            </div>
+            <div class="loading-text">Egyptian Creativity</div>
+            <div class="loading-subtitle">Loading Ancient Wonders...</div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <button class="skip-btn" id="skipBtn">Skip</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-container">
+            <a href="index.html" class="logo">
+                <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+            </a>
+            
+            <nav class="nav-menu" id="navMenu">
+                <a href="index.html" class="nav-link">HOME</a>
+                <a href="about.html" class="nav-link">ABOUT US</a>
+                <a href="gallery.html" class="nav-link">GALLERY</a>
+                <a href="blog.html" class="nav-link">BLOGS</a>
+                <a href="shop.html" class="nav-link">SHOP</a>
+                <a href="contact.html" class="nav-link">CONTACT</a>
+                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+            </nav>
+            
+            <div class="header-actions">
+                <button class="header-icon" id="searchBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
+                <button class="header-icon" id="userBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </button>
+                <button class="header-icon" id="wishlistBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span class="badge" id="wishlistBadge">0</span>
+                </button>
+                <button class="header-icon" id="cartBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span class="badge" id="cartBadge">0</span>
+                </button>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">
+                    ✨ Your Sacred Collection
+                </div>
+                <h1 class="hero-title">
+                    <span class="line">My Sacred</span>
+                    <span class="line golden">Wishlist</span>
+                </h1>
+                <p class="hero-description">
+                    Your carefully curated collection of ancient Egyptian creativity, each piece chosen for its divine beauty and mystical significance.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number" id="totalItems">0</div>
+                        <div class="stat-label">Treasures</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="totalValue">$0</div>
+                        <div class="stat-label">Total Value</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">∞</div>
+                        <div class="stat-label">Memories</div>
+                    </div>
+                </div>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" id="addAllBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                        </svg>
+                        Add All to Cart
+                    </button>
+                    <button class="btn btn-secondary" id="shareBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <path d="M16 6l-4-4-4 4"></path>
+                            <path d="M12 2v13"></path>
+                        </svg>
+                        Share Collection
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div class="scroll-line"></div>
+            <span>Scroll to explore</span>
+        </div>
+    </section>
+
+    <!-- Filter Section -->
+    <section class="filter-section">
+        <div class="container">
+            <div class="filter-bar">
+                <div class="filter-left">
+                    <div class="wishlist-summary">
+                        <span class="summary-label">Items:</span>
+                        <span class="summary-value" id="totalItemsDisplay">0</span>
+                        <span class="summary-separator">|</span>
+                        <span class="summary-label">Value:</span>
+                        <span class="summary-value" id="totalValueDisplay">$0.00</span>
+                    </div>
+                </div>
+                <div class="filter-right">
+                    <div class="filter-controls">
+                        <select class="sort-select" id="sortSelect">
+                            <option value="newest">Newest First</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="name-asc">Name: A to Z</option>
+                            <option value="name-desc">Name: Z to A</option>
+                        </select>
+                        <select class="filter-select" id="filterSelect">
+                            <option value="all">All Categories</option>
+                            <option value="jewelry">Jewelry</option>
+                            <option value="decorations">Decorations</option>
+                            <option value="boxes">Treasure Boxes</option>
+                            <option value="accessories">Accessories</option>
+                        </select>
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="grid" id="gridViewBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="view-btn" data-view="list" id="listViewBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Wishlist Section -->
+    <section class="wishlist-section">
+        <div class="container">
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                </div>
+                <h2>Your Sacred Collection Awaits</h2>
+                <p>Begin your journey through ancient Egyptian creativity and mystical artifacts</p>
+                <button class="btn btn-primary" onclick="window.location.href='shop.html'">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12l2 2 4-4"></path>
+                    </svg>
+                    Explore Collection
+                </button>
+            </div>
+
+            <!-- Wishlist Grid -->
+            <div class="wishlist-grid" id="wishlistGrid">
+                <!-- Items will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Recommended Section -->
+    <section class="recommended-section">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-badge">Recommended</div>
+                <h2 class="section-title">Treasures You Might Cherish</h2>
+                <p class="section-description">
+                    Discover more ancient wonders that complement your divine collection
+                </p>
+            </div>
+            <div class="recommended-grid" id="recommendedGrid">
+                <!-- Recommended items will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
+                    </div>
+                    <p class="footer-description">
+                        Preserving the timeless artistry of ancient Egypt through contemporary luxury craftsmanship.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                        <a href="#" class="social-link">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Navigation</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About</a></li>
+                        <li><a href="gallery.html">Gallery</a></li>
+                        <li><a href="blog.html">Blog</a></li>
+                        <li><a href="shop.html">shop</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Categories</h4>
+                    <ul class="footer-links">
+                        <li><a href="shop.html?category=jewelry">Jewelry</a></li>
+                        <li><a href="shop.html?category=decorations">Decorations</a></li>
+                        <li><a href="shop.html?category=boxes">Treasure Boxes</a></li>
+                        <li><a href="shop.html?category=accessories">Accessories</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Cairo, Egypt</a></li>
+                        <li><a href="#">+20 102 132 2002</a></li>
+                        <li><a href="#">info@egyptiantreasures.com</a></li>
+                        <li><a href="#">Support Center</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Egyptian Creativity. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="searchModal">
+        <div class="modal-backdrop" id="searchBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Search Wishlist</h3>
+                <button class="modal-close" id="searchClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-input-container">
+                <input type="text" class="search-input" placeholder="Search your wishlist..." id="searchInput">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+            <div class="search-suggestions">
+                <div class="suggestion-item">Pharaoh Mask</div>
+                <div class="suggestion-item">Jewelry</div>
+                <div class="suggestion-item">Decorations</div>
+                <div class="suggestion-item">Treasure </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div class="sidebar-backdrop" id="cartBackdrop"></div>
+    <div class="sidebar" id="cartSidebar">
+        <div class="sidebar-header">
+            <h3>Shopping Cart</h3>
+            <button class="sidebar-close" id="cartClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="sidebar-content" id="cartContent">
+            <div class="cart-empty" id="cartEmpty">
+                <div class="empty-icon">🛒</div>
+                <h4>Your cart is empty</h4>
+                <p>Add some treasures to get started</p>
+            </div>
+            <div class="cart-items" id="cartItems"></div>
+        </div>
+        <div class="sidebar-footer" id="cartFooter" style="display: none;">
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="cartSubtotal">$0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="cartTotal">$0</span>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <a class="btn btn-outline" href="cart.html">View Cart</a>
+                <a class="btn btn-primary" href="cart.html">Checkout</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth-manager.js"></script>
+    <script src="js/sidebar-utils.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/wishlist-script.js"></script>
+    <script>
+    document.addEventListener('mousedown', (e) => {
+        const cartSidebar = document.getElementById('cartSidebar');
+        const wishlistSidebar = document.getElementById('wishlistSidebar');
+        if (cartSidebar && cartSidebar.classList.contains('active') &&
+            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
+            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
+            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
+            cartSidebar.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
+            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
+            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
+            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
+            wishlistSidebar.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+    </script>
+</body>
+</html>
