@@ -275,7 +275,13 @@ class EgyptianLuxuryCart {
     try {
       const savedCart = localStorage.getItem("egyptianLuxuryCart");
       if (savedCart) {
-        const storedItems = JSON.parse(savedCart);
+        let storedItems = [];
+        try {
+          storedItems = JSON.parse(savedCart);
+        } catch (e) {
+          storedItems = [];
+        }
+        if (!Array.isArray(storedItems)) storedItems = [];
         // Merge with allProducts to ensure all fields are present
         this.cartItems = storedItems.map((item) => {
           const product = (window.allProducts || []).find(p => p.id === item.id);
@@ -289,6 +295,7 @@ class EgyptianLuxuryCart {
       console.error("Error loading cart data:", error);
       this.cartItems = [...this.sampleCartItems];
     }
+    if (!Array.isArray(this.cartItems)) this.cartItems = [];
   }
 
   // Save cart data to localStorage
@@ -761,7 +768,7 @@ class EgyptianLuxuryCart {
     const emptyState = document.getElementById("emptyCartState");
     const cartLayout = document.querySelector(".cart-layout");
 
-    if (this.cartItems.length === 0) {
+    if (!Array.isArray(this.cartItems) || this.cartItems.length === 0) {
       if (cartLayout) cartLayout.style.display = "none";
       if (emptyState) emptyState.style.display = "flex";
       return;
@@ -786,7 +793,7 @@ class EgyptianLuxuryCart {
                     <p class="item-description">${item.description}</p>
                     
                     <div class="item-features">
-                        ${item.features.map((feature) => `<span class="feature-tag">${feature}</span>`).join("")}
+                        ${(item.features || []).map((feature) => `<span class="feature-tag">${feature}</span>`).join("")}
                     </div>
                     
                     <div class="item-meta">
@@ -1476,7 +1483,7 @@ class EgyptianLuxuryCart {
     
     if (!cartSidebar || !cartItems || !cartEmpty || !cartFooter) return;
     
-    if (this.cartItems.length === 0) {
+    if (!Array.isArray(this.cartItems) || this.cartItems.length === 0) {
       cartEmpty.style.display = 'block';
       cartItems.style.display = 'none';
       cartFooter.style.display = 'none';
