@@ -388,6 +388,7 @@ class EgyptianWishlist {
         try {
             // First, try to load from localStorage
             const storedWishlist = localStorage.getItem('egyptianWishlist');
+            let shouldInitSample = false;
             if (storedWishlist) {
                 try {
                     const parsed = JSON.parse(storedWishlist);
@@ -399,17 +400,23 @@ class EgyptianWishlist {
                         }));
                         console.log('Loaded wishlist from storage:', this.wishlistItems);
                         return; // Exit early if we loaded from storage
+                    } else {
+                        shouldInitSample = true;
                     }
                 } catch (e) {
                     console.error('Error parsing wishlist data:', e);
+                    shouldInitSample = true;
                 }
+            } else {
+                shouldInitSample = true;
             }
 
             // If we get here, either there was no stored wishlist or it was empty/invalid
-            console.log('No valid wishlist found in storage, initializing with sample data');
-            this.initSampleData();
-            this.saveWishlistData();
-            
+            if (shouldInitSample) {
+                console.log('No valid wishlist found in storage, initializing with sample data');
+                this.initSampleData();
+                this.saveWishlistData();
+            }
             // Always try to load cart
             const storedCart = localStorage.getItem('egyptianLuxuryCart');
             if (storedCart) {
@@ -422,17 +429,10 @@ class EgyptianWishlist {
                     console.error('Error parsing cart data:', e);
                 }
             }
-            // Ensure all prices are numbers and have valid addedDate
-            this.wishlistItems = this.wishlistItems.map(item => ({
-                ...item,
-                price: typeof item.price === 'string' ? parseFloat(item.price) || 0 : Number(item.price) || 0,
-                addedDate: item.addedDate ? (item.addedDate instanceof Date ? item.addedDate : new Date(item.addedDate)) : new Date()
-            }));
-            
-            console.log('Final wishlist items after load:', this.wishlistItems);
-        } catch (error) {
-            console.error('Error loading stored data:', error);
-            this.showNotification('Error loading saved data', 'warning');
+        } catch (e) {
+            // If anything fails, always fall back to sample data
+            this.initSampleData();
+            this.saveWishlistData();
         }
     }
 
