@@ -1,5 +1,3 @@
-// Egyptian Creativity - About Page - Enhanced JavaScript with Same Background Animations as Index
-
 // Global Variables
 let currentStoryItem = 0;
 let statsAnimated = false;
@@ -94,32 +92,22 @@ const valuesData = [
   {
     icon: "star",
     title: "Authenticity",
-    description: "Every piece is meticulously researched and crafted to reflect the true essence of ancient Egyptian artistry."
+    description: "Looking at symbols and their meanings, as well as ancient Egyptian."
   },
   {
     icon: "heart",
     title: "Passion",
-    description: "Our deep love for Egyptian heritage drives us to create pieces that honor ancient traditions."
+    description: "Ancient Egyptian god and goddesses and their special powers"
   },
   {
-    icon: "shield",
-    title: "Quality",
-    description: "We use only the finest materials and traditional techniques combined with modern precision."
-  },
-  {
-    icon: "globe",
-    title: "Heritage",
-    description: "Preserving and sharing the rich cultural heritage of ancient Egypt with the modern world."
-  },
-  {
-    icon: "zap",
+    icon: "zap",  
     title: "Innovation",
-    description: "Blending ancient techniques with modern precision to create timeless contemporary pieces."
+    description: "The Egyptian Creativity is a brand that redefines the connection between ancient Egyptian artistry and contemporary living. This document outlines a comprehensive marketing strategy designed to enhance brand awareness."
   },
   {
     icon: "users",
     title: "Community",
-    description: "Building a global community of enthusiasts who appreciate Egyptian craftsmanship."
+    description: "Establishing credibility and enhancing customer engagement to learn about our products inspired by ancient Egyptian art."
   }
 ];
 
