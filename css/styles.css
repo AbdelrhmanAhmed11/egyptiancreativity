@@ -1767,7 +1767,7 @@ section {
   }
 
   .hero-visual {
-      order: -1;
+      order: 1;
   }
 
   .blog-grid {

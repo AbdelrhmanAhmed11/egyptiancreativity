@@ -540,18 +540,19 @@ img {
 
 .hero-badge {
   display: inline-block;
-  padding: 0.5rem 1.5rem;
+  padding: 0.7rem 2rem !important;
   background-color: var(--pyramid-gold);
   color: var(--royal-dark-blue);
   font-family: var(--font-primary);
   font-weight: 600;
-  border-radius: 20px;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  border-radius: 50px !important;
+  margin-bottom: 2rem !important;
+  font-size: 1.15rem !important;
   position: relative;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
   text-transform: uppercase;
   letter-spacing: 1px;
+  margin-top: 1.2rem !important;
 }
 
 .hero-title {
@@ -1759,6 +1760,7 @@ select.form-input option {
     --border-color: #666;
     --text-muted: #333;
   }
+
 }
 
 /* Scrollbar Styling */

@@ -546,9 +546,9 @@ img {
   background: linear-gradient(135deg, #ffd700, #ffed4e) !important;
   border: 2px solid #ffd700 !important;
   border-radius: 50px !important;
-  padding: 0.75rem 2rem !important;
+  padding: 0.7rem 2rem !important;
   margin-bottom: 2rem !important;
-  font-size: 1rem !important;
+  font-size: 1.15rem !important;
   color: #1a1a2e !important;
   backdrop-filter: blur(10px) !important;
   font-weight: 700 !important;
@@ -556,6 +556,7 @@ img {
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
   text-transform: uppercase !important;
   letter-spacing: 1px !important;
+  margin-top: 1.2rem !important;
 }
 
 .hero-title {

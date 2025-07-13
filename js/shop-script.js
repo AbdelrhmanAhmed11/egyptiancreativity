@@ -407,9 +407,13 @@ class ShopManager {
         // Search functionality
         const searchInput = document.getElementById('shopSearchInput');
         if (searchInput) {
+            let searchTimeout;
             searchInput.addEventListener('input', (e) => {
-                this.searchQuery = e.target.value;
-                this.applyFilters();
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.searchQuery = e.target.value;
+                    this.applyFilters();
+                }, 500);
             });
         }
 

@@ -433,15 +433,23 @@ function initializeSearch() {
     
     // Search functionality
     if (gallerySearchInput) {
+        let searchTimeout;
         gallerySearchInput.addEventListener('input', (e) => {
-            searchGallery(e.target.value);
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchGallery(e.target.value);
+            }, 500);
         });
     }
     
     if (searchInput) {
+        let searchTimeout;
         searchInput.addEventListener('input', (e) => {
-            searchGallery(e.target.value);
-            searchModal.classList.remove('active');
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchGallery(e.target.value);
+                searchModal.classList.remove('active');
+            }, 500);
         });
     }
     

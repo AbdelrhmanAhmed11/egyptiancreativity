@@ -351,15 +351,23 @@ function initializeSearch() {
     // Search functionality
     const blogSearchInput = document.getElementById('blogSearchInput');
     if (blogSearchInput) {
+        let searchTimeout;
         blogSearchInput.addEventListener('input', (e) => {
-            searchArticles(e.target.value);
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchArticles(e.target.value);
+            }, 500);
         });
     }
     
     if (searchInput) {
+        let searchTimeout;
         searchInput.addEventListener('input', (e) => {
-            searchArticles(e.target.value);
-            searchModal.classList.remove('active');
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchArticles(e.target.value);
+                searchModal.classList.remove('active');
+            }, 500);
         });
     }
     
