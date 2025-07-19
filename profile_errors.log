@@ -1,0 +1,6 @@
+[19-Jul-2025 03:58:45 Europe/Berlin] 2025-07-19 03:58:45 - Profile Action: get_profile - Data: {"user_id":null}
+[19-Jul-2025 03:58:45 Europe/Berlin] 2025-07-19 03:58:45 - Profile Action: get_orders - Data: {"user_id":null}
+[19-Jul-2025 03:58:45 Europe/Berlin] 2025-07-19 03:58:45 - Profile Action: get_addresses - Data: {"user_id":null}
+[19-Jul-2025 03:58:45 Europe/Berlin] 2025-07-19 03:58:45 - Profile Action: update_profile - Data: {"action":"update_profile","full_name":"Test User","phone":"+1234567890","email":"test@example.com"}
+[19-Jul-2025 03:58:45 Europe/Berlin] 2025-07-19 03:58:45 - Profile Action: add_address - Data: {"action":"add_address","recipient_name":"Test Recipient","phone":"+1234567890","address_line1":"123 Test Street","city":"Test City","country":"Test Country","is_default":true}
+[19-Jul-2025 03:58:45 Europe/Berlin] 2025-07-19 03:58:45 - Profile Action: get_profile - Data: {"user_id":null}

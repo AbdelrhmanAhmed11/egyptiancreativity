@@ -1,16 +1,263 @@
 // Egyptian Creativity Gallery - Enhanced JavaScript with Index Background Animations
 
-// Global Variables
-let cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-let wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
+// Gallery-specific variables
 let currentFilter = 'All';
-let currentShowcaseItem = 0;
 let currentLightboxIndex = 0;
 let displayedItems = 8;
 let filteredItems = [];
+let currentPreviewProduct = null;
 
-// Gallery Data
-const galleryData = [
+// Make functions globally available immediately for onclick handlers
+window.openProductPreview = function(productId) {
+    console.log('Opening product preview for ID:', productId);
+    
+    // Try to find product in hardcoded data first
+    let product = productData.find(item => item.id === productId);
+    console.log('Found in hardcoded data:', product);
+    
+    // If not found in hardcoded data, create a basic product from gallery item
+    if (!product) {
+        const galleryItem = document.querySelector(`[data-id="${productId}"]`);
+        console.log('Gallery item found:', galleryItem);
+        if (galleryItem) {
+            const image = galleryItem.querySelector('img');
+            const category = galleryItem.querySelector('.gallery-item-category');
+            
+            product = {
+                id: productId,
+                title: image?.alt || `Gallery Item ${productId}`,
+                category: category?.textContent || 'Artifact',
+                price: 0,
+                image: image?.src || 'images/1-7-scaled.jpg',
+                description: `Exquisite Egyptian artifact with authentic craftsmanship and timeless beauty.`,
+                specs: {
+                    "Materials": "Authentic Egyptian Materials",
+                    "Dimensions": "Various sizes available",
+                    "Weight": "Varies by item",
+                    "Origin": "Handcrafted in Egypt"
+                }
+            };
+            console.log('Created product from gallery item:', product);
+        }
+    }
+    
+    if (!product) {
+        console.error('No product found for ID:', productId);
+        return;
+    }
+    
+    currentPreviewProduct = product;
+    
+    // Update modal content
+    const modal = document.getElementById('productPreviewModal');
+    const image = document.getElementById('previewProductImage');
+    const category = document.getElementById('previewProductCategory');
+    const title = document.getElementById('previewProductTitle');
+    const description = document.getElementById('previewProductDescription');
+    const specs = document.getElementById('previewProductSpecs');
+    const addToCartBtn = document.getElementById('previewAddToCart');
+    const addToWishlistBtn = document.getElementById('previewAddToWishlist');
+    
+    console.log('Modal elements found:', {
+        modal: !!modal,
+        image: !!image,
+        category: !!category,
+        title: !!title,
+        description: !!description,
+        specs: !!specs,
+        addToCartBtn: !!addToCartBtn,
+        addToWishlistBtn: !!addToWishlistBtn
+    });
+    
+    if (image) image.src = product.image;
+    if (category) category.textContent = product.category.toUpperCase();
+    if (title) title.textContent = product.title.toUpperCase();
+    if (description) description.textContent = product.description;
+    
+    // Update specifications
+    if (specs && product.specs) {
+        specs.innerHTML = Object.entries(product.specs).map(([key, value]) => `
+            <div class="spec-item">
+                <span class="spec-label">${key}:</span>
+                <span class="spec-value">${value}</span>
+            </div>
+        `).join('');
+    }
+    
+    // Update wishlist button state - use global wishlist
+    if (addToWishlistBtn) {
+        const globalWishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
+        const isInWishlist = globalWishlist.some(item => item.id === product.id);
+        addToWishlistBtn.classList.toggle('active', isInWishlist);
+        addToWishlistBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            ${isInWishlist ? 'REMOVE FROM WISHLIST' : 'ADD TO WISHLIST'}
+        `;
+    }
+    
+    // Show modal
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        console.log('Modal opened successfully');
+    } else {
+        console.error('Modal element not found');
+    }
+};
+
+// Product Preview Modal Functions - Define immediately
+function openProductPreview(productId) {
+    // Try to find product in hardcoded data first
+    let product = productData.find(item => item.id === productId);
+    
+    // If not found in hardcoded data, create a basic product from gallery item
+    if (!product) {
+        const galleryItem = document.querySelector(`[data-id="${productId}"]`);
+        if (galleryItem) {
+            const image = galleryItem.querySelector('img');
+            const category = galleryItem.querySelector('.gallery-item-category');
+            
+            product = {
+                id: productId,
+                title: image?.alt || `Gallery Item ${productId}`,
+                category: category?.textContent || 'Artifact',
+                price: 0,
+                image: image?.src || 'images/1-7-scaled.jpg',
+                description: `Exquisite Egyptian artifact with authentic craftsmanship and timeless beauty.`,
+                specs: {
+                    "Materials": "Authentic Egyptian Materials",
+                    "Dimensions": "Various sizes available",
+                    "Weight": "Varies by item",
+                    "Origin": "Handcrafted in Egypt"
+                }
+            };
+        }
+    }
+    
+    if (!product) return;
+    
+    currentPreviewProduct = product;
+    
+    // Update modal content
+    const modal = document.getElementById('productPreviewModal');
+    const image = document.getElementById('previewProductImage');
+    const category = document.getElementById('previewProductCategory');
+    const title = document.getElementById('previewProductTitle');
+    const description = document.getElementById('previewProductDescription');
+    const specs = document.getElementById('previewProductSpecs');
+    const addToCartBtn = document.getElementById('previewAddToCart');
+    const addToWishlistBtn = document.getElementById('previewAddToWishlist');
+    
+    if (image) image.src = product.image;
+    if (category) category.textContent = product.category.toUpperCase();
+    if (title) title.textContent = product.title.toUpperCase();
+    if (description) description.textContent = product.description;
+    
+    // Update specifications
+    if (specs && product.specs) {
+        specs.innerHTML = Object.entries(product.specs).map(([key, value]) => `
+            <div class="spec-item">
+                <span class="spec-label">${key}:</span>
+                <span class="spec-value">${value}</span>
+            </div>
+        `).join('');
+    }
+    
+    // Update wishlist button state - use global wishlist
+    if (addToWishlistBtn) {
+        const globalWishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
+        const isInWishlist = globalWishlist.some(item => item.id === product.id);
+        addToWishlistBtn.classList.toggle('active', isInWishlist);
+        addToWishlistBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            ${isInWishlist ? 'REMOVE FROM WISHLIST' : 'ADD TO WISHLIST'}
+        `;
+    }
+    
+    // Show modal
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeProductPreview() {
+    const modal = document.getElementById('productPreviewModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    currentPreviewProduct = null;
+}
+
+function handlePreviewAddToCart() {
+    console.log('handlePreviewAddToCart called');
+    if (!currentPreviewProduct) {
+        console.error('No current preview product');
+        return;
+    }
+    
+    console.log('Adding to cart:', currentPreviewProduct);
+    addToCart(currentPreviewProduct.id);
+    showNotification(`${currentPreviewProduct.title} added to cart!`, 'success');
+}
+
+function handlePreviewAddToWishlist() {
+    console.log('handlePreviewAddToWishlist called');
+    if (!currentPreviewProduct) {
+        console.error('No current preview product');
+        return;
+    }
+    
+    const globalWishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
+    const isInWishlist = globalWishlist.some(item => item.id === currentPreviewProduct.id);
+    
+    console.log('Current wishlist state:', { isInWishlist, productId: currentPreviewProduct.id });
+    
+    if (isInWishlist) {
+        removeFromWishlist(currentPreviewProduct.id);
+        showNotification(`${currentPreviewProduct.title} removed from wishlist`, 'info');
+    } else {
+        addToWishlist(currentPreviewProduct.id);
+        showNotification(`${currentPreviewProduct.title} added to wishlist!`, 'success');
+    }
+    
+    // Update button state
+    const addToWishlistBtn = document.getElementById('previewAddToWishlist');
+    if (addToWishlistBtn) {
+        const newGlobalWishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
+        const newIsInWishlist = newGlobalWishlist.some(item => item.id === currentPreviewProduct.id);
+        addToWishlistBtn.classList.toggle('active', newIsInWishlist);
+        addToWishlistBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="${newIsInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            ${newIsInWishlist ? 'REMOVE FROM WISHLIST' : 'ADD TO WISHLIST'}
+        `;
+    } else {
+        console.error('Add to wishlist button not found in handle function');
+    }
+}
+
+// Make functions globally available immediately
+if (typeof window !== 'undefined') {
+    window.openProductPreview = openProductPreview;
+    window.addToCart = addToCart;
+    window.addToWishlist = addToWishlist;
+    window.removeFromCart = removeFromCart;
+    window.removeFromWishlist = removeFromWishlist;
+    window.changeShowcase = changeShowcase;
+    window.closeProductPreview = closeProductPreview;
+    window.handlePreviewAddToCart = handlePreviewAddToCart;
+    window.handlePreviewAddToWishlist = handlePreviewAddToWishlist;
+}
+
+// Product data for preview modal
+const productData = [
     {
         id: 1,
         title: "Golden Pharaoh Necklace",
@@ -18,7 +265,12 @@ const galleryData = [
         price: 299,
         image: "images/1-7-scaled.jpg",
         description: "Exquisite handcrafted necklace featuring traditional Egyptian blue and gold beads, inspired by ancient pharaonic jewelry.",
-        details: "Materials: 18k Gold Plated, Lapis Lazuli, Turquoise\nDimensions: 45cm length\nWeight: 85g\nOrigin: Handcrafted in Cairo"
+        specs: {
+            "Materials": "18k Gold Plated, Lapis Lazuli, Turquoise",
+            "Dimensions": "45cm length",
+            "Weight": "85g",
+            "Origin": "Handcrafted in Cairo"
+        }
     },
     {
         id: 2,
@@ -27,7 +279,12 @@ const galleryData = [
         price: 189,
         image: "images/5-1 (1).jpg",
         description: "Sacred Eye of Horus ring crafted in gold and turquoise, symbolizing protection and royal power.",
-        details: "Materials: Sterling Silver, Gold Plating, Turquoise Inlay\nSizes: Available in all sizes\nWeight: 12g\nSymbolism: Protection and Divine Power"
+        specs: {
+            "Materials": "Sterling Silver, Gold Plating, Turquoise Inlay",
+            "Sizes": "Available in all sizes",
+            "Weight": "12g",
+            "Symbolism": "Protection and Divine Power"
+        }
     },
     {
         id: 3,
@@ -36,7 +293,12 @@ const galleryData = [
         price: 450,
         image: "images/5-3.jpg",
         description: "Ornate wooden box with authentic hieroglyphic carvings and golden accents, perfect for storing precious items.",
-        details: "Materials: Mahogany Wood, Gold Leaf, Hand-carved Details\nDimensions: 25cm x 15cm x 10cm\nWeight: 1.2kg\nFeatures: Velvet-lined interior"
+        specs: {
+            "Materials": "Mahogany Wood, Gold Leaf, Hand-carved Details",
+            "Dimensions": "25cm x 15cm x 10cm",
+            "Weight": "1.2kg",
+            "Features": "Velvet-lined interior"
+        }
     },
     {
         id: 4,
@@ -45,7 +307,12 @@ const galleryData = [
         price: 125,
         image: "images/4-5-scaled.jpg",
         description: "Authentic papyrus scroll featuring ancient Egyptian scenes and hieroglyphic texts.",
-        details: "Materials: Genuine Papyrus, Natural Pigments\nDimensions: 40cm x 30cm\nWeight: 150g\nTheme: Book of the Dead excerpts"
+        specs: {
+            "Materials": "Genuine Papyrus, Natural Pigments",
+            "Dimensions": "40cm x 30cm",
+            "Weight": "150g",
+            "Theme": "Book of the Dead excerpts"
+        }
     },
     {
         id: 5,
@@ -54,7 +321,12 @@ const galleryData = [
         price: 380,
         image: "images/10.jpg",
         description: "Complete set of four canopic jars representing the Four Sons of Horus, meticulously crafted.",
-        details: "Materials: Limestone, Gold Accents\nDimensions: 20cm height each\nWeight: 2.5kg total\nSet: Imsety, Duamutef, Hapi, Qebehsenuef"
+        specs: {
+            "Materials": "Limestone, Gold Accents",
+            "Dimensions": "20cm height each",
+            "Weight": "2.5kg total",
+            "Set": "Imsety, Duamutef, Hapi, Qebehsenuef"
+        }
     },
     {
         id: 6,
@@ -63,7 +335,12 @@ const galleryData = [
         price: 95,
         image: "images/9-1.jpg",
         description: "Sacred Ankh pendant symbolizing eternal life, crafted in gold with intricate detailing.",
-        details: "Materials: 14k Gold Plated Bronze\nDimensions: 4cm x 2.5cm\nWeight: 15g\nChain: 50cm gold-plated chain included"
+        specs: {
+            "Materials": "14k Gold Plated Bronze",
+            "Dimensions": "4cm x 2.5cm",
+            "Weight": "15g",
+            "Chain": "50cm gold-plated chain included"
+        }
     },
     {
         id: 7,
@@ -72,7 +349,12 @@ const galleryData = [
         price: 650,
         image: "images/9-1.jpg",
         description: "Magnificent replica of a pharaoh's ceremonial scepter with golden finish and precious stone inlays.",
-        details: "Materials: Brass Core, Gold Plating, Semi-precious Stones\nDimensions: 75cm length\nWeight: 800g\nDisplay: Includes wooden stand"
+        specs: {
+            "Materials": "Brass Core, Gold Plating, Semi-precious Stones",
+            "Dimensions": "75cm length",
+            "Weight": "800g",
+            "Display": "Includes wooden stand"
+        }
     },
     {
         id: 8,
@@ -81,79 +363,12 @@ const galleryData = [
         price: 220,
         image: "images/5-3.jpg",
         description: "Elegant hand mirror inspired by Queen Cleopatra's personal accessories, featuring lotus motifs.",
-        details: "Materials: Bronze, Silver Plating, Polished Mirror\nDimensions: 25cm x 15cm\nWeight: 400g\nDesign: Lotus and papyrus motifs"
-    },
-    {
-        id: 9,
-        title: "Senet Game Board",
-        category: "Games",
-        price: 320,
-        image: "images/4-5-scaled.jpg",
-        description: "Authentic replica of the ancient Egyptian board game Senet, complete with playing pieces.",
-        details: "Materials: Cedar Wood, Ivory Pieces, Gold Inlays\nDimensions: 35cm x 12cm x 5cm\nWeight: 1kg\nIncludes: Complete game pieces and rules"
-    },
-    {
-        id: 10,
-        title: "Scarab Beetle Amulet",
-        category: "Jewelry",
-        price: 75,
-        image: "images/10.jpg",
-        description: "Traditional scarab beetle amulet symbolizing transformation and protection.",
-        details: "Materials: Faience, Gold Plating\nDimensions: 3cm x 2cm\nWeight: 10g\nCord: Adjustable leather cord included"
-    },
-    {
-        id: 11,
-        title: "Tutankhamun Mask",
-        category: "Masks",
-        price: 850,
-        image: "images/5-1.jpg",
-        description: "Museum-quality replica of the iconic Tutankhamun death mask with stunning gold and blue detailing.",
-        details: "Materials: Resin, 24k Gold Leaf, Lapis Lazuli Inlays\nDimensions: 54cm x 39cm x 49cm\nWeight: 11kg\nDisplay: Custom stand included"
-    },
-    {
-        id: 12,
-        title: "Usekh Collar Necklace",
-        category: "Jewelry",
-        price: 420,
-        image: "images/5-1.jpg",
-        description: "Traditional broad collar necklace worn by ancient Egyptian nobility, featuring intricate beadwork.",
-        details: "Materials: Gold Plating, Lapis Lazuli, Carnelian\nDimensions: Adjustable 35-40cm\nWeight: 350g\nStyle: Traditional Usekh collar"
-    },
-    {
-        id: 13,
-        title: "Nefertiti Bust Replica",
-        category: "Decorations",
-        price: 280,
-        image: "images/4-5-scaled.jpg",
-        description: "Beautiful replica of Queen Nefertiti's iconic bust with detailed painting.",
-        details: "Materials: Painted Limestone Replica\nDimensions: 30cm height\nWeight: 2kg\nOrigin: Berlin Museum reproduction"
-    },
-    {
-        id: 14,
-        title: "Anubis Shrine Figure",
-        category: "Decorations",
-        price: 195,
-        image: "images/5-3.jpg",
-        description: "Detailed figure of Anubis, the jackal-headed god of mummification, in shrine pose.",
-        details: "Materials: Black Granite, Gold Accents\nDimensions: 25cm height\nWeight: 1.8kg\nFinish: Hand-painted details"
-    },
-    {
-        id: 15,
-        title: "Royal Lotus Vase",
-        category: "Decorations",
-        price: 310,
-        image: "images/10.jpg",
-        description: "Elegant vase shaped like a lotus flower, a sacred symbol of rebirth in ancient Egypt.",
-        details: "Materials: Alabaster, Gold Trim\nDimensions: 30cm height, 15cm diameter\nWeight: 2kg\nFinish: Polished natural stone"
-    },
-    {
-        id: 16,
-        title: "Sacred Cat Statue",
-        category: "Decorations",
-        price: 165,
-        image: "images/9-1.jpg",
-        description: "Bronze statue of Bastet in cat form, representing protection and fertility.",
-        details: "Materials: Bronze with Verdigris Patina\nDimensions: 18cm height\nWeight: 800g\nSymbolism: Protection of home and family"
+        specs: {
+            "Materials": "Bronze, Silver Plating, Polished Mirror",
+            "Dimensions": "25cm x 15cm",
+            "Weight": "400g",
+            "Design": "Lotus and papyrus motifs"
+        }
     }
 ];
 
@@ -179,423 +394,266 @@ const showcaseItems = [
     }
 ];
 
-// Categories with counts
-const categories = [
-    { name: "All", count: galleryData.length },
-    { name: "Jewelry", count: galleryData.filter(item => item.category === "Jewelry").length },
-    { name: "Decorations", count: galleryData.filter(item => item.category === "Decorations").length },
-    { name: "Accessories", count: galleryData.filter(item => item.category === "Accessories").length },
-    { name: "Boxes", count: galleryData.filter(item => item.category === "Boxes").length },
-    { name: "Games", count: galleryData.filter(item => item.category === "Games").length },
-    { name: "Masks", count: galleryData.filter(item => item.category === "Masks").length }
-];
+// Use global DOM elements from script.js or get them when needed
 
-// DOM Elements
-const loadingOverlay = document.getElementById('loadingOverlay');
-const header = document.getElementById('header');
-const searchBtn = document.getElementById('searchBtn');
-const searchModal = document.getElementById('searchModal');
-const searchClose = document.getElementById('searchClose');
-const searchInput = document.getElementById('searchInput');
-const gallerySearchInput = document.getElementById('gallerySearchInput');
-const userBtn = document.getElementById('userBtn');
-const cartBtn = document.getElementById('cartBtn');
-const cartSidebar = document.getElementById('cartSidebar');
-const cartClose = document.getElementById('cartClose');
-const wishlistBtn = document.getElementById('wishlistBtn');
-const wishlistSidebar = document.getElementById('wishlistSidebar');
-const wishlistClose = document.getElementById('wishlistClose');
-const filterButtons = document.getElementById('filterButtons');
-const galleryGrid = document.getElementById('galleryGrid');
-const loadMoreBtn = document.getElementById('loadMoreBtn');
-const lightboxOverlay = document.getElementById('lightboxOverlay');
-const lightboxClose = document.getElementById('lightboxClose');
-const lightboxImage = document.getElementById('lightboxImage');
-const lightboxCategory = document.getElementById('lightboxCategory');
-const lightboxTitle = document.getElementById('lightboxTitle');
-const lightboxDescription = document.getElementById('lightboxDescription');
-const lightboxDetails = document.getElementById('lightboxDetails');
-const lightboxPrev = document.getElementById('lightboxPrev');
-const lightboxNext = document.getElementById('lightboxNext');
-const lightboxAddToCart = document.getElementById('lightboxAddToCart');
-const lightboxAddToWishlist = document.getElementById('lightboxAddToWishlist');
-const notificationContainer = document.getElementById('notificationContainer');
-
-// Initialize Website
-document.addEventListener('DOMContentLoaded', function() {
-    initializeLoading();
-    initializeNavigation();
-    initializeHero();
-    initializeSearch();
-    initializeFilters();
-    initializeGallery();
-    initializeLightbox();
-    initializeSidebars();
-    updateCartBadge();
-    updateWishlistBadge();
-    ensureSidebarsClosed();
-    
-    console.log('🏺 Egyptian Creativity Gallery with Index animations initialized successfully!');
-});
-
-// Initialize loading animation
+// Loading Screen Functions
 function initializeLoading() {
-    let progress = 0;
-    const progressBar = document.querySelector('.progress-bar');
+const loadingOverlay = document.getElementById('loadingOverlay');
+    if (!loadingOverlay) return;
+    
     const skipBtn = document.getElementById('skipBtn');
+    const progressBar = document.querySelector('.progress-bar');
     
-    const loadingInterval = setInterval(() => {
-        progress += Math.random() * 15 + 5;
-        if (progressBar) progressBar.style.width = `${progress}%`;
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
         if (progress >= 100) {
-            clearInterval(loadingInterval);
-            setTimeout(() => hideLoading(), 500);
+            progress = 100;
+            clearInterval(interval);
+            setTimeout(hideLoading, 500);
         }
-    }, 150);
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+        }
+    }, 200);
     
-    // Skip button
     if (skipBtn) {
         skipBtn.addEventListener('click', () => {
-            clearInterval(loadingInterval);
+            clearInterval(interval);
             hideLoading();
         });
     }
-    
-    // Auto hide after 3 seconds
-    setTimeout(() => {
-        clearInterval(loadingInterval);
-        hideLoading();
-    }, 3000);
 }
 
 function hideLoading() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) {
         loadingOverlay.classList.add('hidden');
-        document.body.style.overflow = 'auto';
+        setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+        }, 1000);
     }
 }
 
-// Navigation
+// Navigation Functions
 function initializeNavigation() {
-    // Navbar scroll effect
+    const header = document.getElementById('header');
+    if (!header) return;
+    
+    let lastScrollTop = 0;
+    const scrollThreshold = 100;
+    
     window.addEventListener('scroll', () => {
-        const currentScrollY = window.scrollY;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         
-        if (currentScrollY > 100) {
+        if (scrollTop > scrollThreshold) {
             header.classList.add('scrolled');
         } else {
             header.classList.remove('scrolled');
         }
+        
+        lastScrollTop = scrollTop;
     });
     
-    // Smooth scroll for navigation links
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            const href = link.getAttribute('href');
-            
-            if (href && href.startsWith('#')) {
-                e.preventDefault();
-                const targetSection = document.querySelector(href);
-                
-                if (targetSection) {
-                    targetSection.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                    
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                }
-            }
-        });
-    });
-    
-    // Mobile menu toggle
+    // Mobile menu functionality
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navMenu = document.getElementById('navMenu');
-
-    function closeMobileMenu() {
-        if (navMenu) {
-            navMenu.classList.remove('active');
-            if (mobileMenuBtn) mobileMenuBtn.classList.remove('active');
-            document.body.style.overflow = '';
-            console.log('Mobile menu closed');
-        } else {
-            document.body.style.overflow = '';
-            console.log('No navMenu found, nothing to close');
-        }
-    }
-
-    function openMobileMenu() {
-        if (navMenu) {
-            navMenu.classList.add('active');
-            if (mobileMenuBtn) mobileMenuBtn.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            console.log('Mobile menu opened');
-        } else {
-            document.body.style.overflow = '';
-            console.log('No navMenu found, cannot open menu');
-        }
-    }
-
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', () => {
-            const isActive = navMenu.classList.contains('active');
-            if (isActive) {
-                closeMobileMenu();
-            } else {
-                openMobileMenu();
-            }
+            navMenu.classList.toggle('active');
+            mobileMenuBtn.classList.toggle('active');
         });
-    } else {
-        console.log('Mobile menu button or navMenu not found');
-    }
-
-    // Close mobile menu when a nav link is clicked (on mobile)
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                closeMobileMenu();
-            }
+        
+        // Close mobile menu when clicking on a link
+        const navLinks = navMenu.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('active');
+                mobileMenuBtn.classList.remove('active');
         });
     });
+    
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            navMenu.classList.remove('active');
+                mobileMenuBtn.classList.remove('active');
+            }
+        });
+    }
 }
 
-// Hero Section
+// Hero Section Functions
 function initializeHero() {
+    const exploreBtn = document.getElementById('exploreBtn');
+    if (!exploreBtn) return;
+    
+    exploreBtn.addEventListener('click', () => {
+        const gallerySection = document.getElementById('gallery');
+        if (gallerySection) {
+            gallerySection.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+    
+    const heritageBtn = document.getElementById('heritageBtn');
+    if (heritageBtn) {
+        heritageBtn.addEventListener('click', () => {
+            window.location.href = 'about.php';
+        });
+    }
+    
     // Auto-rotate showcase
     setInterval(() => {
-        currentShowcaseItem = (currentShowcaseItem + 1) % showcaseItems.length;
+        const nextIndex = (window.currentShowcaseItem + 1) % showcaseItems.length;
+        window.currentShowcaseItem = nextIndex;
         updateShowcase();
     }, 5000);
+}
     
-    // Update showcase display
     function updateShowcase() {
-        const item = showcaseItems[currentShowcaseItem];
-        
-        document.getElementById('showcaseImage').src = item.image;
-        document.getElementById('showcaseTitle').textContent = item.title;
-        document.getElementById('showcaseDesc').textContent = item.description;
-        document.getElementById('showcaseCategory').textContent = item.category;
+    const item = showcaseItems[window.currentShowcaseItem];
+    if (!item) return;
+    
+    const showcaseImage = document.getElementById('showcaseImage');
+    const showcaseTitle = document.getElementById('showcaseTitle');
+    const showcaseDesc = document.getElementById('showcaseDesc');
+    const showcaseCategory = document.getElementById('showcaseCategory');
+    
+    if (showcaseImage) showcaseImage.src = item.image;
+    if (showcaseTitle) showcaseTitle.textContent = item.title;
+    if (showcaseDesc) showcaseDesc.textContent = item.description;
+    if (showcaseCategory) showcaseCategory.textContent = item.category;
         
         // Update dots
         const dots = document.querySelectorAll('.dot');
-        dots.forEach((dot, index) => {
-            dot.classList.toggle('active', index === currentShowcaseItem);
-        });
-    }
-    
-    // Hero buttons
-    const exploreBtn = document.getElementById('exploreBtn');
-    const heritageBtn = document.getElementById('heritageBtn');
-    
-    if (exploreBtn) {
-        exploreBtn.addEventListener('click', () => {
-            document.getElementById('gallery').scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    }
-    
-    if (heritageBtn) {
-        heritageBtn.addEventListener('click', () => {
-            document.getElementById('filters').scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    }
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === window.currentShowcaseItem);
+    });
 }
 
-// Search functionality
+// Search Functions
 function initializeSearch() {
-    if (searchBtn && searchModal) {
+    const searchBtn = document.getElementById('searchBtn');
+    const searchModal = document.getElementById('searchModal');
+    const searchClose = document.getElementById('searchClose');
+    if (!searchBtn || !searchModal || !searchClose) return;
+    
         searchBtn.addEventListener('click', () => {
             searchModal.classList.add('active');
+        const searchInput = document.getElementById('searchInput');
             if (searchInput) searchInput.focus();
         });
-    }
     
-    if (searchClose) {
         searchClose.addEventListener('click', () => {
             searchModal.classList.remove('active');
         });
-    }
     
-    // Close search modal when clicking outside
-    if (searchModal) {
-        searchModal.addEventListener('click', (e) => {
-            if (e.target === searchModal || e.target.classList.contains('modal-backdrop')) {
+    const searchBackdrop = document.getElementById('searchBackdrop');
+    if (searchBackdrop) {
+        searchBackdrop.addEventListener('click', () => {
                 searchModal.classList.remove('active');
-            }
         });
     }
     
     // Search functionality
-    if (gallerySearchInput) {
-        let searchTimeout;
-        gallerySearchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                searchGallery(e.target.value);
-            }, 500);
-        });
-    }
-    
+    const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        let searchTimeout;
         searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                searchGallery(e.target.value);
-                searchModal.classList.remove('active');
-            }, 500);
-        });
-    }
-    
-    // Search suggestions
-    const suggestions = document.querySelectorAll('.suggestion-item');
-    suggestions.forEach(suggestion => {
-        suggestion.addEventListener('click', () => {
-            const query = suggestion.textContent;
-            if (gallerySearchInput) gallerySearchInput.value = query;
+            const query = e.target.value.toLowerCase();
             searchGallery(query);
-            searchModal.classList.remove('active');
         });
+        
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                searchModal.classList.remove('active');
+            }
+        });
+    }
+    
+    // Gallery search
+    const gallerySearchInput = document.getElementById('gallerySearchInput');
+    if (gallerySearchInput) {
+        gallerySearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            searchGallery(query);
     });
+    }
 }
 
-// Search function
 function searchGallery(query) {
-    if (!query.trim()) {
-        setFilter(currentFilter);
-        return;
-    }
+    const galleryItems = document.querySelectorAll('.gallery-item');
     
-    const searchTerms = query.toLowerCase().split(' ');
-    filteredItems = galleryData.filter(item => {
-        const searchableText = `${item.title} ${item.description} ${item.category}`.toLowerCase();
-        return searchTerms.every(term => searchableText.includes(term));
-    });
-    
-    displayedItems = 8;
-    renderGallery();
-    showNotification(`Found ${filteredItems.length} items matching "${query}"`, 'info');
-}
-
-// Filter functionality
-function initializeFilters() {
-    renderFilterButtons();
-    filteredItems = [...galleryData];
-}
-
-function renderFilterButtons() {
-    if (!filterButtons) return;
-    
-    filterButtons.innerHTML = categories.map(category => `
-        <button class="filter-btn ${category.name === currentFilter ? 'active' : ''}" 
-                data-filter="${category.name}">
-            <span>${category.name} (${category.count})</span>
-        </button>
-    `).join('');
-    
-    // Add event listeners
-    const filterBtns = filterButtons.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const filter = btn.dataset.filter;
-            setFilter(filter);
-        });
+    galleryItems.forEach(item => {
+        const title = item.querySelector('img')?.alt?.toLowerCase() || '';
+        const category = item.querySelector('.gallery-item-category')?.textContent?.toLowerCase() || '';
+        
+        const matches = title.includes(query) || category.includes(query);
+        item.style.display = matches ? 'block' : 'none';
     });
 }
 
-function setFilter(filter) {
-    currentFilter = filter;
-    
-    if (filter === 'All') {
-        filteredItems = [...galleryData];
-    } else {
-        filteredItems = galleryData.filter(item => item.category === filter);
-    }
-    
-    displayedItems = 8;
-    renderFilterButtons();
-    renderGallery();
-}
-
-// Gallery functionality
+// Gallery Functions
 function initializeGallery() {
-    renderGallery();
-    
-    // Load more button
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-            displayedItems += 8;
-            renderGallery();
-            showNotification('Loaded more treasures!', 'success');
-        });
-    }
-}
-
-function renderGallery() {
+    const galleryGrid = document.getElementById('galleryGrid');
     if (!galleryGrid) return;
     
-    const itemsToShow = filteredItems.slice(0, displayedItems);
-    
-    galleryGrid.innerHTML = itemsToShow.map((item, index) => `
-        <div class="gallery-item" style="animation-delay: ${index * 0.1}s;" data-id="${item.id}">
-            <div class="gallery-item-image">
-                <img src="${item.image}" alt="${item.title}" loading="lazy" />
-                <div class="gallery-item-overlay"></div>
-                <div class="gallery-item-category">${item.category}</div>
-                <div class="gallery-item-actions">
-                    <button class="gallery-action-btn" title="Quick View" onclick="openLightbox(${item.id})">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
+    // Filter functionality
+    const filterButtons = document.getElementById('filterButtons');
+    if (filterButtons) {
+        const categories = ['All', 'Jewelry', 'Decorations', 'Accessories', 'Boxes', 'Games', 'Masks'];
+        
+        filterButtons.innerHTML = categories.map(category => `
+            <button class="filter-btn ${category === 'All' ? 'active' : ''}" data-category="${category}">
+                <span>${category}</span>
                     </button>
-                    <button class="gallery-action-btn" title="Add to Wishlist" onclick="addToWishlist(${item.id})">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
     `).join('');
     
-    // Update load more button visibility
-    if (loadMoreBtn) {
-        if (displayedItems >= filteredItems.length) {
-            loadMoreBtn.style.display = 'none';
-        } else {
-            loadMoreBtn.style.display = 'block';
-        }
+        filterButtons.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                const category = e.target.dataset.category;
+                
+                // Update active button
+                filterButtons.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                e.target.classList.add('active');
+                
+                // Filter items
+                const galleryItems = document.querySelectorAll('.gallery-item');
+                galleryItems.forEach(item => {
+                    const itemCategory = item.querySelector('.gallery-item-category')?.textContent || '';
+                    const shouldShow = category === 'All' || itemCategory === category;
+                    item.style.display = shouldShow ? 'block' : 'none';
+                });
+            }
+        });
     }
 }
 
-// Lightbox functionality
+// Lightbox Functions
 function initializeLightbox() {
-    if (lightboxClose) {
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
+    const lightboxClose = document.getElementById('lightboxClose');
+    if (!lightboxOverlay || !lightboxClose) return;
+    
         lightboxClose.addEventListener('click', closeLightbox);
-    }
     
-    if (lightboxPrev) {
-        lightboxPrev.addEventListener('click', () => navigateLightbox('prev'));
-    }
-    
-    if (lightboxNext) {
-        lightboxNext.addEventListener('click', () => navigateLightbox('next'));
-    }
-    
-    // Close lightbox when clicking outside
     if (lightboxOverlay) {
         lightboxOverlay.addEventListener('click', (e) => {
             if (e.target === lightboxOverlay) {
                 closeLightbox();
             }
         });
+    }
+    
+    const lightboxPrev = document.getElementById('lightboxPrev');
+    if (lightboxPrev) {
+        lightboxPrev.addEventListener('click', () => navigateLightbox('prev'));
+    }
+    
+    const lightboxNext = document.getElementById('lightboxNext');
+    if (lightboxNext) {
+        lightboxNext.addEventListener('click', () => navigateLightbox('next'));
     }
     
     // Keyboard navigation
@@ -613,306 +671,252 @@ function initializeLightbox() {
 }
 
 function openLightbox(id) {
-    const item = galleryData.find(item => item.id === id);
+    const item = productData.find(item => item.id === id);
     if (!item) return;
     
-    currentLightboxIndex = galleryData.findIndex(item => item.id === id);
+    currentLightboxIndex = productData.findIndex(item => item.id === id);
+    
+    const lightboxImage = document.getElementById('lightboxImage');
+    const lightboxCategory = document.getElementById('lightboxCategory');
+    const lightboxTitle = document.getElementById('lightboxTitle');
+    const lightboxDescription = document.getElementById('lightboxDescription');
+    const lightboxDetails = document.getElementById('lightboxDetails');
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
     
     if (lightboxImage) lightboxImage.src = item.image;
     if (lightboxCategory) lightboxCategory.textContent = item.category;
     if (lightboxTitle) lightboxTitle.textContent = item.title;
     if (lightboxDescription) lightboxDescription.textContent = item.description;
     if (lightboxDetails) {
-        lightboxDetails.innerHTML = item.details.split('\n').map(line => `<p>${line}</p>`).join('');
+        lightboxDetails.innerHTML = item.specs ? Object.entries(item.specs).map(([key, value]) => `<p><strong>${key}:</strong> ${value}</p>`).join('') : '';
     }
     
     if (lightboxOverlay) {
         lightboxOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-    
-    // Update action buttons
-    if (lightboxAddToCart) {
-        lightboxAddToCart.onclick = () => addToCart(item.id);
-    }
-    if (lightboxAddToWishlist) {
-        lightboxAddToWishlist.onclick = () => addToWishlist(item.id);
-    }
 }
 
 function closeLightbox() {
+    const lightboxOverlay = document.getElementById('lightboxOverlay');
     if (lightboxOverlay) {
         lightboxOverlay.classList.remove('active');
-        document.body.style.overflow = 'auto';
+        document.body.style.overflow = '';
     }
 }
 
 function navigateLightbox(direction) {
     if (direction === 'prev') {
-        currentLightboxIndex = currentLightboxIndex > 0 ? currentLightboxIndex - 1 : galleryData.length - 1;
+        currentLightboxIndex = currentLightboxIndex > 0 ? currentLightboxIndex - 1 : productData.length - 1;
     } else {
-        currentLightboxIndex = currentLightboxIndex < galleryData.length - 1 ? currentLightboxIndex + 1 : 0;
+        currentLightboxIndex = currentLightboxIndex < productData.length - 1 ? currentLightboxIndex + 1 : 0;
     }
     
-    const item = galleryData[currentLightboxIndex];
+    const item = productData[currentLightboxIndex];
     openLightbox(item.id);
 }
 
-// Initialize Sidebars
-// Ensure all sidebars are closed by default
 function ensureSidebarsClosed() {
+    // Close any open sidebars when clicking outside
+    document.addEventListener('click', (e) => {
   const sidebars = document.querySelectorAll('.sidebar');
   sidebars.forEach(sidebar => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target)) {
     sidebar.classList.remove('active');
-  });
-}
-
-function initializeSidebars() {
-  const cartBtn = document.getElementById('cartBtn');
-    const wishlistBtn = document.getElementById('wishlistBtn');
-    const cartSidebar = document.getElementById('cartSidebar');
-    const wishlistSidebar = document.getElementById('wishlistSidebar');
-    const cartClose = document.getElementById('cartClose');
-    const wishlistClose = document.getElementById('wishlistClose');
-
-    function openSidebar(sidebar) {
-        if (sidebar) sidebar.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeSidebar(sidebar) {
-        if (sidebar) sidebar.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    if (cartBtn && cartSidebar) {
-        cartBtn.addEventListener('click', () => {
-            openSidebar(cartSidebar);
-            renderCartSidebar();
+            }
         });
-    }
-
-    if (wishlistBtn && wishlistSidebar) {
-        wishlistBtn.addEventListener('click', () => {
-            openSidebar(wishlistSidebar);
-            renderWishlistSidebar();
-        });
-    }
-
-    if (cartClose && cartSidebar) {
-        cartClose.addEventListener('click', () => closeSidebar(cartSidebar));
-    }
-
-    if (wishlistClose && wishlistSidebar) {
-        wishlistClose.addEventListener('click', () => closeSidebar(wishlistSidebar));
-    }
-
-    // Close sidebar when clicking outside
-    document.addEventListener('mousedown', (e) => {
-        if (cartSidebar && cartSidebar.classList.contains('active') && 
-            !cartSidebar.contains(e.target) && !cartBtn.contains(e.target)) {
-            closeSidebar(cartSidebar);
-        }
-        if (wishlistSidebar && wishlistSidebar.classList.contains('active') && 
-            !wishlistSidebar.contains(e.target) && !wishlistBtn.contains(e.target)) {
-            closeSidebar(wishlistSidebar);
-        }
-    });
-
-    // ESC key closes any open sidebar
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (cartSidebar && cartSidebar.classList.contains('active')) closeSidebar(cartSidebar);
-            if (wishlistSidebar && wishlistSidebar.classList.contains('active')) closeSidebar(wishlistSidebar);
-        }
     });
 }
 
 // Cart Functions
-function addToCart(productId) {
-    const product = galleryData.find(p => p.id === productId);
-    if (!product) return;
-    
-    const existingItem = cart.find(item => item.id === productId);
-    
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({
-            ...product,
-            quantity: 1
+async function addToCart(productId) {
+    try {
+        const response = await fetch('cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_to_cart',
+                product_id: productId,
+                quantity: 1
+            })
         });
-    }
-    
-    updateCartBadge();
-    saveCart();
-    showNotification(`${product.title} added to cart!`, 'success');
-}
 
-function removeFromCart(productId) {
-    const product = galleryData.find(p => p.id === productId);
-    cart = cart.filter(item => item.id !== productId);
-    
-    updateCartBadge();
-    saveCart();
-    renderCartSidebar();
-    if (product) {
-        showNotification(`${product.title} removed from cart`, 'info');
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification(data.message || 'Item added to cart!', 'success');
+            updateCartBadge();
+        } else {
+            showNotification(data.error || 'Failed to add to cart', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        showNotification('Error adding to cart', 'error');
     }
 }
 
-function updateCartBadge() {
-    const badge = document.getElementById('cartBadge');
-    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    
-    if (badge) {
-        badge.textContent = totalItems;
-        badge.style.display = totalItems > 0 ? 'flex' : 'none';
+async function removeFromCart(productId) {
+    try {
+        const response = await fetch('cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'remove_from_cart',
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateCartBadge();
+            window.renderCartSidebar();
+            showNotification('Item removed from cart', 'success');
+        } else {
+            showNotification(data.error || 'Failed to remove item', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing from cart:', error);
+        showNotification('Error removing from cart', 'error');
     }
 }
 
-function saveCart() {
-    localStorage.setItem('egyptianLuxuryCart', JSON.stringify(cart));
-}
-
-function renderCartSidebar() {
-    const cartEmpty = document.getElementById('cartEmpty');
-    const cartItems = document.getElementById('cartItems');
-    const cartFooter = document.getElementById('cartFooter');
-    
-    if (!cartEmpty || !cartItems || !cartFooter) return;
-    
-    if (cart.length === 0) {
-        cartEmpty.style.display = 'block';
-        cartItems.style.display = 'none';
-        cartFooter.style.display = 'none';
-    } else {
-        cartEmpty.style.display = 'none';
-        cartItems.style.display = 'block';
-        cartFooter.style.display = 'block';
-        
-        cartItems.innerHTML = cart.map(item => {
-            // Fallback to galleryData if fields are missing
-            let product = item;
-            if (!item.title || !item.image || !item.price) {
-                const found = galleryData.find(p => p.id === item.id);
-                if (found) {
-                    product = { ...found, ...item };
-                }
-            }
-            return `
-                <div class="cart-item">
-                    <img src="${product.image}" alt="${product.title}" class="cart-item-image">
-                    <div class="cart-item-details">
-                        <h4 class="cart-item-title">${product.title}</h4>
-                        <div class="cart-item-price">${product.price ? product.price.toLocaleString() : ''} x ${product.quantity}</div>
-                    </div>
-                    <button class="cart-item-remove" onclick="removeFromCart(${product.id})" title="Remove item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3,6 5,6 21,6"></polyline>
-                            <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                        </svg>
-                    </button>
-                </div>
-            `;
-        }).join('');
-        
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const subtotalEl = document.getElementById('cartSubtotal');
-        const totalEl = document.getElementById('cartTotal');
-        if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString()}`;
-        if (totalEl) totalEl.textContent = `$${subtotal.toLocaleString()}`;
+async function updateCartBadge() {
+    try {
+        const response = await fetch('cart.php?action=get_cart');
+        const data = await response.json();
+        const items = data.cart_items || [];
+            const badge = document.getElementById('cartBadge');
+        const totalItems = items.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+            if (badge) {
+                badge.textContent = totalItems;
+                badge.style.display = totalItems > 0 ? 'flex' : 'none';
+        }
+    } catch (error) {
+        console.error('Error updating cart badge:', error);
     }
 }
 
 // Wishlist Functions
-function addToWishlist(productId) {
-    const product = galleryData.find(p => p.id === productId);
-    if (!product) return;
-    
-    const existingIndex = wishlist.findIndex(item => item.id === productId);
-    
-    if (existingIndex > -1) {
-        wishlist.splice(existingIndex, 1);
-        showNotification(`${product.title} removed from wishlist`, 'info');
-    } else {
-        wishlist.push(product);
-        showNotification(`${product.title} added to wishlist!`, 'success');
-    }
-    
-    updateWishlistBadge();
-    saveWishlist();
-}
+async function addToWishlist(productId) {
+    try {
+        const response = await fetch('wishlist.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_to_wishlist',
+                product_id: productId
+            })
+        });
 
-function removeFromWishlist(productId) {
-    const product = galleryData.find(p => p.id === productId);
-    wishlist = wishlist.filter(item => item.id !== productId);
-    
-    updateWishlistBadge();
-    saveWishlist();
-    renderWishlistSidebar();
-    if (product) {
-        showNotification(`${product.title} removed from wishlist`, 'info');
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification(data.message || 'Item added to wishlist!', 'success');
+            updateWishlistBadge();
+        } else {
+            showNotification(data.message || 'Failed to add to wishlist', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        showNotification('Error adding to wishlist', 'error');
     }
 }
 
-function updateWishlistBadge() {
-    const badge = document.getElementById('wishlistBadge');
-    
-    if (badge) {
-        badge.textContent = wishlist.length;
-        badge.style.display = wishlist.length > 0 ? 'flex' : 'none';
+async function removeFromWishlist(productId) {
+    try {
+        const response = await fetch('wishlist.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'remove_from_wishlist',
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateWishlistBadge();
+            renderWishlistSidebar();
+            showNotification('Item removed from wishlist', 'success');
+        } else {
+            showNotification(data.error || 'Failed to remove item', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        showNotification('Error removing from wishlist', 'error');
     }
 }
 
-function saveWishlist() {
-    localStorage.setItem('egyptianWishlist', JSON.stringify(wishlist));
+async function updateWishlistBadge() {
+    try {
+        const response = await fetch('wishlist.php?action=get_wishlist');
+        const data = await response.json();
+        const items = data.wishlist || [];
+        if (data.success) {
+            const badge = document.getElementById('wishlistBadge');
+            if (badge) {
+                badge.textContent = items.length;
+                badge.style.display = items.length > 0 ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating wishlist badge:', error);
+    }
 }
 
-function renderWishlistSidebar() {
+async function renderWishlistSidebar() {
     const wishlistEmpty = document.getElementById('wishlistEmpty');
     const wishlistItems = document.getElementById('wishlistItems');
-    
     if (!wishlistEmpty || !wishlistItems) return;
-    
-    if (wishlist.length === 0) {
-        wishlistEmpty.style.display = 'block';
-        wishlistItems.style.display = 'none';
-    } else {
-        wishlistEmpty.style.display = 'none';
-        wishlistItems.style.display = 'block';
-        
-        wishlistItems.innerHTML = wishlist.map(item => {
-            // Fallback to galleryData if fields are missing
-            let product = item;
-            if (!item.title || !item.image || !item.price) {
-                const found = galleryData.find(p => p.id === item.id);
-                if (found) {
-                    product = { ...found, ...item };
-                }
-            }
-            return `
+    try {
+        const response = await fetch('wishlist.php?action=get_wishlist');
+        const data = await response.json();
+        const items = data.wishlist || [];
+        if (data.success && items.length > 0) {
+            wishlistEmpty.style.display = 'none';
+            wishlistItems.style.display = 'block';
+            wishlistItems.innerHTML = items.map(item => `
                 <div class="wishlist-item">
-                    <img src="${product.image}" alt="${product.title}" class="wishlist-item-image">
+                    <img src="${item.image}" alt="${item.name || item.title}" class="wishlist-item-image">
                     <div class="wishlist-item-details">
-                        <h4 class="wishlist-item-title">${product.title}</h4>
-                        <div class="wishlist-item-price">$${product.price ? product.price.toLocaleString() : ''}</div>
+                        <h4 class="wishlist-item-title">${item.name || item.title}</h4>
+                        <div class="wishlist-item-price">${item.price}</div>
                     </div>
-                    <button class="wishlist-item-remove" onclick="removeFromWishlist(${product.id})" title="Remove from wishlist">
+                    <button class="wishlist-item-remove" onclick="removeFromWishlist(${item.id})" title="Remove from wishlist">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </button>
                 </div>
-            `;
-        }).join('');
+            `).join('');
+        } else {
+            wishlistEmpty.style.display = 'block';
+            wishlistItems.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading wishlist data:', error);
+        wishlistEmpty.style.display = 'block';
+        wishlistItems.style.display = 'none';
     }
 }
 
 // Showcase Controls
 function changeShowcase(index) {
-    currentShowcaseItem = index;
-    const item = showcaseItems[currentShowcaseItem];
+    // Use global currentShowcaseItem from script.js
+    if (typeof window.currentShowcaseItem !== 'undefined') {
+        window.currentShowcaseItem = index;
+    }
+    const item = showcaseItems[index];
     
     document.getElementById('showcaseImage').src = item.image;
     document.getElementById('showcaseTitle').textContent = item.title;
@@ -928,6 +932,7 @@ function changeShowcase(index) {
 
 // Notification System
 function showNotification(message, type = 'info') {
+    const notificationContainer = document.getElementById('notificationContainer');
     if (!notificationContainer) return;
     
     const notification = document.createElement('div');
@@ -952,33 +957,85 @@ function showNotification(message, type = 'info') {
     }, 4000);
 }
 
-// Header Actions
-document.getElementById('userBtn')?.addEventListener('click', () => {
-    if (window.authManager && window.authManager.isAuthenticated()) {
-        window.location.href = 'profile.html';
+// Initialize Product Preview Modal
+function initializeProductPreview() {
+    const modal = document.getElementById('productPreviewModal');
+    const backdrop = document.getElementById('productPreviewBackdrop');
+    const closeBtn = document.getElementById('productPreviewClose');
+    const addToCartBtn = document.getElementById('previewAddToCart');
+    const addToWishlistBtn = document.getElementById('previewAddToWishlist');
+    
+    console.log('Initializing product preview modal:', {
+        modal: !!modal,
+        backdrop: !!backdrop,
+        closeBtn: !!closeBtn,
+        addToCartBtn: !!addToCartBtn,
+        addToWishlistBtn: !!addToWishlistBtn
+    });
+    
+    // Close modal events
+    if (backdrop) {
+        backdrop.addEventListener('click', closeProductPreview);
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeProductPreview);
+    }
+    
+    // Action button events
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', handlePreviewAddToCart);
+        console.log('Add to cart button event listener added');
     } else {
-        showNotification('You must login first to access your profile', 'error');
+        console.error('Add to cart button not found!');
     }
-});
-
-// Auto-refresh badges when localStorage changes (cross-tab sync)
-window.addEventListener('storage', (event) => {
-    if (event.key === 'egyptianLuxuryCart') {
-        cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-        updateCartBadge();
+    
+    if (addToWishlistBtn) {
+        addToWishlistBtn.addEventListener('click', handlePreviewAddToWishlist);
+        console.log('Add to wishlist button event listener added');
+    } else {
+        console.error('Add to wishlist button not found!');
     }
-    if (event.key === 'egyptianWishlist') {
-        wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-        updateWishlistBadge();
-    }
-});
+    
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+            closeProductPreview();
+        }
+    });
+}
 
 // Global functions for onclick handlers
 window.openLightbox = openLightbox;
+window.openProductPreview = openProductPreview;
 window.addToCart = addToCart;
 window.addToWishlist = addToWishlist;
 window.removeFromCart = removeFromCart;
 window.removeFromWishlist = removeFromWishlist;
 window.changeShowcase = changeShowcase;
 
+// Ensure functions are available immediately for onclick handlers
+if (typeof window !== 'undefined') {
+    window.openProductPreview = openProductPreview;
+    window.addToCart = addToCart;
+    window.addToWishlist = addToWishlist;
+    window.removeFromCart = removeFromCart;
+    window.removeFromWishlist = removeFromWishlist;
+    window.changeShowcase = changeShowcase;
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🏺 Egyptian Creativity Gallery - Initializing...');
+    
+    initializeLoading();
+    initializeNavigation();
+    initializeHero();
+    initializeSearch();
+    initializeGallery();
+    initializeLightbox();
+    initializeProductPreview();
+    ensureSidebarsClosed();
+
 console.log('🏺 Egyptian Creativity Gallery - Enhanced with Index background animations loaded successfully!');
+}); 

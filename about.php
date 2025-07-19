@@ -1,10 +1,49 @@
+<?php include 'includes/db.php'; ?>
+<?php
+// Fetch company info from admin_settings
+$site_name = '';
+$site_description = '';
+$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM admin_settings WHERE setting_key IN ('site_name', 'site_description')");
+$stmt->execute();
+while ($row = $stmt->fetch()) {
+    if ($row['setting_key'] === 'site_name') $site_name = $row['setting_value'];
+    if ($row['setting_key'] === 'site_description') $site_description = $row['setting_value'];
+}
+
+// Fetch masterpieces from DB
+$masterpieces = [];
+try {
+    $mp_stmt = $pdo->query("SELECT * FROM masterpieces ORDER BY created_at DESC");
+    if ($mp_stmt) {
+        $mp_stmt->setFetchMode(PDO::FETCH_ASSOC);
+        while ($row = $mp_stmt->fetch()) {
+            $masterpieces[] = $row;
+        }
+    }
+} catch (Exception $e) {
+    $masterpieces = [];
+}
+// Fetch team members from DB
+$team_members = [];
+try {
+    $team_stmt = $pdo->query("SELECT * FROM team_members ORDER BY created_at DESC");
+    if ($team_stmt) {
+        $team_stmt->setFetchMode(PDO::FETCH_ASSOC);
+        while ($row = $team_stmt->fetch()) {
+            $team_members[] = $row;
+        }
+    }
+} catch (Exception $e) {
+    $team_members = [];
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - Egyptian Creativity | Luxury Ancient Artifacts Collection</title>
-    <meta name="description" content="Discover the story behind Egyptian Creativity - preserving ancient Egyptian heritage through contemporary luxury craftsmanship">
+    <title>About Us - <?php echo htmlspecialchars($site_name); ?> | Luxury Ancient Artifacts Collection</title>
+    <meta name="description" content="Discover the story behind <?php echo htmlspecialchars($site_name); ?> - <?php echo htmlspecialchars($site_description); ?>">
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="images/go3ran_.png">
@@ -15,6 +54,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="css/about-styles.css">
+    
     <link rel="stylesheet" href="css/sidebar-styles.css">
 
 </head>
@@ -58,18 +98,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link active">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link active">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -118,11 +158,10 @@
                 <h1 class="hero-title">
                     <span class="line">Guardians of</span>
                     <span class="line golden">Ancient Heritage</span>
-                    <span class="line">Since 1999</span>
+                    <span class="line"><?php echo htmlspecialchars($site_name); ?></span>
                 </h1>
                 <p class="hero-description">
-                    For over 25 years, Egyptian Creativity has been dedicated to preserving and sharing 
-                    the magnificent heritage of ancient Egypt through authentic craftsmanship and contemporary artistry.
+                    <?php echo htmlspecialchars($site_description); ?>
                 </p>
                 <div class="hero-stats" id="heroStats">
                     <div class="stat">
@@ -275,9 +314,21 @@
                     and contemporary craftsmanship.
                 </p>
             </div>
-            
             <div class="masterpieces-carousel" id="masterpiecesCarousel">
-                <!-- Masterpieces will be populated by JavaScript -->
+                <div class="masterpieces-track">
+                    <?php foreach ($masterpieces as $mp): ?>
+                        <div class="masterpiece-card">
+                            <div class="masterpiece-image">
+                                <img src="<?php echo htmlspecialchars($mp['image'] ?? 'images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($mp['title']); ?>" loading="lazy">
+                                <div class="masterpiece-overlay"></div>
+                            </div>
+                            <div class="masterpiece-info">
+                                <h3 class="masterpiece-title"><?php echo htmlspecialchars($mp['title']); ?></h3>
+                                <p class="masterpiece-description"><?php echo htmlspecialchars($mp['description']); ?></p>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </section>
@@ -326,9 +377,27 @@
                     and unwavering dedication to authenticity.
                 </p>
             </div>
-
             <div class="team-grid" id="teamGrid">
-                <!-- Team members will be populated by JavaScript -->
+                <?php foreach ($team_members as $member): ?>
+                    <div class="team-card">
+                        <div class="team-avatar">
+                            <?php
+                            $avatar = $member['avatar'];
+                            $is_image = $avatar && (strpos($avatar, '/') !== false || preg_match('/\.(jpg|jpeg|png|gif)$/i', $avatar));
+                            ?>
+                            <?php if ($is_image): ?>
+                                <img src="<?php echo htmlspecialchars($avatar); ?>" alt="<?php echo htmlspecialchars($member['name']); ?>">
+                            <?php else: ?>
+                                <div class="avatar-placeholder"><?php echo htmlspecialchars($avatar ?: strtoupper(substr($member['name'], 0, 2))); ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="team-info">
+                            <h3 class="team-name"><?php echo htmlspecialchars($member['name']); ?></h3>
+                            <div class="team-role"><?php echo htmlspecialchars($member['role']); ?></div>
+                            <p class="team-bio"><?php echo htmlspecialchars($member['bio']); ?></p>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>
@@ -380,23 +449,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -482,8 +551,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -510,14 +579,17 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+                <button class="btn btn-outline" onclick="window.location.href='wishlist.php'">View Wishlist</button>
             </div>
         </div>
     </div>
 
+    <?php include 'includes/sidebar.html'; ?>
+    <script src="js/sidebar-utils.js"></script>
+    <script src="js/script.js"></script>
+
     <script src="js/about-script.js"></script>
     <script src="js/auth-manager.js"></script>
-    <script src="js/sidebar-utils.js"></script>
     <script src="js/products-data.js"></script>
 </body>
 </html>

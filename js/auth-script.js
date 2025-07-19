@@ -237,7 +237,7 @@ function togglePasswordVisibility(toggleBtn, passwordInput) {
 }
 
 // Form submissions
-function handleLoginSubmit(event) {
+async function handleLoginSubmit(event) {
   event.preventDefault();
 
   const formData = new FormData(document.getElementById("loginFormElement"));
@@ -265,38 +265,60 @@ function handleLoginSubmit(event) {
   submitBtn.disabled = true;
   submitBtn.style.background = 'linear-gradient(45deg, var(--pyramid-gold), var(--soft-gold))';
 
-  // Simulate login
-  setTimeout(() => {
-    // Store user data
-    const userData = {
-      email: email,
-      loginTime: new Date().toISOString(),
-      remember: remember,
-    };
+  try {
+    // Create form data for API
+    const apiFormData = new FormData();
+    apiFormData.append('action', 'login');
+    apiFormData.append('email', email);
+    apiFormData.append('password', password);
+    
+    // Send login request to backend
+    const response = await fetch('auth.php', {
+      method: 'POST',
+      body: apiFormData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Store user data for frontend use
+      const userData = {
+        ...result.user,
+        loginTime: new Date().toISOString(),
+        remember: remember,
+        isAuthenticated: true
+      };
 
-    // Use AuthManager to handle login
-    if (window.authManager) {
-      window.authManager.login(userData);
-    } else {
-      // Fallback if AuthManager is not available
-      if (remember) {
-        localStorage.setItem("egyptianCreativityUser", JSON.stringify(userData));
+      // Use AuthManager to handle login
+      if (window.authManager) {
+        window.authManager.login(userData);
       } else {
-        sessionStorage.setItem("egyptianCreativityUser", JSON.stringify(userData));
+        // Fallback if AuthManager is not available
+        if (remember) {
+          localStorage.setItem("egyptianCreativityUser", JSON.stringify(userData));
+        } else {
+          sessionStorage.setItem("egyptianCreativityUser", JSON.stringify(userData));
+        }
       }
-      showNotification("Welcome back! Redirecting to your treasures...", "success");
+      
+      showNotification(result.message, "success");
       setTimeout(() => {
         window.location.href = "index.html";
       }, 2000);
+    } else {
+      showNotification(result.message, "error");
     }
-
+  } catch (error) {
+    console.error('Login error:', error);
+    showNotification("Login failed. Please try again.", "error");
+  } finally {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
     submitBtn.style.background = '';
-  }, 2000);
+  }
 }
 
-function handleSignupSubmit(event) {
+async function handleSignupSubmit(event) {
   event.preventDefault();
 
   const formData = new FormData(document.getElementById("signupFormElement"));
@@ -328,8 +350,8 @@ function handleSignupSubmit(event) {
     return;
   }
 
-  if (password.length < 8) {
-    showNotification("Password must be at least 8 characters long.", "error");
+  if (password.length < 6) {
+    showNotification("Password must be at least 6 characters long.", "error");
     return;
   }
 
@@ -345,37 +367,61 @@ function handleSignupSubmit(event) {
   submitBtn.disabled = true;
   submitBtn.style.background = 'linear-gradient(45deg, var(--pyramid-gold), var(--soft-gold))';
 
-  // Simulate signup
-  setTimeout(() => {
-    // Store user data
-    const userData = {
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
-      phone: phone,
-      newsletter: newsletter,
-      signupTime: new Date().toISOString(),
-    };
+  try {
+    // Create form data for API
+    const apiFormData = new FormData();
+    apiFormData.append('action', 'signup');
+    apiFormData.append('username', email.split('@')[0]); // Use email prefix as username
+    apiFormData.append('email', email);
+    apiFormData.append('password', password);
+    apiFormData.append('full_name', `${firstName} ${lastName}`);
+    
+    // Send signup request to backend
+    const response = await fetch('auth.php', {
+      method: 'POST',
+      body: apiFormData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      // Store user data for frontend use
+      const userData = {
+        ...result.user,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        newsletter: newsletter,
+        signupTime: new Date().toISOString(),
+        isAuthenticated: true
+      };
 
-    // Use AuthManager to handle signup/login
-    if (window.authManager) {
-      window.authManager.login(userData);
-    } else {
-      // Fallback if AuthManager is not available
-      localStorage.setItem("egyptianCreativityUser", JSON.stringify(userData));
-      showNotification("Account created successfully! Welcome to Egyptian Creativity!", "success");
+      // Use AuthManager to handle signup/login
+      if (window.authManager) {
+        window.authManager.login(userData);
+      } else {
+        // Fallback if AuthManager is not available
+        localStorage.setItem("egyptianCreativityUser", JSON.stringify(userData));
+      }
+      
+      showNotification(result.message, "success");
       setTimeout(() => {
         window.location.href = "index.html";
       }, 2000);
+    } else {
+      showNotification(result.message, "error");
     }
-
+  } catch (error) {
+    console.error('Signup error:', error);
+    showNotification("Account creation failed. Please try again.", "error");
+  } finally {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
     submitBtn.style.background = '';
-  }, 2500);
+  }
 }
 
-function handleForgotSubmit(event) {
+async function handleForgotSubmit(event) {
   event.preventDefault();
 
   const formData = new FormData(document.getElementById("forgotFormElement"));
@@ -400,19 +446,39 @@ function handleForgotSubmit(event) {
   submitBtn.disabled = true;
   submitBtn.style.background = 'linear-gradient(45deg, var(--pyramid-gold), var(--soft-gold))';
 
-  // Simulate sending reset email
-  setTimeout(() => {
-    showNotification("Password reset link sent! Check your email.", "success");
-    document.getElementById("forgotFormElement").reset();
+  try {
+    // Create form data for API
+    const apiFormData = new FormData();
+    apiFormData.append('action', 'forgot_password');
+    apiFormData.append('email', email);
+    
+    // Send forgot password request to backend
+    const response = await fetch('auth.php', {
+      method: 'POST',
+      body: apiFormData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showNotification(result.message, "success");
+      document.getElementById("forgotFormElement").reset();
+      
+      // Switch back to login form
+      setTimeout(() => {
+        switchToForm("login");
+      }, 2000);
+    } else {
+      showNotification(result.message, "error");
+    }
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    showNotification("Password reset failed. Please try again.", "error");
+  } finally {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
     submitBtn.style.background = '';
-
-    // Switch back to login form
-    setTimeout(() => {
-      switchToForm("login");
-    }, 2000);
-  }, 2000);
+  }
 }
 
 // Notification function
@@ -800,19 +866,46 @@ window.addEventListener("error", (e) => {
 });
 
 // Check if user is already logged in
-document.addEventListener("DOMContentLoaded", () => {
-  const savedUser = localStorage.getItem("egyptianCreativityUser") || sessionStorage.getItem("egyptianCreativityUser");
-
-  if (savedUser) {
-    try {
-      const userData = JSON.parse(savedUser);
-      console.log("User already logged in:", userData.email);
-      showNotification(`Welcome back, explorer of ancient treasures!`, "info");
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      // Clear invalid data
-      localStorage.removeItem("egyptianCreativityUser");
-      sessionStorage.removeItem("egyptianCreativityUser");
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const response = await fetch('auth.php?action=check_auth');
+    const result = await response.json();
+    
+    if (result.success && result.authenticated) {
+      console.log("User already logged in:", result.user.email);
+      showNotification(`Welcome back, ${result.user.full_name}!`, "success");
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1500);
+    } else {
+      // Check for saved user data in localStorage as fallback
+      const savedUser = localStorage.getItem("egyptianCreativityUser") || sessionStorage.getItem("egyptianCreativityUser");
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          console.log("User already logged in (localStorage):", userData.email);
+          showNotification(`Welcome back, explorer of ancient treasures!`, "info");
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+          // Clear invalid data
+          localStorage.removeItem("egyptianCreativityUser");
+          sessionStorage.removeItem("egyptianCreativityUser");
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Auth check error:", error);
+    // Fallback to localStorage check
+    const savedUser = localStorage.getItem("egyptianCreativityUser") || sessionStorage.getItem("egyptianCreativityUser");
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        console.log("User already logged in (fallback):", userData.email);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        localStorage.removeItem("egyptianCreativityUser");
+        sessionStorage.removeItem("egyptianCreativityUser");
+      }
     }
   }
 });

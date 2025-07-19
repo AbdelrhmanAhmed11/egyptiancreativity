@@ -1,8 +1,6 @@
 // Egyptian Creativity Blog - Enhanced JavaScript
 
 // Global Variables
-let cart = JSON.parse(localStorage.getItem('egyptianCart')) || [];
-let wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
 let currentFilter = 'all';
 let currentShowcaseItem = 0;
 let displayedArticles = 6;
@@ -125,8 +123,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCart();
     initializeWishlist();
     initializeNewsletter();
-    updateCartBadge();
-    updateWishlistBadge();
     ensureSidebarsClosed();
     
     console.log('🏺 Egyptian Creativity Blog initialized successfully!');
@@ -385,20 +381,23 @@ function initializeSearch() {
 
 // Search function
 function searchArticles(query) {
-    if (!query.trim()) {
-        setFilter(currentFilter);
-        return;
-    }
-    
-    const searchTerms = query.toLowerCase().split(' ');
-    filteredArticles = blogData.filter(article => {
-        const searchableText = `${article.title} ${article.excerpt} ${article.category}`.toLowerCase();
-        return searchTerms.every(term => searchableText.includes(term));
+    const articlesGrid = document.getElementById('articlesGrid');
+    if (!articlesGrid) return;
+    const cards = articlesGrid.querySelectorAll('.article-card');
+    const search = query.trim().toLowerCase();
+    let found = 0;
+    cards.forEach(card => {
+        const title = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
+        const excerpt = card.querySelector('.card-excerpt')?.textContent.toLowerCase() || '';
+        const category = card.querySelector('.card-category')?.textContent.toLowerCase() || '';
+        if (!search || title.includes(search) || excerpt.includes(search) || category.includes(search)) {
+            card.style.display = '';
+            found++;
+        } else {
+            card.style.display = 'none';
+        }
     });
-    
-    displayedArticles = 6;
-    renderArticles();
-    showNotification(`Found ${filteredArticles.length} articles matching "${query}"`, 'info');
+    showNotification(`Found ${found} articles matching "${query}"`, 'info');
 }
 
 // Filter functionality
@@ -447,58 +446,14 @@ function initializeArticles() {
     }
 }
 
-function renderArticles() {
-    if (!articlesGrid) return;
-    
-    const articlesToShow = filteredArticles.slice(0, displayedArticles);
-    
-    articlesGrid.innerHTML = articlesToShow.map((article, index) => `
-        <article class="article-card" style="animation-delay: ${index * 0.1}s;" data-category="${article.category}" data-id="${article.id}">
-            <div class="card-image">
-                <img src="${article.image}" alt="${article.title}" loading="lazy" />
-                <div class="card-overlay">
-                    <div class="card-category">${article.category.split(' ')[0]}</div>
-                </div>
-            </div>
-            <div class="card-content">
-                <h3 class="card-title">${article.title}</h3>
-                <div class="card-meta">
-                    <span class="meta-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                        ${article.author}
-                    </span>
-                    <span class="meta-item">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12,6 12,12 16,14"></polyline>
-                        </svg>
-                        ${article.readTime}
-                    </span>
-                </div>
-                <p class="card-excerpt">${article.excerpt}</p>
-                <a href="blog-details.html?id=${article.id}" class="card-link">
-                    <span>Read More</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                        <polyline points="12,5 19,12 12,19"></polyline>
-                    </svg>
-                </a>
-            </div>
-        </article>
-    `).join('');
-    
-    // Update load more button visibility
-    if (loadMoreBtn) {
-        if (displayedArticles >= filteredArticles.length) {
-            loadMoreBtn.style.display = 'none';
-        } else {
-            loadMoreBtn.style.display = 'block';
-        }
-    }
-}
+// --- REMOVE/COMMENT OUT ALL JS THAT RENDERS ARTICLES TO #articlesGrid ---
+// Comment out renderArticles and any code that fills articlesGrid with blogData
+// function renderArticles() { ... }
+// ...
+// document.addEventListener('DOMContentLoaded', function() {
+//   renderArticles();
+//   ...
+// });
 
 // Cart functionality
 function initializeCart() {
@@ -516,56 +471,6 @@ function initializeCart() {
     }
 }
 
-function updateCartBadge() {
-    const badge = document.getElementById('cartBadge');
-    const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    
-    if (badge) {
-        badge.textContent = totalItems;
-        badge.style.display = totalItems > 0 ? 'flex' : 'none';
-    }
-}
-
-function renderCart() {
-    const cartEmpty = document.getElementById('cartEmpty');
-    const cartItems = document.getElementById('cartItems');
-    const cartFooter = document.getElementById('cartFooter');
-    
-    if (!cartEmpty || !cartItems || !cartFooter) return;
-    
-    if (cart.length === 0) {
-        cartEmpty.style.display = 'block';
-        cartItems.style.display = 'none';
-        cartFooter.style.display = 'none';
-    } else {
-        cartEmpty.style.display = 'none';
-        cartItems.style.display = 'block';
-        cartFooter.style.display = 'block';
-        
-        cartItems.innerHTML = cart.map(item => `
-            <div class="cart-item">
-                <img src="${item.image}" alt="${item.title}" class="cart-item-image">
-                <div class="cart-item-details">
-                    <h4 class="cart-item-title">${item.title}</h4>
-                    <div class="cart-item-price">$${item.price.toLocaleString()}</div>
-                </div>
-                <button class="cart-item-remove" onclick="removeFromCart(${item.id})" title="Remove item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3,6 5,6 21,6"></polyline>
-                        <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                    </svg>
-                </button>
-            </div>
-        `).join('');
-        
-        const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-        const subtotalEl = document.getElementById('cartSubtotal');
-        const totalEl = document.getElementById('cartTotal');
-        if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString()}`;
-        if (totalEl) totalEl.textContent = `$${subtotal.toLocaleString()}`;
-    }
-}
-
 // Wishlist functionality
 function initializeWishlist() {
     if (wishlistBtn && wishlistSidebar) {
@@ -579,45 +484,6 @@ function initializeWishlist() {
         wishlistClose.addEventListener('click', () => {
             wishlistSidebar.classList.remove('active');
         });
-    }
-}
-
-function updateWishlistBadge() {
-    const badge = document.getElementById('wishlistBadge');
-    
-    if (badge) {
-        badge.textContent = wishlist.length;
-        badge.style.display = wishlist.length > 0 ? 'flex' : 'none';
-    }
-}
-
-function renderWishlist() {
-    const wishlistEmpty = document.getElementById('wishlistEmpty');
-    const wishlistItems = document.getElementById('wishlistItems');
-    
-    if (!wishlistEmpty || !wishlistItems) return;
-    
-    if (wishlist.length === 0) {
-        wishlistEmpty.style.display = 'block';
-        wishlistItems.style.display = 'none';
-    } else {
-        wishlistEmpty.style.display = 'none';
-        wishlistItems.style.display = 'block';
-        
-        wishlistItems.innerHTML = wishlist.map(item => `
-            <div class="wishlist-item">
-                <img src="${item.image}" alt="${item.title}" class="wishlist-item-image">
-                <div class="wishlist-item-details">
-                    <h4 class="wishlist-item-title">${item.title}</h4>
-                    <div class="wishlist-item-price">$${item.price.toLocaleString()}</div>
-                </div>
-                <button class="wishlist-item-remove" onclick="removeFromWishlist(${item.id})" title="Remove from wishlist">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                    </svg>
-                </button>
-            </div>
-        `).join('');
     }
 }
 

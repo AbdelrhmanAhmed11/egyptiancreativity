@@ -27,18 +27,26 @@ class ContactManager {
     constructor() {
         this.cart = this.loadFromStorage('egyptianLuxuryCart') || [];
         this.wishlist = this.loadFromStorage('egyptianWishlist') || [];
-        this.init();
+        // Check for a flag to skip loading animation (set by PHP after POST)
+        const skipLoading = window.skipContactLoading === true;
+        this.init(skipLoading);
     }
 
-    init() {
+    init(skipLoading = false) {
         this.bindEvents();
-        this.initializeLoading();
+        if (!skipLoading) {
+            this.initializeLoading();
+        } else {
+            // Hide loading overlay immediately if present
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
+            this.animateContactStats();
+        }
         this.setupScrollEffects();
         this.setupFAQ();
         this.setupAnimations();
-        this.updateCartBadge();
-        this.updateWishlistBadge();
-        ensureSidebarsClosed();
+        // this.updateCartBadge(); // Removed as per edit hint
+        // this.updateWishlistBadge(); // Removed as per edit hint
+        // ensureSidebarsClosed(); // Removed as per edit hint
     }
 
     // Initialize loading animation
@@ -139,11 +147,11 @@ class ContactManager {
         }
 
         if (cartBtn) {
-            cartBtn.addEventListener('click', () => this.openSidebar('cartSidebar'));
+            cartBtn.addEventListener('click', () => window.openSidebar('cartSidebar'));
         }
 
         if (wishlistBtn) {
-            wishlistBtn.addEventListener('click', () => this.openSidebar('wishlistSidebar'));
+            wishlistBtn.addEventListener('click', () => window.openSidebar('wishlistSidebar'));
         }
 
         // Modal controls
@@ -160,19 +168,19 @@ class ContactManager {
             btn.addEventListener('click', (e) => {
                 const sidebar = e.target.closest('.sidebar');
                 if (sidebar) {
-                    this.closeSidebar(sidebar.id);
+                    window.closeSidebar(sidebar.id);
                 }
             });
         });
 
         // Forms
-        if (contactForm) {
-            contactForm.addEventListener('submit', (e) => this.handleContactForm(e));
-        }
-
-        if (newsletterForm) {
-            newsletterForm.addEventListener('submit', (e) => this.handleNewsletterForm(e));
-        }
+        // Remove or comment out the following lines in the bindEvents() method:
+        // if (contactForm) {
+        //     contactForm.addEventListener('submit', (e) => this.handleContactForm(e));
+        // }
+        // if (newsletterForm) {
+        //     newsletterForm.addEventListener('submit', (e) => this.handleNewsletterForm(e));
+        // }
 
         // Search functionality
         if (searchInput) {
@@ -198,16 +206,16 @@ class ContactManager {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.closeModal('searchModal');
-                this.closeSidebar('cartSidebar');
-                this.closeSidebar('wishlistSidebar');
+                window.closeSidebar('cartSidebar');
+                window.closeSidebar('wishlistSidebar');
             }
         });
 
         // Click outside to close sidebars
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.sidebar') && !e.target.closest('.header-icon')) {
-                this.closeSidebar('cartSidebar');
-                this.closeSidebar('wishlistSidebar');
+                window.closeSidebar('cartSidebar');
+                window.closeSidebar('wishlistSidebar');
             }
         });
 
@@ -340,180 +348,127 @@ class ContactManager {
         }
     }
 
-    // Sidebar management
-    openSidebar(sidebarId) {
-        const sidebar = document.getElementById(sidebarId);
-        if (sidebar) {
-            sidebar.classList.add('active');
-            
-            if (sidebarId === 'cartSidebar') {
-                this.renderCart();
-            } else if (sidebarId === 'wishlistSidebar') {
-                this.renderWishlist();
-            }
-        }
-    }
-
-    closeSidebar(sidebarId) {
-        const sidebar = document.getElementById(sidebarId);
-        if (sidebar) {
-            sidebar.classList.remove('active');
-        }
-    }
-
     // Cart functionality
-    updateCartBadge() {
-        // Always reload cart from localStorage to sync with other pages
-        this.cart = this.loadFromStorage('egyptianLuxuryCart') || [];
-        const totalItems = this.cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        
-        if (cartBadge) {
-            cartBadge.textContent = totalItems;
-            cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
-        }
-    }
+    // async updateCartBadge() { // Removed as per edit hint
+    //     try {
+    //         const response = await fetch('cart.php?action=get_cart');
+    //         const data = await response.json();
+            
+    //         if (data.success) {
+    //             const totalItems = data.items.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+    //             if (cartBadge) {
+    //                 cartBadge.textContent = totalItems;
+    //                 cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Error updating cart badge:', error);
+    //     }
+    // }
 
-    updateWishlistBadge() {
-        // Always reload wishlist from localStorage to sync with other pages
-        this.wishlist = this.loadFromStorage('egyptianWishlist') || [];
-        if (wishlistBadge) {
-            wishlistBadge.textContent = this.wishlist.length;
-            wishlistBadge.style.display = this.wishlist.length > 0 ? 'flex' : 'none';
-        }
-    }
-
-    renderCart() {
-        const cartContent = document.getElementById('cartContent');
-        const cartFooter = document.getElementById('cartFooter');
-        
-        if (!cartContent) return;
-
-        if (this.cart.length === 0) {
-            cartContent.innerHTML = `
-                <div class="cart-empty">
-                    <div class="empty-icon">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg>
-                    </div>
-                    <h4>Your sacred cart is empty</h4>
-                    <p>Add some treasures to begin your journey</p>
-                </div>
-            `;
-            if (cartFooter) cartFooter.style.display = 'none';
-            return;
-        }
-
-        cartContent.innerHTML = this.cart.map(item => `
-            <div class="cart-item">
-                <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                <div class="cart-item-details">
-                    <div class="cart-item-title">${item.name}</div>
-                    <div class="cart-item-price">${typeof item.price === 'number' ? '$' + item.price.toLocaleString() : item.price} x ${item.quantity}</div>
-                </div>
-                <button class="cart-item-remove" onclick="contactManager.removeFromCart(${item.id})" title="Remove">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        `).join('');
-
-        // Update totals
-        const subtotal = this.cart.reduce((sum, item) => {
-            const price = typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^\d.]/g, ''));
-            return sum + (price * (item.quantity || 1));
-        }, 0);
-        
-        if (document.getElementById('cartSubtotal')) {
-            document.getElementById('cartSubtotal').textContent = `$${subtotal.toLocaleString()}`;
-        }
-        if (document.getElementById('cartTotal')) {
-            document.getElementById('cartTotal').textContent = `$${subtotal.toLocaleString()}`;
-        }
-        
-        if (cartFooter) cartFooter.style.display = 'block';
-    }
-
-    renderWishlist() {
-        const wishlistContent = document.getElementById('wishlistContent');
-        
-        if (!wishlistContent) return;
-
-        if (this.wishlist.length === 0) {
-            wishlistContent.innerHTML = `
-                <div class="wishlist-empty">
-                    <div class="empty-icon">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                        </svg>
-                    </div>
-                    <h4>Your sacred wishlist is empty</h4>
-                    <p>Save treasures you desire for later</p>
-                </div>
-            `;
-            return;
-        }
-
-        wishlistContent.innerHTML = this.wishlist.map(item => `
-            <div class="wishlist-item">
-                <img src="${item.image}" alt="${item.name}" class="wishlist-item-image">
-                <div class="wishlist-item-details">
-                    <div class="wishlist-item-title">${item.name}</div>
-                    <div class="wishlist-item-price">${typeof item.price === 'number' ? '$' + item.price.toLocaleString() : item.price}</div>
-                </div>
-                <button class="wishlist-item-remove" onclick="contactManager.removeFromWishlist(${item.id})" title="Remove">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        `).join('');
-    }
+    // async updateWishlistBadge() { // Removed as per edit hint
+    //     try {
+    //         const response = await fetch('wishlist.php?action=get_wishlist');
+    //         const data = await response.json();
+            
+    //         if (data.success) {
+    //             if (wishlistBadge) {
+    //                 wishlistBadge.textContent = data.items.length;
+    //                 wishlistBadge.style.display = data.items.length > 0 ? 'flex' : 'none';
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Error updating wishlist badge:', error);
+    //     }
+    // }
 
     // Remove from cart
-    removeFromCart(productId) {
-        this.cart = this.cart.filter(item => item.id !== productId);
-        this.saveToStorage('egyptianLuxuryCart', this.cart);
-        this.renderCart();
-        this.updateCartBadge();
-        this.showNotification('Item removed from cart', 'info');
-    }
+    // async removeFromCart(productId) { // Removed as per edit hint
+    //     try {
+    //         const response = await fetch('cart.php', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify({
+    //                 action: 'remove_from_cart',
+    //                 product_id: productId
+    //             })
+    //         });
+
+    //         const data = await response.json();
+
+    //         if (data.success) {
+    //             window.renderCartSidebar();
+    //             this.updateCartBadge();
+    //             this.showNotification('Item removed from cart', 'success');
+    //         } else {
+    //             this.showNotification(data.error || 'Failed to remove item', 'error');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error removing from cart:', error);
+    //         this.showNotification('Error removing from cart', 'error');
+    //     }
+    // }
 
     // Add to cart
-    addToCart(productId) {
-        const product = this.wishlist.find(item => item.id === productId);
-        if (!product) return;
+    // async addToCart(productId) { // Removed as per edit hint
+    //     try {
+    //         const response = await fetch('cart.php', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify({
+    //                 action: 'add_to_cart',
+    //                 product_id: productId,
+    //                 quantity: 1
+    //             })
+    //         });
 
-        const existingItem = this.cart.find(item => item.id === productId);
-        
-        if (existingItem) {
-            existingItem.quantity = (existingItem.quantity || 1) + 1;
-        } else {
-            this.cart.push({
-                ...product,
-                quantity: 1
-            });
-        }
+    //         const data = await response.json();
 
-        this.saveToStorage('egyptianLuxuryCart', this.cart);
-        this.updateCartBadge();
-        this.renderCart();
-        this.showNotification(`${product.name} added to cart!`, 'success');
-    }
+    //         if (data.success) {
+    //             this.showNotification(data.message || 'Item added to cart!', 'success');
+    //             this.updateCartBadge();
+    //             window.renderCartSidebar();
+    //         } else {
+    //             this.showNotification(data.error || 'Failed to add to cart', 'error');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error adding to cart:', error);
+    //         this.showNotification('Error adding to cart', 'error');
+    //     }
+    // }
 
     // Remove from wishlist
-    removeFromWishlist(productId) {
-        this.wishlist = this.wishlist.filter(item => item.id !== productId);
-        this.saveToStorage('egyptianWishlist', this.wishlist);
-        this.renderWishlist();
-        this.updateWishlistBadge();
-        this.showNotification('Item removed from wishlist', 'info');
-    }
+    // async removeFromWishlist(productId) { // Removed as per edit hint
+    //     try {
+    //         const response = await fetch('wishlist.php', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify({
+    //                 action: 'remove_from_wishlist',
+    //                 product_id: productId
+    //             })
+    //         });
+
+    //         const data = await response.json();
+
+    //         if (data.success) {
+    //             window.renderWishlistSidebar();
+    //             this.updateWishlistBadge();
+    //             this.showNotification('Item removed from wishlist', 'success');
+    //         } else {
+    //             this.showNotification(data.error || 'Failed to remove item', 'error');
+    //         }
+    //     } catch (error) {
+    //         console.error('Error removing from wishlist:', error);
+    //         this.showNotification('Error removing from wishlist', 'error');
+    //     }
+    // }
 
     // Handle search
     handleSearch(e) {
@@ -694,18 +649,18 @@ window.addEventListener('storage', (event) => {
     if (event.key === 'egyptianLuxuryCart') {
         if (window.contactManager) {
             window.contactManager.cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-            window.contactManager.updateCartBadge();
+            // window.contactManager.updateCartBadge(); // Removed as per edit hint
             if (cartSidebar && cartSidebar.classList.contains('active')) {
-                window.contactManager.renderCart();
+                // window.renderCartSidebar(); // Removed as per edit hint
             }
         }
     }
     if (event.key === 'egyptianWishlist') {
         if (window.contactManager) {
             window.contactManager.wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-            window.contactManager.updateWishlistBadge();
+            // window.contactManager.updateWishlistBadge(); // Removed as per edit hint
             if (wishlistSidebar && wishlistSidebar.classList.contains('active')) {
-                window.contactManager.renderWishlist();
+                // window.renderWishlistSidebar(); // Removed as per edit hint
             }
         }
     }
@@ -730,8 +685,8 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('load', () => {
     // Update badges on load
     if (window.contactManager) {
-        window.contactManager.updateCartBadge();
-        window.contactManager.updateWishlistBadge();
+        // window.contactManager.updateCartBadge(); // Removed as per edit hint
+        // window.contactManager.updateWishlistBadge(); // Removed as per edit hint
     }
 });
 

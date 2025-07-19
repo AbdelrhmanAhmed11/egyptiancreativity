@@ -1,3 +1,4 @@
+<?php include 'includes/db.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,18 +58,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link active">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link active">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -250,7 +251,7 @@
                     <p class="featured-description">
                         Ancient Egypt was home to numerous powerful queens who left an indelible mark on history. From Nefertiti to Cleopatra, these remarkable women wielded influence and authority alongside their pharaoh counterparts, shaping the destiny of one of history's greatest civilizations.
                     </p>
-                    <a href="blog-details.html?id=3" class="read-more-btn">
+                    <a href="blog-details.php?id=3" class="read-more-btn">
                         <span>Read Full Article</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -308,244 +309,66 @@
     </section>
 
     <!-- Articles Grid Section -->
+    <?php
+    // Fetch blog posts with their images (if any)
+    $blog_posts = [];
+    $sql = "SELECT bp.*, u.full_name AS author_name, m.file_path AS image_path
+            FROM blog_posts bp
+            LEFT JOIN users u ON bp.author_id = u.id
+            LEFT JOIN media_relations mr ON mr.entity_type = 'blog_post' AND mr.entity_id = bp.id AND mr.relation_type = 'thumbnail'
+            LEFT JOIN media m ON mr.media_id = m.id
+            WHERE bp.status = 'published'
+            ORDER BY bp.published_at DESC, bp.created_at DESC";
+    $stmt = $pdo->query($sql);
+    while ($row = $stmt->fetch()) {
+        $blog_posts[] = $row;
+    }
+    ?>
     <section class="articles-section" id="articles">
         <div class="container">
             <div class="articles-grid" id="articlesGrid">
-                <!-- Article Card 1 -->
-                <article class="article-card" data-category="history artifacts" data-id="1">
-                    <div class="card-image">
-                        <img src="images/1-7-scaled.jpg" alt="The Senet Games of King Tutankhamun" loading="lazy">
-                        <div class="card-overlay">
-                            <div class="card-category">Artifacts</div>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">The Senet Games of King Tutankhamun</h3>
-                        <div class="card-meta">
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Admin
-                            </span>
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12,6 12,12 16,14"></polyline>
-                                </svg>
-                                3 min read
-                            </span>
-                        </div>
-                        <p class="card-excerpt">
-                            King Tutankhamun was buried with no fewer than five senet game boxes. Senet was an ancient Egyptian board game popular with all classes. Archaeological evidence reveals that senet was played by both royalty and commoners, and it was believed to have spiritual significance in the afterlife.
-                        </p>
-                        <a href="blog-details.html?id=1" class="card-link">
-                            <span>Read More</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12,5 19,12 12,19"></polyline>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-
-                <!-- Article Card 2 -->
-                <article class="article-card" data-category="history culture" data-id="2">
-                    <div class="card-image">
-                        <img src="images/10.jpg" alt="The Road of Rams" loading="lazy">
-                        <div class="card-overlay">
-                            <div class="card-category">History</div>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">The Road of Rams</h3>
-                        <div class="card-meta">
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Admin
-                            </span>
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12,6 12,12 16,14"></polyline>
-                                </svg>
-                                4 min read
-                            </span>
-                        </div>
-                        <p class="card-excerpt">
-                            The Sphinx Avenue (the Rams Road) is a royal avenue that connects the Karnak Temple in the north with the Luxor Temple in the south. It was established for the purpose of witnessing the annual celebrations and religious processions in ancient Thebes.
-                        </p>
-                        <a href="blog-details.html?id=2" class="card-link">
-                            <span>Read More</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12,5 19,12 12,19"></polyline>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-
-                <!-- Article Card 3 -->
-                <article class="article-card" data-category="royalty history" data-id="3">
-                    <div class="card-image">
-                        <img src="images/4-5-scaled.jpg" alt="The Queens of Ancient Egypt" loading="lazy">
-                        <div class="card-overlay">
-                            <div class="card-category">Royalty</div>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">The Queens of Ancient Egypt</h3>
-                        <div class="card-meta">
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Admin
-                            </span>
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12,6 12,12 16,14"></polyline>
-                                </svg>
-                                6 min read
-                            </span>
-                        </div>
-                        <p class="card-excerpt">
-                            Ancient Egypt was home to numerous powerful and influential queens who left an indelible mark on the land of the pharaohs. From the Old Kingdom to the New Kingdom, these queens held significant roles in Egyptian society, politics, and religion.
-                        </p>
-                        <a href="blog-details.html?id=3" class="card-link">
-                            <span>Read More</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12,5 19,12 12,19"></polyline>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-
-                <!-- Article Card 4 -->
-                <article class="article-card" data-category="royalty history" data-id="4">
-                    <div class="card-image">
-                        <img src="images/5-1.jpg" alt="Queen Nefertiti" loading="lazy">
-                        <div class="card-overlay">
-                            <div class="card-category">Royalty</div>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">Queen Nefertiti: The Beautiful One</h3>
-                        <div class="card-meta">
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Admin
-                            </span>
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12,6 12,12 16,14"></polyline>
-                                </svg>
-                                5 min read
-                            </span>
-                        </div>
-                        <p class="card-excerpt">
-                            Queen Nefertiti, whose name means "the beautiful one has come," was the wife of King Amenhotep IV, the famous pharaoh of the Eighteenth Dynasty, and the protector of Tutankhamun. Her legacy endures through her iconic bust and her influence on Egyptian art and culture.
-                        </p>
-                        <a href="blog-details.html?id=4" class="card-link">
-                            <span>Read More</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12,5 19,12 12,19"></polyline>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-
-                <!-- Article Card 5 -->
-                <article class="article-card" data-category="artifacts royalty" data-id="5">
-                    <div class="card-image">
-                        <img src="images/5-3.jpg" alt="Tutankhamun's Sandals" loading="lazy">
-                        <div class="card-overlay">
-                            <div class="card-category">Artifacts</div>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">Sandals of Tutankhamun</h3>
-                        <div class="card-meta">
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Admin
-                            </span>
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12,6 12,12 16,14"></polyline>
-                                </svg>
-                                4 min read
-                            </span>
-                        </div>
-                        <p class="card-excerpt">
-                            Among the many treasures found in Tutankhamun's tomb were his golden sandals. These exquisite pieces of footwear were crafted with incredible detail, featuring golden straps and soles, and were intended to accompany the young king into the afterlife.
-                        </p>
-                        <a href="blog-details.html?id=5" class="card-link">
-                            <span>Read More</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12,5 19,12 12,19"></polyline>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
-
-                <!-- Article Card 6 -->
-                <article class="article-card" data-category="mythology culture" data-id="6">
-                    <div class="card-image">
-                        <img src="images/9-1.jpg" alt="Heka and the hammer Nakakha" loading="lazy">
-                        <div class="card-overlay">
-                            <div class="card-category">Mythology</div>
-                        </div>
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">Heka and the Hammer Nakakha</h3>
-                        <div class="card-meta">
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Admin
-                            </span>
-                            <span class="meta-item">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12,6 12,12 16,14"></polyline>
-                                </svg>
-                                4 min read
-                            </span>
-                        </div>
-                        <p class="card-excerpt">
-                            The stick (Heka) and the hammer (Nakakha) were originally attributes of the ancient Egyptian god. The shepherd's stick symbolized royalty and the hammer symbolized the fertility of the land and power...
-                        </p>
-                        <a href="blog-details.html?id=6" class="card-link">
-                            <span>Read More</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                <polyline points="12,5 19,12 12,19"></polyline>
-                            </svg>
-                        </a>
-                    </div>
-                </article>
+                <?php if (count($blog_posts) > 0): ?>
+                    <?php foreach ($blog_posts as $post): ?>
+                        <article class="article-card" data-id="<?php echo $post['id']; ?>">
+                            <div class="card-image">
+                                <img src="<?php echo htmlspecialchars($post['image_path'] ?? 'images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" loading="lazy">
+                                <div class="card-overlay">
+                                    <div class="card-category"><?php echo htmlspecialchars($post['excerpt'] ? explode(' ', $post['excerpt'])[0] : ''); ?></div>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <h3 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h3>
+                                <div class="card-meta">
+                                    <span class="meta-item">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <?php echo htmlspecialchars($post['author_name'] ?? 'Admin'); ?>
+                                    </span>
+                                    <span class="meta-item">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12,6 12,12 16,14"></polyline>
+                                        </svg>
+                                        <?php echo $post['published_at'] ? date('M d, Y', strtotime($post['published_at'])) : ''; ?>
+                                    </span>
+                                </div>
+                                <p class="card-excerpt"><?php echo htmlspecialchars($post['excerpt']); ?></p>
+                                <a href="blog-details.php?id=<?php echo $post['id']; ?>" class="card-link">
+                                    <span>Read More</span>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12,5 19,12 12,19"></polyline>
+                                    </svg>
+                                </a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="color:#fff;font-size:1.2rem;text-align:center;padding:2rem;">No blog posts found.</div>
+                <?php endif; ?>
             </div>
-
             <div class="load-more-container">
                 <button class="btn btn-outline" id="loadMoreBtn">
                     Load More Articles
@@ -589,8 +412,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -617,7 +440,7 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+                <button class="btn btn-outline" onclick="window.location.href='wishlist.php'">View Wishlist</button>
             </div>
         </div>
     </div>
@@ -669,23 +492,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -708,12 +531,13 @@
 
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
+    <?php include 'includes/sidebar.html'; ?>
+    <script src="js/script.js"></script>
 
     <script src="js/auth-manager.js"></script>
     <script src="js/blog-script.js"></script>
     <script src="js/sidebar-utils.js"></script>
     <script src="js/products-data.js"></script>
-    <script src="js/script.js"></script>
     <script>
     document.addEventListener('mousedown', (e) => {
         const cartSidebar = document.getElementById('cartSidebar');

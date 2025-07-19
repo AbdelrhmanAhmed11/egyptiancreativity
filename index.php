@@ -1,3 +1,53 @@
+<?php
+include 'includes/db.php';
+
+// AJAX handler for newsletter subscription
+if (
+    isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' &&
+    isset($_POST['subscribe_email'])
+) {
+    $email = trim($_POST['subscribe_email']);
+    $response = ['success' => false, 'message' => ''];
+    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $stmt = $pdo->prepare("INSERT IGNORE INTO newsletter_subscriptions (email, status, subscribed_at) VALUES (?, 'subscribed', NOW())");
+        if ($stmt->execute([$email])) {
+            $response['success'] = true;
+            $response['message'] = 'Thank you for subscribing to Egyptian Creativity!';
+        } else {
+            $response['message'] = 'Subscription failed. Please try again.';
+        }
+    } else {
+        $response['message'] = 'Please enter a valid email address.';
+    }
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+
+// Fetch featured product (latest)
+$featured = null;
+$featured_sql = "SELECT * FROM products ORDER BY created_at DESC LIMIT 1";
+$featured_stmt = $pdo->query($featured_sql);
+$featured = $featured_stmt->fetch();
+
+// Fetch products for collection (limit 6 for homepage)
+$products_result = null;
+$products_sql = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
+$products_result = $pdo->query($products_sql);
+
+// Fetch latest 3 published blog posts
+$blog_posts = [];
+$blog_sql = "SELECT bp.*, m.file_path AS image_path FROM blog_posts bp
+    LEFT JOIN media_relations mr ON mr.entity_type = 'blog_post' AND mr.entity_id = bp.id AND mr.relation_type = 'thumbnail'
+    LEFT JOIN media m ON mr.media_id = m.id
+    WHERE bp.status = 'published'
+    ORDER BY bp.published_at DESC, bp.created_at DESC LIMIT 3";
+$blog_stmt = $pdo->query($blog_sql);
+while ($row = $blog_stmt->fetch()) {
+    $blog_posts[] = $row;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -64,13 +114,13 @@
             </div>
 
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link active">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link active">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
 
             <div class="header-actions">
@@ -158,11 +208,15 @@
                 <div class="featured-product" id="featuredProduct">
                     <div class="product-showcase">
                         <div class="product-image">
-                            <img src="images/1-7-scaled.jpg" alt="Golden Pharaoh Mask" id="showcaseImage">
+                            <?php if ($featured): ?>
+                                <img src="<?php echo htmlspecialchars($featured['product_image'] ?: 'images/products/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($featured['name']); ?>" id="showcaseImage">
+                            <?php else: ?>
+                                <img src="images/products/placeholder.jpg" alt="Featured Product" id="showcaseImage">
+                            <?php endif; ?>
                         </div>
                         <div class="product-info">
-                            <h3 id="showcaseTitle">Golden Pharaoh Mask</h3>
-                            <p id="showcaseDesc">Authentic 18th Dynasty ceremonial mask</p>
+                            <h3 id="showcaseTitle"><?php echo $featured ? htmlspecialchars($featured['name']) : 'Golden Pharaoh Mask'; ?></h3>
+                            <p id="showcaseDesc"><?php echo $featured ? htmlspecialchars($featured['description']) : 'Authentic 18th Dynasty ceremonial mask'; ?></p>
                         </div>
                     </div>
                     <div class="product-dots">
@@ -192,11 +246,51 @@
             </div>
 
             <div class="collection-grid" id="collectionGrid">
-                <!-- Products will be dynamically loaded here -->
+                <?php if ($products_result && $products_result->rowCount() > 0): ?>
+                    <?php while ($product = $products_result->fetch()): ?>
+                        <div class="collection-item">
+                            <div class="item-image">
+                                <img src="<?php echo htmlspecialchars($product['product_image'] ?: 'images/products/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                                <div class="item-overlay">
+                                    <div class="overlay-content">
+                                        <h3><?php echo htmlspecialchars($product['name']); ?></h3>
+                                        <p class="item-price">$<?php echo number_format($product['price'], 2); ?></p>
+                                        <div class="item-actions">
+                                            <button class="action-btn add-to-cart" onclick="addToCart(<?php echo (int)$product['id']; ?>)">Add to Cart</button>
+                                            <button class="action-btn add-to-wishlist" onclick="toggleWishlist(<?php echo (int)$product['id']; ?>)">&#9825;</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item-info">
+                                <span class="item-category">
+                                    <?php
+                                    // Fetch category name if possible
+                                    if (!empty($product['category'])) {
+                                        $cat_id = (int)$product['category'];
+                                        $cat_name = '';
+                                        $cat_stmt = $pdo->prepare("SELECT name FROM categories WHERE id = ?");
+                                        $cat_stmt->execute([$cat_id]);
+                                        $cat_row = $cat_stmt->fetch();
+                                        if ($cat_row) {
+                                            $cat_name = $cat_row['name'];
+                                        }
+                                        echo htmlspecialchars($cat_name);
+                                    }
+                                    ?>
+                                </span>
+                                <h3 class="item-title"><?php echo htmlspecialchars($product['name']); ?></h3>
+                                <p class="item-description"><?php echo htmlspecialchars($product['description']); ?></p>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <p>No products found.</p>
+                <?php endif; ?>
             </div>
 
             <div class="collection-footer">
-                <button class="btn btn-outline">View All Collection</button>
+                <button class="btn btn-outline" onclick="window.location.href='shop.php'">View All Collection</button>
             </div>
         </div>
     </section>
@@ -310,62 +404,30 @@
                     and discover the stories behind our magnificent artifacts.
                 </p>
             </div>
-
             <div class="blog-grid">
-                <article class="blog-card featured">
-                    <div class="card-image">
-                        <img src="images/1-7-scaled.jpg" alt="The Senet Games of King Tutankhamun">
-                        <div class="card-badge">Featured</div>
-                    </div>
-                    <div class="card-content">
-                        <div class="card-meta">
-                            <span class="card-date">April 15, 2025</span>
-                            <span class="card-category">History & Artifacts</span>
-                        </div>
-                        <h3 class="card-title">The Senet Games of King Tutankhamun</h3>
-                        <p class="card-excerpt">
-                            King Tutankhamun was buried with no fewer than five senet game boxes. Explore the history of
-                            one of the world's oldest board games.
-                        </p>
-                        <a href="blog-details.html?id=1" class="card-link">Read More →</a>
-                    </div>
-                </article>
-
-                <article class="blog-card">
-                    <div class="card-image">
-                        <img src="images/10.jpg" alt="The Road of Rams">
-                    </div>
-                    <div class="card-content">
-                        <div class="card-meta">
-                            <span class="card-date">April 12, 2025</span>
-                            <span class="card-category">History & Culture</span>
-                        </div>
-                        <h3 class="card-title">The Road of Rams</h3>
-                        <p class="card-excerpt">
-                            Discover the royal avenue that connects the Karnak Temple with the Luxor Temple, lined with
-                            hundreds of ram-headed sphinxes.
-                        </p>
-                        <a href="blog-details.html?id=2" class="card-link">Read More →</a>
-                    </div>
-                </article>
-
-                <article class="blog-card">
-                    <div class="card-image">
-                        <img src="images/4-5-scaled.jpg" alt="The Queens of Ancient Egypt">
-                    </div>
-                    <div class="card-content">
-                        <div class="card-meta">
-                            <span class="card-date">April 10, 2025</span>
-                            <span class="card-category">Royalty & History</span>
-                        </div>
-                        <h3 class="card-title">The Queens of Ancient Egypt</h3>
-                        <p class="card-excerpt">
-                            Learn about the powerful and influential queens who left an indelible mark on the land of
-                            the pharaohs, from Hatshepsut to Nefertiti.
-                        </p>
-                        <a href="blog-details.html?id=3" class="card-link">Read More →</a>
-                    </div>
-                </article>
+                <?php if (count($blog_posts) > 0): ?>
+                    <?php foreach ($blog_posts as $i => $post): ?>
+                        <article class="blog-card<?php echo $i === 0 ? ' featured' : ''; ?>">
+                            <div class="card-image">
+                                <?php if ($i === 0): ?>
+                                    <span class="card-badge">FEATURED</span>
+                                <?php endif; ?>
+                                <img src="<?php echo htmlspecialchars($post['image_path'] ?? 'images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>">
+                            </div>
+                            <div class="card-content">
+                                <div class="card-meta">
+                                    <span class="card-date"><?php echo $post['published_at'] ? date('M d, Y', strtotime($post['published_at'])) : ''; ?></span>
+                                    <span class="card-category"><?php echo htmlspecialchars($post['excerpt'] ? explode(' ', $post['excerpt'])[0] : ''); ?></span>
+                                </div>
+                                <h3 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h3>
+                                <p class="card-excerpt"><?php echo htmlspecialchars($post['excerpt']); ?></p>
+                                <a href="blog-details.php?id=<?php echo $post['id']; ?>" class="card-link">Read More &rarr;</a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p>No blog posts found.</p>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -397,9 +459,9 @@
                 <div class="newsletter-icon">𓊃</div>
                 <h2 class="newsletter-title">Stay Connected with Ancient Wisdom</h2>
                 <p class="newsletter-subtitle">Be the first to discover new collections and exclusive pieces</p>
-                <form class="newsletter-form" id="newsletterForm">
+                <form method="post" action="" class="newsletter-form" id="newsletterForm">
                     <div class="form-group">
-                        <input type="email" class="newsletter-input" placeholder="Enter your email address" required>
+                        <input type="email" name="subscribe_email" class="newsletter-input" placeholder="Enter your email address" required>
                         <button type="submit" class="btn btn-primary newsletter-btn">
                             Subscribe
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -413,6 +475,26 @@
             </div>
         </div>
     </section>
+    <script>
+document.getElementById('newsletterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    var email = form.subscribe_email.value;
+    fetch('', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: new URLSearchParams({ subscribe_email: email })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) form.reset();
+        // No message shown
+    })
+    .catch(() => {
+        // No message shown
+    });
+});
+</script>
 
     <!-- Footer -->
     <footer class="footer" id="contact">
@@ -471,23 +553,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
 
@@ -575,8 +657,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -603,11 +685,12 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <a class="btn btn-outline" href="wishlist.html">View Wishlist</a>
+                <a class="btn btn-outline" href="wishlist.php">View Wishlist</a>
             </div>
         </div>
     </div>
 
+    <?php include 'includes/sidebar.html'; ?>
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>
     <script src="js/script.js"></script>

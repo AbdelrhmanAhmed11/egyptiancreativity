@@ -1,3 +1,235 @@
+<?php 
+include 'includes/db.php';
+
+// Start session for authentication
+session_start();
+
+// Handle API requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    $action = $_POST['action'];
+    
+    switch ($action) {
+        case 'login':
+            $email = $_POST['email'] ?? '';
+            $password = $_POST['password'] ?? '';
+            
+            if (empty($email) || empty($password)) {
+                echo json_encode(['success' => false, 'message' => 'Email and password are required']);
+                exit;
+            }
+            
+            try {
+                // Check if user exists
+                $query = "SELECT id, username, email, password_hash, full_name, role FROM users WHERE email = ?";
+                $stmt = $pdo->prepare($query);
+                $stmt->execute([$email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($user && password_verify($password, $user['password_hash'])) {
+                    // Login successful
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['username'] = $user['username'];
+                    $_SESSION['email'] = $user['email'];
+                    $_SESSION['full_name'] = $user['full_name'];
+                    $_SESSION['role'] = $user['role'];
+                    
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Login successful',
+                        'user' => [
+                            'id' => $user['id'],
+                            'username' => $user['username'],
+                            'email' => $user['email'],
+                            'full_name' => $user['full_name'],
+                            'role' => $user['role']
+                        ]
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Invalid email or password']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Login failed. Please try again.']);
+            }
+            exit;
+            
+        case 'signup':
+            $username = $_POST['username'] ?? '';
+            $email = $_POST['email'] ?? '';
+            $password = $_POST['password'] ?? '';
+            $full_name = $_POST['full_name'] ?? '';
+            
+            if (empty($username) || empty($email) || empty($password) || empty($full_name)) {
+                echo json_encode(['success' => false, 'message' => 'All fields are required']);
+                exit;
+            }
+            
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                echo json_encode(['success' => false, 'message' => 'Please enter a valid email address']);
+                exit;
+            }
+            
+            // Validate password strength
+            if (strlen($password) < 6) {
+                echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters long']);
+                exit;
+            }
+            
+            try {
+                // Check if email already exists
+                $check_query = "SELECT id FROM users WHERE email = ?";
+                $check_stmt = $pdo->prepare($check_query);
+                $check_stmt->execute([$email]);
+                
+                if ($check_stmt->fetch()) {
+                    echo json_encode(['success' => false, 'message' => 'Email already registered']);
+                    exit;
+                }
+                
+                // Check if username already exists
+                $check_username_query = "SELECT id FROM users WHERE username = ?";
+                $check_username_stmt = $pdo->prepare($check_username_query);
+                $check_username_stmt->execute([$username]);
+                
+                if ($check_username_stmt->fetch()) {
+                    echo json_encode(['success' => false, 'message' => 'Username already taken']);
+                    exit;
+                }
+                
+                // Hash password
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                
+                // Insert new user
+                $insert_query = "INSERT INTO users (username, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, 'user')";
+                $insert_stmt = $pdo->prepare($insert_query);
+                $result = $insert_stmt->execute([$username, $email, $password_hash, $full_name]);
+                
+                if ($result) {
+                    $user_id = $pdo->lastInsertId();
+                    
+                    // Create user profile
+                    $profile_query = "INSERT INTO user_profiles (user_id) VALUES (?)";
+                    $profile_stmt = $pdo->prepare($profile_query);
+                    $profile_stmt->execute([$user_id]);
+                    
+                    // Auto-login after signup
+                    $_SESSION['user_id'] = $user_id;
+                    $_SESSION['username'] = $username;
+                    $_SESSION['email'] = $email;
+                    $_SESSION['full_name'] = $full_name;
+                    $_SESSION['role'] = 'user';
+                    
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Account created successfully! Welcome to Egyptian Creativity.',
+                        'user' => [
+                            'id' => $user_id,
+                            'username' => $username,
+                            'email' => $email,
+                            'full_name' => $full_name,
+                            'role' => 'user'
+                        ]
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to create account. Please try again.']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Account creation failed. Please try again.']);
+            }
+            exit;
+            
+        case 'forgot_password':
+            $email = $_POST['email'] ?? '';
+            
+            if (empty($email)) {
+                echo json_encode(['success' => false, 'message' => 'Email is required']);
+                exit;
+            }
+            
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                echo json_encode(['success' => false, 'message' => 'Please enter a valid email address']);
+                exit;
+            }
+            
+            try {
+                // Check if user exists
+                $query = "SELECT id, username, full_name FROM users WHERE email = ?";
+                $stmt = $pdo->prepare($query);
+                $stmt->execute([$email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($user) {
+                    // Generate reset token (in a real app, you'd send this via email)
+                    $reset_token = bin2hex(random_bytes(32));
+                    $reset_expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                    
+                    // Store reset token (you'd need a password_resets table in real app)
+                    // For demo purposes, we'll just return success
+                    
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Password reset instructions sent to your email (demo mode)',
+                        'demo_token' => $reset_token // Only for demo purposes
+                    ]);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'No account found with this email address']);
+                }
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Password reset failed. Please try again.']);
+            }
+            exit;
+            
+        case 'logout':
+            // Clear session
+            session_destroy();
+            echo json_encode(['success' => true, 'message' => 'Logged out successfully']);
+            exit;
+            
+        case 'check_auth':
+            // Check if user is logged in
+            if (isset($_SESSION['user_id'])) {
+                echo json_encode([
+                    'success' => true, 
+                    'authenticated' => true,
+                    'user' => [
+                        'id' => $_SESSION['user_id'],
+                        'username' => $_SESSION['username'],
+                        'email' => $_SESSION['email'],
+                        'full_name' => $_SESSION['full_name'],
+                        'role' => $_SESSION['role']
+                    ]
+                ]);
+            } else {
+                echo json_encode(['success' => true, 'authenticated' => false]);
+            }
+            exit;
+    }
+}
+
+// Handle GET requests for checking authentication status
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'check_auth') {
+    header('Content-Type: application/json');
+    
+    if (isset($_SESSION['user_id'])) {
+        echo json_encode([
+            'success' => true, 
+            'authenticated' => true,
+            'user' => [
+                'id' => $_SESSION['user_id'],
+                'username' => $_SESSION['username'],
+                'email' => $_SESSION['email'],
+                'full_name' => $_SESSION['full_name'],
+                'role' => $_SESSION['role']
+            ]
+        ]);
+    } else {
+        echo json_encode(['success' => true, 'authenticated' => false]);
+    }
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,18 +317,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -517,23 +749,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -619,8 +851,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -647,10 +879,14 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <a class="btn btn-outline" href="wishlist.html">View Wishlist</a>
+                <a class="btn btn-outline" href="wishlist.php">View Wishlist</a>
             </div>
         </div>
     </div>
+
+    <?php include 'includes/sidebar.html'; ?>
+
+    <script src="js/script.js"></script>
 
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>

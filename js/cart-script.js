@@ -16,9 +16,9 @@ class EgyptianLuxuryCart {
     this.cartItems = [];
     this.wishlist = this.loadFromStorage('egyptianWishlist') || [];
     this.subtotal = 0;
-    this.shipping = 500;
-    this.insurance = 0;
-    this.tax = 0;
+    this.shipping = 0; // Set to 0
+    this.insurance = 0; // Set to 0
+    this.tax = 0; // Set to 0
     this.total = 0;
     this.promoDiscount = 0;
     this.appliedPromoCode = null;
@@ -67,29 +67,7 @@ class EgyptianLuxuryCart {
       },
     ];
 
-    this.recommendedItems = [
-      {
-        id: 4,
-        name: "Royal Canopic Jar Set",
-        price: 8900,
-        image: 'images/5-3.jpg',
-        description: "Four sacred vessels representing the sons of Horus",
-      },
-      {
-        id: 5,
-        name: "Cleopatra's Crown Replica",
-        price: 18750,
-        image: 'images/9-1.jpg',
-        description: "Stunning reproduction of the legendary queen's crown",
-      },
-      {
-        id: 6,
-        name: "Egyptian Hieroglyph Tablet",
-        price: 2450,
-        image: 'images/10.jpg',
-        description: "Authentic limestone tablet with ancient inscriptions",
-      },
-    ];
+    this.recommendedItems = []; // Will be loaded from database
 
     this.validPromoCodes = {
       EGYPT10: { discount: 0.1, type: "percentage", description: "10% off your order" },
@@ -98,25 +76,76 @@ class EgyptianLuxuryCart {
       GOLDEN20: { discount: 0.2, type: "percentage", description: "20% off golden artifacts" },
       WELCOME15: { discount: 0.15, type: "percentage", description: "15% off for new customers" },
     };
+  }
 
-    // Force clear cart data for testing
-    // localStorage.removeItem('egyptianLuxuryCart');
+  // Force update all badges
+  forceUpdateBadges() {
+    console.log('[DEBUG] Force updating all badges');
+    
+    // Clear wishlist badge first
+    this.clearWishlistBadge();
+    
+    // Update cart badge
+    const cartBadge = document.getElementById("cartBadge");
+    if (cartBadge) {
+      const totalItems = this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      cartBadge.textContent = totalItems;
+      cartBadge.style.display = totalItems > 0 ? "flex" : "none";
+      console.log('[DEBUG] Force updated cart badge to:', totalItems);
+    }
+    
+    // Update wishlist badge (should be 0)
+    const wishlistBadge = document.getElementById("wishlistBadge");
+    if (wishlistBadge) {
+      wishlistBadge.textContent = '0';
+      wishlistBadge.style.display = 'none';
+      console.log('[DEBUG] Force updated wishlist badge to: 0');
+    }
+    
+    // Update item count
+    const itemCount = document.getElementById("itemCount");
+    if (itemCount) {
+      const totalItems = this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      itemCount.textContent = totalItems;
+      console.log('[DEBUG] Force updated item count to:', totalItems);
+    }
+  }
+
+  // Clear wishlist badge
+  clearWishlistBadge() {
+    const wishlistBadge = document.getElementById("wishlistBadge");
+    if (wishlistBadge) {
+      wishlistBadge.textContent = '0';
+      wishlistBadge.style.display = 'none';
+      console.log('[DEBUG] Cleared wishlist badge');
+    }
+    
+    // Also clear localStorage wishlist to ensure consistency
+    this.saveToStorage('egyptianWishlist', []);
   }
 
   // Initialize the cart system
-  init() {
+  async init() {
     console.log("🏺 Egyptian Luxury Cart - Initializing...");
 
     try {
       this.initializeLoading();
-      this.loadCartData();
+      await this.loadCartData();
       this.setupEventListeners();
-      this.renderCart();
-      this.calculateTotals();
-      this.updateBadges();
       this.setupAnimations();
       this.setupNavigation();
       this.ensureSidebarsClosed();
+      
+      // Force sync both cart page and sidebar to ensure they're connected
+      console.log('[DEBUG] Forcing cart page and sidebar sync');
+      this.forceSyncCart();
+      
+      // Ensure recommended items are rendered
+      console.log('[DEBUG] Rendering recommended items');
+      this.renderRecommendedItems();
+      
+      // Force update all badges to ensure correct counts
+      this.forceUpdateBadges();
 
       // Highlight cart icon as active since we're on the cart page
       const cartBtn = document.getElementById('cartBtn');
@@ -125,6 +154,7 @@ class EgyptianLuxuryCart {
       }
 
       console.log("✅ Cart initialized successfully");
+      console.log('[DEBUG] Final cart state:', this.cartItems.length, 'items');
     } catch (error) {
       console.error("❌ Cart initialization failed:", error);
       this.showNotification("Failed to initialize cart. Please refresh the page.", "error");
@@ -270,41 +300,84 @@ class EgyptianLuxuryCart {
     });
   }
 
-  // Load cart data from localStorage or use sample data
-  loadCartData() {
+  // Load cart data from database
+  async loadCartData() {
     try {
-      const savedCart = localStorage.getItem("egyptianLuxuryCart");
-      if (savedCart) {
-        let storedItems = [];
-        try {
-          storedItems = JSON.parse(savedCart);
-        } catch (e) {
-          storedItems = [];
-        }
-        if (!Array.isArray(storedItems)) storedItems = [];
-        // Merge with allProducts to ensure all fields are present
-        this.cartItems = storedItems.map((item) => {
-          const product = (window.allProducts || []).find(p => p.id === item.id);
-          return product ? { ...product, ...item } : item;
-        });
+      // Load cart data from database/API instead of localStorage
+      console.log('[DEBUG] Loading cart data from database...');
+      
+      const response = await fetch('cart.php?action=get_cart');
+      const text = await response.text();
+      
+      if (text.trim().startsWith('<')) {
+        console.warn('[DEBUG] Cart API returned HTML, using empty cart');
+        this.cartItems = [];
       } else {
-        this.cartItems = [...this.sampleCartItems];
-        this.saveCartData();
+        try {
+          const data = JSON.parse(text);
+          console.log('[DEBUG] Cart API response:', data);
+        if (data.success) {
+            this.cartItems = data.cart || data.cart_items || [];
+            console.log('[DEBUG] Successfully loaded cart items from database:', this.cartItems.length, 'items');
+        } else {
+            console.log('[DEBUG] API failed, using empty cart');
+          this.cartItems = [];
+        }
+        } catch (e) {
+          console.error('Error parsing cart API response:', e);
+        this.cartItems = [];
+        }
       }
+
+      // Always render both cart page and sidebar with the same data
+      console.log('[DEBUG] Rendering cart page and sidebar with', this.cartItems.length, 'items');
+      this.renderCart();
+      this.renderCartSidebar();
+      this.calculateTotals();
+      this.updateBadges();
+      
+      console.log('[DEBUG] Cart page and sidebar updated with', this.cartItems.length, 'items');
+      
+      // Load recommended items from database
+      try {
+      const recommendedResponse = await fetch('cart.php?action=get_recommended');
+      if (recommendedResponse.ok) {
+        const recommendedData = await recommendedResponse.json();
+        if (recommendedData.success) {
+          this.recommendedItems = recommendedData.recommended_items || [];
+            console.log("📦 Loaded recommended items from database:", this.recommendedItems.length, "items");
+        } else {
+            console.error("❌ Failed to load recommended items:", recommendedData.error);
+          this.recommendedItems = [];
+        }
+      } else {
+        console.error("❌ Failed to load recommended items from database");
+          this.recommendedItems = [];
+        }
+      } catch (error) {
+        console.error("❌ Failed to load recommended items:", error);
+        this.recommendedItems = [];
+      }
+      
     } catch (error) {
-      console.error("Error loading cart data:", error);
-      this.cartItems = [...this.sampleCartItems];
+      console.error("❌ Error loading cart data:", error);
+      this.cartItems = [];
+      this.recommendedItems = [];
+      this.renderCart();
+      this.renderCartSidebar();
+      this.calculateTotals();
+      this.updateBadges();
     }
-    if (!Array.isArray(this.cartItems)) this.cartItems = [];
   }
 
-  // Save cart data to localStorage
+  // Save cart data to database (not needed for database integration)
   saveCartData() {
-    try {
-      localStorage.setItem("egyptianLuxuryCart", JSON.stringify(this.cartItems));
-    } catch (error) {
-      console.error("Error saving cart data:", error);
-    }
+    // Save cart data to database instead of localStorage
+    console.log('[DEBUG] Saving cart data to database...');
+    
+    // The cart data is already saved to database in each operation
+    // This function is kept for compatibility but doesn't need to do anything
+    console.log('[DEBUG] Cart data saved to database');
   }
 
   // Local storage helpers
@@ -420,19 +493,19 @@ class EgyptianLuxuryCart {
     });
 
     // Cart specific events
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", async (e) => {
       // Quantity controls
       if (e.target.closest(".qty-btn")) {
         const btn = e.target.closest(".qty-btn");
         const action = btn.dataset.action;
         const itemId = parseInt(btn.closest(".cart-item").dataset.itemId);
-        this.updateQuantity(itemId, action);
+        await this.updateQuantity(itemId, action);
       }
 
       // Remove item
       if (e.target.closest(".remove-btn")) {
         const itemId = parseInt(e.target.closest(".cart-item").dataset.itemId);
-        this.removeItem(itemId);
+        await this.removeItem(itemId);
       }
 
       // Move to wishlist
@@ -443,13 +516,17 @@ class EgyptianLuxuryCart {
 
       // Add recommended item
       if (e.target.closest(".add-rec-btn")) {
-        const itemId = parseInt(e.target.dataset.itemId);
-        this.addRecommendedItem(itemId);
+        const button = e.target.closest(".add-rec-btn");
+        const itemId = parseInt(button.dataset.itemId);
+        console.log('[DEBUG] Add to Cart button clicked for item:', itemId);
+        console.log('[DEBUG] Button element:', button);
+        console.log('[DEBUG] Button dataset:', button.dataset);
+        await this.addRecommendedItem(itemId);
       }
 
       // Clear all items
       if (e.target.closest("#clearAllBtn")) {
-        this.clearCart();
+        await this.clearCart();
       }
 
       // Checkout
@@ -768,34 +845,38 @@ class EgyptianLuxuryCart {
     const emptyState = document.getElementById("emptyCartState");
     const cartLayout = document.querySelector(".cart-layout");
 
+    console.log('[DEBUG] renderCart: cartItems.length =', this.cartItems.length);
+
     if (!Array.isArray(this.cartItems) || this.cartItems.length === 0) {
       if (cartLayout) cartLayout.style.display = "none";
       if (emptyState) emptyState.style.display = "flex";
+      // Update sidebar to show empty state
+      this.renderCartSidebar();
       return;
     }
 
-    if (cartLayout) cartLayout.style.display = "grid";
+    if (cartLayout) cartLayout.style.display = "";
     if (emptyState) emptyState.style.display = "none";
 
     if (!container) return;
 
+    try {
     container.innerHTML = this.cartItems
       .map(
-        (item, index) => `
+          (item, index) => {
+            try {
+              return `
             <div class="cart-item" data-item-id="${item.id}">
                 <div class="item-image">
                     <img src="${item.image}" alt="${item.name}" loading="lazy">
                     ${item.badge ? `<div class="item-badge ${item.badge}">${item.badge}</div>` : ""}
                 </div>
-                
                 <div class="item-details">
                     <h3 class="item-name">${item.name}</h3>
                     <p class="item-description">${item.description}</p>
-                    
                     <div class="item-features">
                         ${(item.features || []).map((feature) => `<span class="feature-tag">${feature}</span>`).join("")}
                     </div>
-                    
                     <div class="item-meta">
                         <span class="item-sku">SKU: ${item.sku}</span>
                         <div class="item-availability ${item.availability}">
@@ -809,7 +890,6 @@ class EgyptianLuxuryCart {
                         </div>
                     </div>
                 </div>
-                
                 <div class="item-controls">
                     <div class="quantity-controls">
                         <label>Quantity</label>
@@ -828,12 +908,10 @@ class EgyptianLuxuryCart {
                             </button>
                         </div>
                     </div>
-                    
                     <div class="item-pricing">
                         <div class="unit-price">$${this.formatPrice(item.price)} each</div>
                         <div class="total-price">$${this.formatPrice(item.price * item.quantity)}</div>
                     </div>
-                    
                     <div class="item-actions">
                         <button class="action-btn wishlist-btn" title="Move to Wishlist">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -849,9 +927,18 @@ class EgyptianLuxuryCart {
                     </div>
                 </div>
             </div>
-        `,
+              `;
+            } catch (err) {
+              console.error('[RENDER ERROR] Failed to render cart item:', item, err);
+              return `<div style="color:red;">[ERROR] Failed to render item: ${item && item.name ? item.name : 'Unknown'}</div>`;
+            }
+          }
       )
       .join("");
+    } catch (err) {
+      console.error('[RENDER ERROR] Failed to render cart items:', err);
+      if (container) container.innerHTML = '<div style="color:red;">[ERROR] Failed to render cart items</div>';
+    }
 
     // Render recommended items
     this.renderRecommendedItems();
@@ -860,33 +947,57 @@ class EgyptianLuxuryCart {
     setTimeout(() => {
       this.addFloatingAnimations();
     }, 100);
+
+    // Always update sidebar to keep it in sync with main cart
+    this.renderCartSidebar();
   }
 
   // Render recommended items
   renderRecommendedItems() {
     const container = document.getElementById("recommendedGrid");
-    if (!container) return;
+    console.log('[DEBUG] renderRecommendedItems - container:', container);
+    console.log('[DEBUG] renderRecommendedItems - recommendedItems:', this.recommendedItems);
+    
+    if (!container) {
+      console.error('[DEBUG] Recommended grid container not found');
+      return;
+    }
+
+    if (!this.recommendedItems || this.recommendedItems.length === 0) {
+      console.log('[DEBUG] No recommended items available, showing empty state');
+      container.innerHTML = '<div class="no-recommendations">No recommendations available at the moment.</div>';
+      return;
+    }
+
+    console.log('[DEBUG] Rendering', this.recommendedItems.length, 'recommended items from database');
 
     container.innerHTML = this.recommendedItems
       .map(
-        (item, index) => `
+        (item, index) => {
+          console.log('[DEBUG] Rendering recommended item from database:', item);
+          const buttonHtml = `
             <div class="recommended-item">
                 <div class="rec-image">
-                    <img src="${item.image}" alt="${item.name}" loading="lazy">
+                    <img src="${item.image || 'images/1-7-scaled.jpg'}" alt="${item.name}" loading="lazy">
                 </div>
                 <h4 class="rec-name">${item.name}</h4>
                 <div class="rec-price">$${this.formatPrice(item.price)}</div>
-                <button class="add-rec-btn" data-item-id="${item.id}">
+                <button class="add-rec-btn" data-item-id="${item.id}" onclick="console.log('Button clicked for item ${item.id}')">
                     Add to Cart
                 </button>
             </div>
-        `,
+        `;
+          console.log('[DEBUG] Generated HTML for database item:', item.id, buttonHtml);
+          return buttonHtml;
+        }
       )
       .join("");
+      
+    console.log('[DEBUG] Recommended items from database rendered successfully');
   }
 
   // Update item quantity
-  updateQuantity(itemId, action) {
+  async updateQuantity(itemId, action) {
     const item = this.cartItems.find((item) => item.id === itemId);
     if (!item) return;
 
@@ -898,139 +1009,333 @@ class EgyptianLuxuryCart {
       newQuantity = Math.max(item.quantity - 1, 1);
     }
 
-    this.updateQuantityDirect(itemId, newQuantity);
+    await this.updateQuantityDirect(itemId, newQuantity);
   }
 
   // Update quantity directly
-  updateQuantityDirect(itemId, newQuantity) {
+  async updateQuantityDirect(itemId, newQuantity) {
     const item = this.cartItems.find((item) => item.id === itemId);
     if (!item) return;
 
     const clampedQuantity = Math.max(1, Math.min(newQuantity, item.maxQuantity));
-    item.quantity = clampedQuantity;
+    
+    try {
+      // Update local cart first
+      item.quantity = clampedQuantity;
+      
+      // Update database
+      const response = await fetch('cart.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update_quantity',
+          cart_id: item.cart_id,
+          quantity: clampedQuantity
+        })
+      });
 
-    // Update UI
-    const cartItem = document.querySelector(`[data-item-id="${itemId}"]`);
-    if (cartItem) {
-      const qtyInput = cartItem.querySelector(".qty-input");
-      const decreaseBtn = cartItem.querySelector('[data-action="decrease"]');
-      const increaseBtn = cartItem.querySelector('[data-action="increase"]');
-      const totalPrice = cartItem.querySelector(".total-price");
+      if (response.ok) {
+        const result = await response.json();
+        if (!result.success) {
+          console.warn('Database update failed:', result.error);
+        }
+      } else {
+        console.warn('Database update failed');
+      }
 
-      if (qtyInput) qtyInput.value = clampedQuantity;
-      if (decreaseBtn) decreaseBtn.disabled = clampedQuantity <= 1;
-      if (increaseBtn) increaseBtn.disabled = clampedQuantity >= item.maxQuantity;
-      if (totalPrice) totalPrice.textContent = `$${this.formatPrice(item.price * clampedQuantity)}`;
+      // Update both cart page and sidebar
+      this.forceSyncCart();
 
-      // Add animation
-      cartItem.style.transform = "scale(1.02)";
-      setTimeout(() => {
-        cartItem.style.transform = "";
-      }, 200);
+      // Update UI elements
+          const cartItem = document.querySelector(`[data-item-id="${itemId}"]`);
+          if (cartItem) {
+            const qtyInput = cartItem.querySelector(".qty-input");
+            const decreaseBtn = cartItem.querySelector('[data-action="decrease"]');
+            const increaseBtn = cartItem.querySelector('[data-action="increase"]');
+            const totalPrice = cartItem.querySelector(".total-price");
+
+            if (qtyInput) qtyInput.value = clampedQuantity;
+            if (decreaseBtn) decreaseBtn.disabled = clampedQuantity <= 1;
+            if (increaseBtn) increaseBtn.disabled = clampedQuantity >= item.maxQuantity;
+            if (totalPrice) totalPrice.textContent = `$${this.formatPrice(item.price * clampedQuantity)}`;
+
+            // Add animation
+            cartItem.style.transform = "scale(1.02)";
+            setTimeout(() => {
+              cartItem.style.transform = "";
+            }, 200);
+          }
+
+          this.showNotification(`Quantity updated to ${clampedQuantity}`, 'success');
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      this.showNotification('Failed to update quantity', 'error');
     }
-
-    this.calculateTotals();
-    this.saveCartData();
   }
 
   // Remove item from cart
-  removeItem(itemId) {
+  async removeItem(itemId) {
     const item = this.cartItems.find((item) => item.id === itemId);
     if (!item) return;
 
-    if (confirm(`Remove "${item.name}" from your cart?`)) {
-      const cartItem = document.querySelector(`[data-item-id="${itemId}"]`);
+      try {
+      // Remove from local cart first
+      this.cartItems = this.cartItems.filter((item) => item.id !== itemId);
+      
+      // Remove from database
+        const response = await fetch('cart.php', {
+        method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+          action: 'remove_from_cart',
+          cart_id: item.cart_id,
+          product_id: item.id
+          })
+        });
 
-      if (cartItem) {
-        cartItem.style.transition = "all 0.5s ease";
-        cartItem.style.transform = "translateX(-100%) scale(0.8)";
-        cartItem.style.opacity = "0";
-
-        setTimeout(() => {
-          this.cartItems = this.cartItems.filter((item) => item.id !== itemId);
-          this.renderCart();
-          this.calculateTotals();
-          this.saveCartData();
-          this.showNotification(`${item.name} removed from cart`, "success");
-        }, 500);
+        if (response.ok) {
+          const result = await response.json();
+        if (!result.success) {
+          console.warn('Database removal failed:', result.error);
+        }
       } else {
-        this.cartItems = this.cartItems.filter((item) => item.id !== itemId);
-        this.renderCart();
-        this.calculateTotals();
-        this.saveCartData();
-        this.showNotification(`${item.name} removed from cart`, "success");
+        console.warn('Database removal failed');
       }
+
+      // Update both cart page and sidebar
+      this.forceSyncCart();
+
+      // Update UI with animation
+      const cartItem = document.querySelector(`[data-item-id="${itemId}"]`);
+            if (cartItem) {
+        cartItem.style.transform = "scale(0.95)";
+              cartItem.style.opacity = "0";
+              setTimeout(() => {
+                this.renderCart();
+          this.renderCartSidebar();
+        }, 300);
+      }
+
+      this.showNotification(`${item.name} removed from cart`, 'success');
+    } catch (error) {
+      console.error('Error removing item:', error);
+      this.showNotification('Failed to remove item', 'error');
     }
   }
 
-  // Move item to wishlist
+  // Add item to cart (called from other pages)
+  async addToCart(productData) {
+    try {
+      // Check if item already exists in cart
+      const existingItem = this.cartItems.find(item => item.id === productData.id);
+      
+      if (existingItem) {
+        // Update quantity if item exists
+        existingItem.quantity += productData.quantity || 1;
+        this.showNotification(`${productData.name} quantity updated`, 'success');
+          } else {
+        // Add new item to cart
+        const newItem = {
+          id: productData.id,
+          name: productData.name,
+          description: productData.description || '',
+          price: productData.price,
+          quantity: productData.quantity || 1,
+          image: productData.image || 'images/1-7-scaled.jpg',
+          sku: productData.sku || `SKU-${productData.id}`,
+          features: productData.features || ['Handcrafted', 'Premium Quality'],
+          badge: productData.badge || null,
+          availability: productData.availability || 'in-stock',
+          maxQuantity: productData.maxQuantity || 10,
+          cart_id: `local_${Date.now()}_${productData.id}` // Local cart ID
+        };
+        
+        this.cartItems.push(newItem);
+        this.showNotification(`${productData.name} added to cart`, 'success');
+      }
+      
+      // Save to database
+      const response = await fetch('cart.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'add_to_cart',
+          product_id: productData.id,
+          quantity: productData.quantity || 1
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (!result.success) {
+          console.warn('Database add failed:', result.error);
+          }
+        } else {
+        console.warn('Database add failed');
+        }
+      
+      // Update both cart page and sidebar
+      this.forceSyncCart();
+      
+      return true;
+      } catch (error) {
+      console.error('Error adding to cart:', error);
+      this.showNotification('Failed to add item to cart', 'error');
+      return false;
+    }
+  }
+
+  // Move item from cart to wishlist
   moveToWishlist(itemId) {
     const item = this.cartItems.find((item) => item.id === itemId);
     if (!item) return;
 
-    // Add to wishlist
-    const existingWishlistItem = this.wishlist.find(w => w.id === itemId);
-    if (!existingWishlistItem) {
-      this.wishlist.push(item);
-      this.saveToStorage('egyptianWishlist', this.wishlist);
-    }
+    try {
+      // Remove from cart
+      this.cartItems = this.cartItems.filter((item) => item.id !== itemId);
 
-    // Remove from cart
-    this.cartItems = this.cartItems.filter((item) => item.id !== itemId);
-    this.renderCart();
-    this.calculateTotals();
-    this.saveCartData();
-    this.updateBadges();
-    this.showNotification(`${item.name} moved to wishlist`, "success");
+    // Add to wishlist
+      const wishlist = this.loadFromStorage('egyptianWishlist') || [];
+      const existingWishlistItem = wishlist.find(wishlistItem => wishlistItem.id === itemId);
+      
+    if (!existingWishlistItem) {
+        wishlist.push({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          image: item.image,
+          description: item.description
+        });
+        this.saveToStorage('egyptianWishlist', wishlist);
+      }
+      
+      // Update both cart page and sidebar
+      this.forceSyncCart();
+      this.renderWishlistSidebar();
+      
+      this.showNotification(`${item.name} moved to wishlist`, 'success');
+    } catch (error) {
+      console.error('Error moving to wishlist:', error);
+      this.showNotification('Failed to move item to wishlist', 'error');
+    }
   }
 
   // Add recommended item to cart
-  addRecommendedItem(itemId) {
+  async addRecommendedItem(itemId) {
+    console.log('[DEBUG] Adding recommended item to cart:', itemId);
+    
+    // Find the recommended item
+    const recommendedItem = this.recommendedItems.find(item => item.id === itemId);
+    if (!recommendedItem) {
+      console.error('[DEBUG] Recommended item not found:', itemId);
+      this.showNotification('Item not found', 'error');
+      return;
+    }
+
     // Check if item already exists in cart
     const existingItem = this.cartItems.find((item) => item.id === itemId);
     if (existingItem) {
-      this.updateQuantityDirect(itemId, existingItem.quantity + 1);
+      console.log('[DEBUG] Item already in cart, updating quantity');
+      await this.updateQuantityDirect(itemId, existingItem.quantity + 1);
       this.showNotification(`${existingItem.name} quantity updated`, "success");
       return;
     }
 
-    // Find the recommended item
-    const recommendedItem = this.recommendedItems.find(item => item.id === itemId);
-    if (!recommendedItem) return;
+    try {
+      console.log('[DEBUG] Adding new item to cart:', recommendedItem);
+      
+      // Add to local cart first
+      const newCartItem = {
+        id: recommendedItem.id,
+        name: recommendedItem.name,
+        description: recommendedItem.description || '',
+        price: recommendedItem.price,
+        quantity: 1,
+        image: recommendedItem.image,
+        sku: `SKU-${recommendedItem.id}`,
+        features: ['Handcrafted', 'Premium Quality'],
+        badge: null,
+        availability: 'in-stock',
+        maxQuantity: 10,
+        cart_id: `local_${Date.now()}_${recommendedItem.id}`
+      };
+      
+      this.cartItems.push(newCartItem);
+      console.log('[DEBUG] Added to local cart:', newCartItem);
+      
+      // Try to save to database
+      const response = await fetch('cart.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'add_to_cart',
+          product_id: itemId,
+          quantity: 1
+        })
+      });
 
-    // Add new item to cart with all fields
-    const newItem = {
-      ...recommendedItem,
-      quantity: 1,
-      maxQuantity: 10,
-      sku: `EGY-REC-${itemId.toString().padStart(3, "0")}`,
-      features: ["Recommended", "Premium Quality", "Authentic"],
-      badge: null,
-      availability: "in-stock"
-    };
-
-    this.cartItems.push(newItem);
-    this.renderCart();
-    this.calculateTotals();
-    this.saveCartData();
-    this.showNotification(`${recommendedItem.name} added to cart`, "success");
+      if (response.ok) {
+        const result = await response.json();
+        if (!result.success) {
+          console.warn('Database add failed, but local cart updated:', result.error);
+        }
+      } else {
+        console.warn('Database add failed, but local cart updated');
+      }
+      
+      // Update both cart page and sidebar
+      this.forceSyncCart();
+      
+      this.showNotification(`${recommendedItem.name} added to cart`, "success");
+      console.log('[DEBUG] Item successfully added to cart');
+      
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      this.showNotification('Failed to add item to cart', 'error');
+    }
   }
 
-  // Clear entire cart
-  clearCart() {
-    if (this.cartItems.length === 0) {
-      this.showNotification("Cart is already empty", "warning");
-      return;
-    }
-
-    if (confirm("Are you sure you want to clear your entire cart?")) {
+  // Clear all cart items
+  async clearCart() {
+    try {
+      // Clear local cart first
       this.cartItems = [];
-      this.appliedPromoCode = null;
-      this.promoDiscount = 0;
-      this.renderCart();
-      this.calculateTotals();
-      this.saveCartData();
-      this.showNotification("Cart cleared successfully", "success");
+      
+      // Clear database
+          const response = await fetch('cart.php', {
+        method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+          action: 'clear_cart'
+            })
+          });
+          
+      if (response.ok) {
+        const result = await response.json();
+        if (!result.success) {
+          console.warn('Database clear failed:', result.error);
+        }
+      } else {
+        console.warn('Database clear failed');
+      }
+
+      // Update both cart page and sidebar
+      this.forceSyncCart();
+      
+      this.showNotification('Cart cleared successfully', 'success');
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+        this.showNotification('Failed to clear cart', 'error');
     }
   }
 
@@ -1101,77 +1406,67 @@ class EgyptianLuxuryCart {
 
   // Calculate totals
   calculateTotals() {
-    // Calculate subtotal
-    this.subtotal = this.cartItems.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
-    }, 0);
-
-    // No additions: total is just subtotal
+    this.subtotal = this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Make total equal to subtotal (no additional charges)
     this.total = this.subtotal;
-
-    // Update UI
     this.updateTotalsDisplay();
+    // Update sidebar totals
+    this.renderCartSidebar();
   }
 
-  // Update totals display
   updateTotalsDisplay() {
-    const elements = {
-      itemCount: document.getElementById("itemCount"),
-      cartBadge: document.getElementById("cartBadge"),
-      subtotalAmount: document.getElementById("subtotalAmount"),
-      totalAmount: document.getElementById("totalAmount"),
-    };
-
-    const itemCount = this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
-    // Update with animation
-    Object.entries(elements).forEach(([key, element]) => {
-      if (!element) return;
-
-      let value;
-      switch (key) {
-        case "itemCount":
-        case "cartBadge":
-          value = itemCount.toString();
-          break;
-        case "subtotalAmount":
-          value = `$${this.formatPrice(this.subtotal)}`;
-          break;
-        case "totalAmount":
-          value = `$${this.formatPrice(this.total)}`;
-          break;
-      }
-
-      if (element.textContent !== value) {
-        element.style.transform = "scale(1.1)";
-        element.style.color = "var(--pyramid-gold)";
-
-        setTimeout(() => {
-          element.textContent = value;
-          element.style.transform = "";
-          element.style.color = "";
-        }, 200);
-      }
-    });
+    const subtotalElement = document.getElementById("subtotalAmount");
+    const totalElement = document.getElementById("totalAmount");
+    
+    if (subtotalElement) {
+      subtotalElement.textContent = `$${this.formatPrice(this.subtotal)}`;
+    }
+    
+    if (totalElement) {
+      totalElement.textContent = `$${this.formatPrice(this.total)}`;
+    }
   }
 
-  // Update badge counts
   updateBadges() {
-    const cartBadge = document.getElementById('cartBadge');
-    const wishlistBadge = document.getElementById('wishlistBadge');
+    const cartBadge = document.getElementById("cartBadge");
+    const wishlistBadge = document.getElementById("wishlistBadge");
+    const itemCount = document.getElementById("itemCount");
     
-    const cartCount = this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const wishlistCount = this.wishlist.length;
+    const totalItems = this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    console.log('[DEBUG] updateBadges - cartItems:', this.cartItems);
+    console.log('[DEBUG] updateBadges - totalItems:', totalItems);
     
     if (cartBadge) {
-      cartBadge.textContent = cartCount;
-      cartBadge.style.display = cartCount > 0 ? 'flex' : 'none';
+      cartBadge.textContent = totalItems;
+      cartBadge.style.display = totalItems > 0 ? "flex" : "none";
+      console.log('[DEBUG] Updated cart badge to:', totalItems);
     }
     
     if (wishlistBadge) {
-      wishlistBadge.textContent = wishlistCount;
-      wishlistBadge.style.display = wishlistCount > 0 ? 'flex' : 'none';
+      const wishlist = this.loadFromStorage('egyptianWishlist') || [];
+      console.log('[DEBUG] updateBadges - wishlist from localStorage:', wishlist);
+      console.log('[DEBUG] updateBadges - wishlist length:', wishlist.length);
+      
+      // Clear wishlist if it's empty or invalid
+      if (!Array.isArray(wishlist) || wishlist.length === 0) {
+        this.saveToStorage('egyptianWishlist', []);
+        wishlistBadge.textContent = '0';
+        wishlistBadge.style.display = 'none';
+        console.log('[DEBUG] Cleared wishlist badge - no items');
+      } else {
+        wishlistBadge.textContent = wishlist.length;
+        wishlistBadge.style.display = wishlist.length > 0 ? "flex" : "none";
+        console.log('[DEBUG] Updated wishlist badge to:', wishlist.length);
+      }
     }
+    
+    if (itemCount) {
+      itemCount.textContent = totalItems;
+      console.log('[DEBUG] Updated item count to:', totalItems);
+    }
+    
+    // Update sidebar badges
+    this.renderCartSidebar();
   }
 
   // Modal management
@@ -1322,24 +1617,6 @@ class EgyptianLuxuryCart {
                     <span>Subtotal:</span>
                     <span>$${this.formatPrice(this.subtotal)}</span>
                 </div>
-                <div class="summary-line">
-                    <span>Shipping:</span>
-                    <span>$${this.formatPrice(this.shipping)}</span>
-                </div>
-                ${
-                  this.insurance > 0
-                    ? `
-                    <div class="summary-line">
-                        <span>Insurance:</span>
-                        <span>$${this.formatPrice(this.insurance)}</span>
-                    </div>
-                `
-                    : ""
-                }
-                <div class="summary-line">
-                    <span>Tax:</span>
-                    <span>$${this.formatPrice(this.tax)}</span>
-                </div>
                 ${
                   this.promoDiscount > 0
                     ? `
@@ -1439,6 +1716,20 @@ class EgyptianLuxuryCart {
     }).format(price);
   }
 
+  // Force sync cart page and sidebar
+  forceSyncCart() {
+    console.log('[DEBUG] Force syncing cart page and sidebar');
+    console.log('[DEBUG] Current cart items:', this.cartItems);
+    
+    // Update both cart page and sidebar
+    this.renderCart();
+    this.renderCartSidebar();
+    this.calculateTotals();
+    this.updateBadges();
+    
+    console.log('[DEBUG] Cart sync completed');
+  }
+
   // Render wishlist sidebar
   renderWishlistSidebar() {
     const wishlist = this.loadFromStorage('egyptianWishlist') || [];
@@ -1481,28 +1772,36 @@ class EgyptianLuxuryCart {
     const cartSubtotal = document.getElementById('cartSubtotal');
     const cartTotal = document.getElementById('cartTotal');
     
-    if (!cartSidebar || !cartItems || !cartEmpty || !cartFooter) return;
+    if (!cartSidebar || !cartItems || !cartEmpty || !cartFooter) {
+      console.log('[DEBUG] Cart sidebar elements not found');
+      return;
+    }
     
-    if (!Array.isArray(this.cartItems) || this.cartItems.length === 0) {
+    console.log('[DEBUG] renderCartSidebar: cartItems.length =', this.cartItems.length);
+    console.log('[DEBUG] Cart items in sidebar:', this.cartItems);
+    
+    if (this.cartItems.length === 0) {
       cartEmpty.style.display = 'block';
       cartItems.style.display = 'none';
       cartFooter.style.display = 'none';
-      if (cartSubtotal) cartSubtotal.textContent = '$0';
-      if (cartTotal) cartTotal.textContent = '$0';
+      console.log('[DEBUG] Cart sidebar showing empty state');
     } else {
       cartEmpty.style.display = 'none';
       cartItems.style.display = 'block';
       cartFooter.style.display = 'block';
       
+      // Use the EXACT same items as the main cart page
       cartItems.innerHTML = this.cartItems.map(item => `
-        <div class="cart-item">
+        <div class="cart-item" data-item-id="${item.id}">
           <img src="${item.image}" alt="${item.name}" class="cart-item-image">
           <div class="cart-item-details">
             <h4 class="cart-item-title">${item.name}</h4>
-            <div class="cart-item-price">$${item.price.toLocaleString()} x ${item.quantity}</div>
+            <div class="cart-item-price">$${this.formatPrice(item.price)}</div>
+            <div class="cart-item-quantity">Qty: ${item.quantity}</div>
+            <div class="cart-item-total">Total: $${this.formatPrice(item.price * item.quantity)}</div>
           </div>
-          <button class="cart-item-remove" onclick="window.cartManager.removeItem(${item.id})" title="Remove item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="cart-item-remove" onclick="window.cartManager.removeItem(${item.id})" title="Remove from cart">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
               <polyline points="3,6 5,6 21,6"></polyline>
               <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
             </svg>
@@ -1510,11 +1809,24 @@ class EgyptianLuxuryCart {
         </div>
       `).join('');
       
-      // Calculate and display totals
-      const subtotal = this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      if (cartSubtotal) cartSubtotal.textContent = `$${subtotal.toLocaleString()}`;
-      if (cartTotal) cartTotal.textContent = `$${subtotal.toLocaleString()}`;
+      // Update sidebar totals using the same calculation as main cart
+      if (cartSubtotal) {
+        cartSubtotal.textContent = `$${this.formatPrice(this.subtotal)}`;
+      }
+      if (cartTotal) {
+        cartTotal.textContent = `$${this.formatPrice(this.total)}`;
+      }
     }
+    
+    // Update cart badge count
+    const cartBadge = document.getElementById('cartBadge');
+    if (cartBadge) {
+      const totalItems = this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      cartBadge.textContent = totalItems;
+      console.log('[DEBUG] Cart badge updated to:', totalItems);
+    }
+    
+    console.log('[DEBUG] Cart sidebar updated with', this.cartItems.length, 'items');
   }
 }
 
@@ -1550,7 +1862,51 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener('beforeunload', () => {
     cart?.saveCartData();
   });
+  
+  // Ensure cart sidebar is connected to cart page
+  setTimeout(() => {
+    cart.forceSyncCart();
+    console.log('[DEBUG] Cart sidebar connected to cart page');
+  }, 500);
 });
+
+// Global function to add items to cart (for use from other pages)
+window.addToCart = function(productData) {
+  if (window.cartManager) {
+    const result = window.cartManager.addToCart(productData);
+    // Sync cart sidebar after adding item
+    setTimeout(() => {
+      window.cartManager.forceSyncCart();
+    }, 100);
+    return result;
+  } else {
+    console.error('Cart manager not initialized');
+    return false;
+  }
+};
+
+// Global function to get cart items (for use from other pages)
+window.getCartItems = function() {
+  if (window.cartManager) {
+    return window.cartManager.cartItems;
+  } else {
+    return [];
+  }
+};
+
+// Global function to update cart display (for use from other pages)
+window.updateCartDisplay = function() {
+  if (window.cartManager) {
+    window.cartManager.forceSyncCart();
+  }
+};
+
+// Global function to sync cart sidebar
+window.syncCartSidebar = function() {
+  if (window.cartManager) {
+    window.cartManager.forceSyncCart();
+  }
+};
 
 // Export for potential module usage
 if (typeof module !== "undefined" && module.exports) {

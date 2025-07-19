@@ -14,8 +14,7 @@ class EgyptianWishlist {
         this.elements = {};
         this.intersectionObserver = null;
 
-        // Initialize sample data
-        this.initSampleData();
+        // No sample data - only database data
     }
 
     init() {
@@ -26,37 +25,34 @@ class EgyptianWishlist {
         this.setupEventListeners();
         this.setupIntersectionObserver();
         
-        // Initialize with sample data first (will be used if no stored data)
-        this.initSampleData();
-        
-        // Then try to load stored data (will override sample data if available)
-        this.loadStoredData();
-        
-        // Initialize filteredItems with a copy of wishlistItems
-        this.filteredItems = [...this.wishlistItems];
-        
-        // Log initial data for debugging
-        console.log('Initial wishlist items:', this.wishlistItems);
-        console.log('Initial filtered items:', this.filteredItems);
-        
-        // Apply initial filters and sorting
-        this.applyFilters();
-        
-        // Render the UI
-        this.renderWishlist();
-        this.renderRecommended();
-        this.updateStats();
-        this.updateBadges();
-        this.setupSearchModal();
-        
-        // Highlight wishlist icon as active since we're on the wishlist page
-        if (this.elements.wishlistBtn) {
-            this.elements.wishlistBtn.classList.add('active');
-        }
-        
-        ensureSidebarsClosed();
-        
-        console.log('✅ Wishlist initialized successfully');
+        // Load data from database only
+        this.loadStoredData().then(() => {
+            // Initialize filteredItems with a copy of wishlistItems
+            this.filteredItems = [...this.wishlistItems];
+            
+            // Log initial data for debugging
+            console.log('Initial wishlist items:', this.wishlistItems);
+            console.log('Initial filtered items:', this.filteredItems);
+            
+            // Apply initial filters and sorting
+            this.applyFilters();
+            
+            // Render the UI
+            this.renderWishlist();
+            this.renderRecommended();
+            this.updateStats();
+            this.updateBadges();
+            this.setupSearchModal();
+            
+            // Highlight wishlist icon as active since we're on the wishlist page
+            if (this.elements.wishlistBtn) {
+                this.elements.wishlistBtn.classList.add('active');
+            }
+            
+            ensureSidebarsClosed();
+            
+            console.log('✅ Wishlist initialized successfully');
+        });
     }
 
     initializeLoading() {
@@ -248,210 +244,91 @@ class EgyptianWishlist {
         });
     }
 
-    initSampleData() {
-        // Enhanced sample data with Egyptian theming
-        this.wishlistItems = [
-            {
-                id: 1,
-                name: "Ancient Pharaoh Mask of Tutankhamun",
-                description: "An exquisite reproduction of the legendary burial mask, crafted with 24-karat gold plating and precious gemstones in the traditional Egyptian style. Each piece is meticulously handcrafted by master artisans.",
-                price: 12500,
-                originalPrice: 15000,
-                image: "images/1-7-scaled.jpg",
-                category: "jewelry",
-                sku: "EGY-MASK-001",
-                inStock: true,
-                features: ["24K Gold Plated", "Handcrafted", "Museum Quality", "Certificate of Authenticity"],
-                badges: ["Featured", "Premium", "Limited Edition"],
-                addedDate: new Date('2024-01-15')
-            },
-            {
-                id: 2,
-                name: "Sacred Ankh Pendant Collection",
-                description: "Symbol of eternal life, this magnificent ankh collection is crafted from pure gold with intricate engravings representing the cycle of life and death in ancient Egyptian mythology.",
-                price: 3750,
-                originalPrice: null,
-                image: "images/5-1.jpg",
-                category: "jewelry",
-                sku: "ANK-PEND-002",
-                inStock: true,
-                features: ["Pure Gold", "Hand Engraved", "Adjustable Chain", "Gift Box Included"],
-                badges: ["New Arrival", "Sacred"],
-                addedDate: new Date('2024-01-20')
-            },
-            {
-                id: 3,
-                name: "Royal Canopic Jars Set",
-                description: "Four magnificent vessels representing the sons of Horus, each meticulously detailed with hieroglyphic inscriptions and gold leaf accents. Perfect for collectors of ancient Egyptian artifacts.",
-                price: 8900,
-                originalPrice: 10500,
-                image: "images/5-1.jpg",
-                category: "boxes",
-                sku: "CPJ-ROYAL-003",
-                inStock: true,
-                features: ["Hand Painted", "Ceramic", "Set of 4", "Display Stand"],
-                badges: ["Sale", "Limited Edition", "Collector's Item"],
-                addedDate: new Date('2024-01-25')
-            },
-            {
-                id: 4,
-                name: "Divine Scarab Amulet Collection",
-                description: "A stunning collection of protective amulets featuring intricate scarab designs, symbolizing rebirth and eternal life in ancient Egyptian culture. Made with premium materials.",
-                price: 2850,
-                originalPrice: null,
-                image: "images/5-3.jpg",
-                category: "jewelry",
-                sku: "SCB-DIV-004",
-                inStock: true,
-                features: ["Protective", "Handcrafted", "Sterling Silver", "Multiple Sizes"],
-                badges: ["Sacred", "Protection"],
-                addedDate: new Date('2024-02-01')
-            },
-            {
-                id: 5,
-                name: "Cleopatra's Crown Replica",
-                description: "A breathtaking reproduction of the legendary queen's crown, adorned with precious stones and intricate goldwork fit for royalty. Museum-quality craftsmanship.",
-                price: 18750,
-                originalPrice: null,
-                image: "images/9-1.jpg",
-                category: "accessories",
-                sku: "CLR-CROWN-005",
-                inStock: true,
-                features: ["Precious Stones", "Goldwork", "Royal Design", "Display Case"],
-                badges: ["Featured", "Royal", "Masterpiece"],
-                addedDate: new Date('2024-02-05')
-            },
-            {
-                id: 6,
-                name: "Hieroglyphic Papyrus Scroll Collection",
-                description: "Authentic papyrus scrolls featuring ancient Egyptian scenes and hieroglyphic texts, handcrafted by skilled artisans using traditional methods passed down through generations.",
-                price: 1250,
-                originalPrice: 1500,
-                image: "images/10.jpg",
-                category: "decorations",
-                sku: "HPS-SCROLL-006",
-                inStock: true,
-                features: ["Handcrafted", "Authentic Papyrus", "Traditional Methods", "Multiple Designs"],
-                badges: ["Sale", "Ancient", "Authentic"],
-                addedDate: new Date('2024-02-10')
-            },
-            {
-                id: 7,
-                name: "Pharaoh's Ceremonial Scepter",
-                description: "Magnificent replica of a pharaoh's ceremonial scepter with golden finish and precious stone inlays. A symbol of divine authority and power in ancient Egypt.",
-                price: 6500,
-                originalPrice: null,
-                image: "images/5-1 (1).jpg",
-                category: "accessories",
-                sku: "PSR-SCEP-007",
-                inStock: true,
-                features: ["Golden Finish", "Precious Stones", "Ceremonial Design", "Premium Materials"],
-                badges: ["New Arrival", "Royal", "Ceremonial"],
-                addedDate: new Date('2024-02-15')
-            },
-            {
-                id: 8,
-                name: "Isis Goddess Statue Premium",
-                description: "Beautiful statue of the goddess Isis, protector of magic and motherhood, crafted in bronze with gold accents. A divine addition to any collection.",
-                price: 4200,
-                originalPrice: null,
-                image: "images/logo.jpg",
-                category: "decorations",
-                sku: "IGS-STAT-008",
-                inStock: true,
-                features: ["Bronze", "Gold Accents", "Divine Protection", "Handcrafted"],
-                badges: ["Sacred", "Divine", "Protection"],
-                addedDate: new Date('2024-02-20')
-            }
-        ];
+    // initSampleData() method removed - only database data is used now
 
-        // Enhanced recommended items
-        this.recommendedItems = [
-            {
-                id: 101,
-                name: "Golden Pharaoh Mask",
-                description: "Authentic 18th Dynasty ceremonial mask",
-                price: 12500,
-                image: "images/1-7-scaled.jpg",
-                category: "jewelry"
-            },
-            {
-                id: 102,
-                name: "Craftsman at Work",
-                description: "Master artisan creating ancient wonders",
-                price: 3200,
-                image: "images/4-5-scaled.jpg",
-                category: "decorations"
-            },
-            {
-                id: 103,
-                name: "Pharaoh's Ceremonial Scepter",
-                description: "Magnificent replica with golden finish and precious stones",
-                price: 6500,
-                image: "images/5-1 (1).jpg",
-                category: "accessories"
-            },
-            {
-                id: 104,
-                name: "Finished Artifacts",
-                description: "A collection of finished ancient Egyptian artifacts",
-                price: 2850,
-                image: "images/5-3.jpg",
-                category: "decorations"
-            },
-            {
-                id: 105,
-                name: "Cleopatra's Crown Replica",
-                description: "A breathtaking reproduction of the legendary queen's crown",
-                price: 18750,
-                image: "images/9-1.jpg",
-                category: "accessories"
-            },
-            {
-                id: 106,
-                name: "Hieroglyphic Papyrus Scroll Collection",
-                description: "Authentic papyrus scrolls featuring ancient Egyptian scenes",
-                price: 1250,
-                image: "images/10.jpg",
-                category: "decorations"
+    // --- Wishlist AJAX helpers ---
+    async fetchWishlistData() {
+        try {
+            // Use GET, not POST, to match sidebar and other pages
+            const res = await fetch('wishlist.php?action=get_wishlist');
+            const data = await res.json();
+            if (data.success && data.wishlist) {
+                return data.wishlist.map(item => ({
+                    ...item,
+                    price: parseFloat(item.price) || 0,
+                    addedDate: item.addedDate ? new Date(item.addedDate) : new Date()
+                }));
             }
-        ];
+            return [];
+        } catch (error) {
+            console.error('Error fetching wishlist:', error);
+            return [];
+        }
     }
 
-    loadStoredData() {
+    async addToWishlistAPI(productId) {
         try {
-            // First, try to load from localStorage
-            const storedWishlist = localStorage.getItem('egyptianWishlist');
-            let shouldInitSample = false;
-            if (storedWishlist) {
-                try {
-                    const parsed = JSON.parse(storedWishlist);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        this.wishlistItems = parsed.map(item => ({
-                            ...item,
-                            price: parseFloat(item.price) || 0,
-                            addedDate: item.addedDate ? new Date(item.addedDate) : new Date()
-                        }));
-                        console.log('Loaded wishlist from storage:', this.wishlistItems);
-                        return; // Exit early if we loaded from storage
-                    } else {
-                        shouldInitSample = true;
-                    }
-                } catch (e) {
-                    console.error('Error parsing wishlist data:', e);
-                    shouldInitSample = true;
-                }
-            } else {
-                shouldInitSample = true;
-            }
+            const res = await fetch('wishlist.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'add_to_wishlist',
+                    product_id: productId 
+                })
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('Error adding to wishlist:', error);
+            return { success: false, message: 'Network error' };
+        }
+    }
 
-            // If we get here, either there was no stored wishlist or it was empty/invalid
-            if (shouldInitSample) {
-                console.log('No valid wishlist found in storage, initializing with sample data');
-                this.initSampleData();
-                this.saveWishlistData();
+    async removeFromWishlistAPI(productId) {
+        try {
+            const res = await fetch('wishlist.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'remove_from_wishlist',
+                    product_id: productId 
+                })
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('Error removing from wishlist:', error);
+            return { success: false, message: 'Network error' };
+        }
+    }
+
+    async fetchRecommendedData() {
+        try {
+            // Use a relative path that works from any page
+            const res = await fetch('./wishlist.php?action=get_recommended');
+            const data = await res.json();
+            if (data.success && data.recommended) {
+                return data.recommended;
             }
-            // Always try to load cart
+            return [];
+        } catch (error) {
+            console.error('Error fetching recommended items:', error);
+            return [];
+        }
+    }
+
+    // Override loadStoredData to use backend only
+    async loadStoredData() {
+        try {
+            // Load wishlist from backend only
+            const wishlistData = await this.fetchWishlistData();
+            this.wishlistItems = wishlistData || [];
+            console.log('Loaded wishlist from backend:', this.wishlistItems);
+
+            // Load recommended items from backend only
+            const recommendedData = await this.fetchRecommendedData();
+            this.recommendedItems = recommendedData || [];
+            console.log('Loaded recommended items from backend:', this.recommendedItems);
+
+            // Always try to load cart from localStorage (cart is still client-side)
             const storedCart = localStorage.getItem('egyptianLuxuryCart');
             if (storedCart) {
                 try {
@@ -464,19 +341,92 @@ class EgyptianWishlist {
                 }
             }
         } catch (e) {
-            // If anything fails, always fall back to sample data
-            this.initSampleData();
-            this.saveWishlistData();
+            console.error('Error loading data from backend:', e);
+            // Don't fallback to sample data - just use empty arrays
+            this.wishlistItems = [];
+            this.recommendedItems = [];
         }
     }
 
-    saveWishlistData() {
-        try {
-            localStorage.setItem('egyptianWishlist', JSON.stringify(this.wishlistItems));
-        } catch (error) {
-            console.error('Error saving wishlist data:', error);
-            this.showNotification('Error saving wishlist', 'error');
+    // Override addToWishlist to use backend
+    async addToWishlist(productId, isFromRecommended = false) {
+        const result = await this.addToWishlistAPI(productId);
+        if (result.success) {
+            // Find the product details to add to local array
+            let productDetails = null;
+            if (isFromRecommended && this.recommendedItems) {
+                productDetails = this.recommendedItems.find(item => item.id == productId);
+            }
+            
+            if (productDetails) {
+                const newItem = {
+                    ...productDetails,
+                    wishlist_id: Date.now(), // Temporary ID until we get the real one
+                    addedDate: new Date()
+                };
+                this.wishlistItems.unshift(newItem);
+                this.renderWishlist();
+                this.updateStats();
+                this.updateBadges();
+                this.showNotification('Added to wishlist!', 'success');
+            }
+        } else {
+            this.showNotification(result.message || 'Failed to add to wishlist', 'error');
         }
+    }
+
+    // Override removeFromWishlist to use backend
+    async removeFromWishlist(itemId, showNotification = true) {
+        const item = this.wishlistItems.find(item => item.id == itemId);
+        if (!item) return;
+
+        const result = await this.removeFromWishlistAPI(item.product_id);
+        if (result.success) {
+            this.wishlistItems = this.wishlistItems.filter(item => item.id != itemId);
+            this.renderWishlist();
+            this.updateStats();
+            this.updateBadges();
+            if (showNotification) {
+                this.showNotification('Removed from wishlist', 'info');
+            }
+        } else {
+            this.showNotification(result.message || 'Failed to remove from wishlist', 'error');
+        }
+    }
+
+    // Override renderRecommended to use backend data
+    async renderRecommended() {
+        if (!this.elements.recommendedGrid) return;
+
+        // Load fresh recommended data
+        const recommendedData = await this.fetchRecommendedData();
+        if (recommendedData.length > 0) {
+            this.recommendedItems = recommendedData;
+        }
+
+        this.elements.recommendedGrid.innerHTML = this.recommendedItems.map((item, index) => {
+            const isInWishlist = this.wishlistItems.some(w => w.id === item.id);
+            return `
+                <div class="recommended-item" data-id="${item.id}" style="animation-delay: ${index * 0.1}s;">
+                    <div class="rec-image">
+                        <img src="${item.image}" alt="${item.name}" loading="lazy">
+                        <button class="rec-add-btn" onclick="${isInWishlist ? '' : `wishlist.addToWishlist(${item.id}, true)`}" 
+                                title="${isInWishlist ? 'Already in wishlist' : 'Add to wishlist'}" aria-label="${isInWishlist ? 'Already in wishlist' : `Add ${item.name} to wishlist`}" ${isInWishlist ? 'disabled' : ''}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="rec-content">
+                        <h4>${item.name}</h4>
+                        <div class="rec-price">$${item.price.toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Observe recommended items for animation
+        this.observeItems('.recommended-item');
     }
 
     saveCartData() {
@@ -516,17 +466,18 @@ class EgyptianWishlist {
         const availabilityText = item.inStock ? 'In Stock' : 'Out of Stock';
         const hasSale = item.originalPrice && item.originalPrice > item.price;
         const discountPercent = hasSale ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100) : 0;
-        let displayPrice = item.price;
-        if (!displayPrice || displayPrice === 0) {
-            if (window.allProducts) {
-                let found = window.allProducts.find(p => p.id === item.id || p.name === item.name || p.title === item.title);
-                if (found) displayPrice = found.price;
-            }
-        }
+        
+        // Ensure price is properly formatted
+        const displayPrice = parseFloat(item.price) || 0;
+        const formattedPrice = displayPrice.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        
         return `
             <div class="wishlist-card${this.currentView === 'list' ? ' list-view' : ''}" data-id="${item.id}" style="animation-delay: ${index * 0.1}s;">
                 <div class="wishlist-card-image-wrapper" style="position:relative;">
-                    <img class="wishlist-card-image" src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.onerror=null;this.src='https://images.pexels.com/photos/12935073/pexels-photo-12935073.jpeg';">
+                    <img class="wishlist-card-image" src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.onerror=null;this.src='images/1-7-scaled.jpg';">
                     ${hasSale ? `<div class="wishlist-card-discount">-${discountPercent}%</div>` : ''}
                 </div>
                 <div class="wishlist-card-content">
@@ -545,8 +496,8 @@ class EgyptianWishlist {
                         </span>
                     </div>
                     <div class="wishlist-card-price-row">
-                        <span class="wishlist-card-price">$${displayPrice ? displayPrice.toLocaleString() : '0'}</span>
-                        ${item.originalPrice ? `<span class="wishlist-card-original-price">$${item.originalPrice.toLocaleString()}</span>` : ''}
+                        <span class="wishlist-card-price">$${formattedPrice}</span>
+                        ${item.originalPrice ? `<span class="wishlist-card-original-price">$${parseFloat(item.originalPrice).toLocaleString()}</span>` : ''}
                     </div>
                     <div class="wishlist-card-features">
                         ${(item.features || []).map(feature => `<span class="wishlist-card-feature">${feature}</span>`).join('')}
@@ -571,10 +522,14 @@ class EgyptianWishlist {
 
         this.elements.recommendedGrid.innerHTML = this.recommendedItems.map((item, index) => {
             const isInWishlist = this.wishlistItems.some(w => w.id === item.id);
+            const formattedPrice = (parseFloat(item.price) || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
             return `
                 <div class="recommended-item" data-id="${item.id}" style="animation-delay: ${index * 0.1}s;">
                     <div class="rec-image">
-                        <img src="${item.image}" alt="${item.name}" loading="lazy">
+                        <img src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.onerror=null;this.src='images/5-1.jpg';">
                         <button class="rec-add-btn" onclick="${isInWishlist ? '' : `wishlist.addToWishlist(${item.id}, true)`}" 
                                 title="${isInWishlist ? 'Already in wishlist' : 'Add to wishlist'}" aria-label="${isInWishlist ? 'Already in wishlist' : `Add ${item.name} to wishlist`}" ${isInWishlist ? 'disabled' : ''}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
@@ -584,7 +539,7 @@ class EgyptianWishlist {
                     </div>
                     <div class="rec-content">
                         <h4>${item.name}</h4>
-                        <div class="rec-price">$${item.price.toLocaleString()}</div>
+                        <div class="rec-price">$${formattedPrice}</div>
                     </div>
                 </div>
             `;
@@ -785,7 +740,7 @@ class EgyptianWishlist {
             }
             if (this.elements.totalValueDisplay) {
                 // Format as currency with 2 decimal places
-                const formattedValue = filteredValue.toLocaleString(undefined, { 
+                const formattedValue = filteredValue.toLocaleString('en-US', { 
                     minimumFractionDigits: 2, 
                     maximumFractionDigits: 2 
                 });
@@ -795,14 +750,14 @@ class EgyptianWishlist {
             console.error('Error updating stats:', error);
             // Set default values if there's an error
             if (this.elements.totalItems) this.elements.totalItems.textContent = '0';
-            if (this.elements.totalValue) this.elements.totalValue.textContent = '$0';
+            if (this.elements.totalValue) this.elements.totalValue.textContent = '$0.00';
             if (this.elements.totalItemsDisplay) this.elements.totalItemsDisplay.textContent = '0 of 0';
-            if (this.elements.totalValueDisplay) this.elements.totalValueDisplay.textContent = '$0';
+            if (this.elements.totalValueDisplay) this.elements.totalValueDisplay.textContent = '$0.00';
         }
     }
 
     animateNumber(element, targetValue, isCurrency = false) {
-        const startValue = parseInt(element.textContent.replace(/[^\d]/g, '')) || 0;
+        const startValue = parseFloat(element.textContent.replace(/[^\d.]/g, '')) || 0;
         const duration = 1500; // 1.5 seconds
         const startTime = performance.now();
 
@@ -812,12 +767,15 @@ class EgyptianWishlist {
             
             // Easing function (ease-out)
             const easeOut = 1 - Math.pow(1 - progress, 3);
-            const currentValue = Math.round(startValue + (targetValue - startValue) * easeOut);
+            const currentValue = startValue + (targetValue - startValue) * easeOut;
             
             if (isCurrency) {
-                element.textContent = `$${currentValue.toLocaleString()}`;
+                element.textContent = `$${currentValue.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
             } else {
-                element.textContent = currentValue.toLocaleString();
+                element.textContent = Math.round(currentValue).toLocaleString();
             }
             
             if (progress < 1) {
@@ -902,56 +860,6 @@ class EgyptianWishlist {
         this.saveCartData();
         this.updateBadges();
         this.showNotification(`${addedCount} divine treasures added to cart!`, 'success');
-        if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
-    }
-
-    removeFromWishlist(itemId, showNotification = true) {
-        const item = this.wishlistItems.find(item => item.id === itemId);
-        if (!item) return;
-
-        // Add confirmation for expensive items
-        if (item.price > 5000 && showNotification) {
-            if (!confirm(`Are you sure you want to remove "${item.name}" from your sacred collection?`)) {
-                return;
-            }
-        }
-
-        this.wishlistItems = this.wishlistItems.filter(item => item.id !== itemId);
-        this.saveWishlistData();
-        this.renderWishlist();
-        this.updateBadges();
-        if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
-
-        if (showNotification) {
-            this.showNotification(`${item.name} removed from wishlist`, 'info');
-        }
-    }
-
-    addToWishlist(productId, isFromRecommended = false) {
-        const product = this.recommendedItems.find(p => p.id === productId);
-        if (!product) return;
-
-        // Check if already in wishlist
-        if (this.wishlistItems.find(wishlistItem => wishlistItem.id === productId)) {
-            this.showNotification('Item already in your sacred collection', 'warning');
-            return;
-        }
-
-        // Convert recommended item to wishlist format
-        const wishlistItem = {
-            ...product,
-            sku: `REC-${productId}`,
-            inStock: true,
-            features: ["Recommended", "High Quality"],
-            badges: ["Recommended"],
-            addedDate: new Date()
-        };
-
-        this.wishlistItems.unshift(wishlistItem); // Add to beginning
-        this.saveWishlistData();
-        this.renderWishlist();
-        this.updateBadges();
-        this.showNotification(`${product.name} added to your sacred collection!`, 'success');
         if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
     }
 

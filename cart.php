@@ -1,3 +1,442 @@
+<?php
+// API logic must be at the very top, before any HTML or whitespace
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', 'cart_errors.log');
+
+// Start session
+session_start();
+
+// Include database connection
+try {
+    include 'includes/db.php';
+    if (!isset($pdo)) {
+        throw new Exception('Database connection not established');
+    }
+} catch (Exception $e) {
+    error_log('Database connection error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed']);
+    exit;
+}
+
+// Helper: Check if user is logged in
+function getCurrentUserId() {
+    return isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
+}
+
+// Helper: Get session cart (for guests)
+function getSessionCart() {
+    return isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+}
+
+// Helper: Save session cart
+function saveSessionCart($cart) {
+    foreach ($cart as $i => &$item) {
+        if (!isset($item['id'])) {
+            $item['id'] = uniqid('cart_', true);
+        }
+    }
+    $_SESSION['cart'] = $cart;
+}
+
+// Helper: Find product details
+function getProductDetails($pdo, $product_id) {
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
+        $stmt->execute([$product_id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log('Error getting product details: ' . $e->getMessage());
+        return false;
+    }
+}
+
+// Helper: Log API requests
+function logApiRequest($action, $data = null) {
+    $log = date('Y-m-d H:i:s') . ' - Action: ' . $action;
+    if ($data) {
+        $log .= ' - Data: ' . json_encode($data);
+    }
+    error_log($log);
+}
+
+// --- API/AJAX HANDLING ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    $action = $_GET['action'];
+    $user_id = getCurrentUserId();
+    
+    logApiRequest($action, ['user_id' => $user_id]);
+    
+    if ($action === 'get_cart') {
+        try {
+            if ($user_id) {
+                // Logged-in user - get from database
+                $query = "SELECT ci.id, ci.user_id, ci.product_id, ci.quantity, ci.added_at, 
+                         p.name, p.description, p.price, p.product_sku, p.stock, 
+                         c.name as category_name 
+                         FROM cart_items ci 
+                         JOIN products p ON ci.product_id = p.id 
+                         LEFT JOIN categories c ON p.category = c.id 
+                         WHERE ci.user_id = ? 
+                         ORDER BY ci.added_at DESC";
+                $stmt = $pdo->prepare($query);
+                $stmt->execute([$user_id]);
+                $cart_items = [];
+                
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $cart_items[] = [
+                        'id' => $row['product_id'],
+                        'cart_id' => $row['id'],
+                        'name' => $row['name'],
+                        'description' => $row['description'],
+                        'price' => floatval($row['price']),
+                        'quantity' => intval($row['quantity']),
+                        'sku' => $row['product_sku'],
+                        'category' => $row['category_name'],
+                        'inStock' => $row['stock'] > 0,
+                        'addedAt' => $row['added_at'],
+                        'image' => 'images/1-7-scaled.jpg',
+                        'features' => ['Handcrafted', 'Premium Quality'],
+                        'badges' => ['Featured'],
+                        'maxQuantity' => min($row['stock'], 10),
+                        'availability' => ($row['stock'] > 0 ? 'in-stock' : 'out-of-stock')
+                    ];
+                }
+                
+                echo json_encode(['success' => true, 'cart' => $cart_items]);
+                logApiRequest('get_cart_success', ['user_id' => $user_id, 'items_count' => count($cart_items)]);
+                
+            } else {
+                // Guest user - get from session
+                $cart = getSessionCart();
+                $cart_items = [];
+                
+                foreach ($cart as $item) {
+                    $product = getProductDetails($pdo, $item['product_id']);
+                    if ($product) {
+                        $cart_items[] = [
+                            'id' => $item['id'],
+                            'name' => $product['name'],
+                            'description' => $product['description'],
+                            'price' => floatval($product['price']),
+                            'quantity' => intval($item['quantity']),
+                            'sku' => $product['product_sku'],
+                            'category' => $product['category'],
+                            'inStock' => $product['stock'] > 0,
+                            'addedAt' => $item['added_at'],
+                            'image' => 'images/1-7-scaled.jpg',
+                            'features' => ['Handcrafted', 'Premium Quality'],
+                            'badges' => ['Featured'],
+                            'maxQuantity' => min($product['stock'], 10),
+                            'availability' => ($product['stock'] > 0 ? 'in-stock' : 'out-of-stock')
+                        ];
+                    }
+                }
+                
+                echo json_encode(['success' => true, 'cart' => $cart_items]);
+                logApiRequest('get_cart_success', ['guest' => true, 'items_count' => count($cart_items)]);
+            }
+            
+        } catch (Exception $e) {
+            error_log('Error getting cart: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to get cart items']);
+        }
+        exit;
+    }
+    
+    if ($action === 'get_recommended') {
+        try {
+            // Get recommended items from database
+            $query = "SELECT id, name, description, price, product_sku, stock, category 
+                     FROM products 
+                     WHERE stock > 0 
+                     ORDER BY RAND() 
+                     LIMIT 9";
+            $stmt = $pdo->prepare($query);
+            $stmt->execute();
+            $recommended_items = [];
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $recommended_items[] = [
+                    'id' => intval($row['id']),
+                    'name' => $row['name'],
+                    'description' => $row['description'],
+                    'price' => floatval($row['price']),
+                    'image' => 'images/1-7-scaled.jpg', // Default image
+                    'sku' => $row['product_sku'],
+                    'stock' => intval($row['stock']),
+                    'category' => $row['category']
+                ];
+            }
+            
+            echo json_encode(['success' => true, 'recommended_items' => $recommended_items]);
+            logApiRequest('get_recommended_success', ['items_count' => count($recommended_items)]);
+            
+        } catch (Exception $e) {
+            error_log('Error getting recommended items: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to get recommended items']);
+        }
+        exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $user_id = getCurrentUserId();
+        $data = json_decode(file_get_contents('php://input'), true);
+        $action = $data['action'] ?? '';
+        
+        logApiRequest($action, $data);
+        
+        if ($action === 'add_to_cart') {
+            $product_id = $data['product_id'] ?? null;
+            $quantity = $data['quantity'] ?? 1;
+            
+            if (!$product_id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Product ID is required']);
+                exit;
+            }
+            
+            // Validate product exists
+            $product = getProductDetails($pdo, $product_id);
+            if (!$product) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Product not found']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB cart for logged-in user
+                try {
+                    $check_query = "SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?";
+                    $check_stmt = $pdo->prepare($check_query);
+                    $check_stmt->execute([$user_id, $product_id]);
+                    $existing_item = $check_stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($existing_item) {
+                        $new_quantity = $existing_item['quantity'] + $quantity;
+                        $update_query = "UPDATE cart_items SET quantity = ? WHERE id = ?";
+                        $update_stmt = $pdo->prepare($update_query);
+                        $result = $update_stmt->execute([$new_quantity, $existing_item['id']]);
+                        
+                        if ($result) {
+                            echo json_encode(['success' => true, 'message' => 'Cart updated', 'action' => 'updated']);
+                            logApiRequest('add_to_cart_success', ['user_id' => $user_id, 'product_id' => $product_id, 'action' => 'updated']);
+                        } else {
+                            throw new Exception('Failed to update cart');
+                        }
+                    } else {
+                        $insert_query = "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)";
+                        $insert_stmt = $pdo->prepare($insert_query);
+                        $result = $insert_stmt->execute([$user_id, $product_id, $quantity]);
+                        
+                        if ($result) {
+                            echo json_encode(['success' => true, 'message' => 'Item added to cart', 'action' => 'added']);
+                            logApiRequest('add_to_cart_success', ['user_id' => $user_id, 'product_id' => $product_id, 'action' => 'added']);
+                        } else {
+                            throw new Exception('Failed to add item to cart');
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log('Error adding to cart (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to add item to cart']);
+                }
+            } else {
+                // Session cart for guests
+                try {
+                    $cart = getSessionCart();
+                    $found = false;
+                    
+                    foreach ($cart as &$item) {
+                        if ($item['product_id'] == $product_id) {
+                            $item['quantity'] += $quantity;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$found) {
+                        $cart[] = [
+                            'product_id' => $product_id,
+                            'quantity' => $quantity,
+                            'added_at' => date('Y-m-d H:i:s'),
+                            'id' => uniqid('cart_', true)
+                        ];
+                    }
+                    
+                    saveSessionCart($cart);
+                    echo json_encode(['success' => true, 'message' => 'Item added to cart', 'action' => $found ? 'updated' : 'added']);
+                    logApiRequest('add_to_cart_success', ['guest' => true, 'product_id' => $product_id, 'action' => $found ? 'updated' : 'added']);
+                    
+                } catch (Exception $e) {
+                    error_log('Error adding to cart (session): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to add item to cart']);
+                }
+            }
+            exit;
+        }
+        
+        if ($action === 'update_quantity') {
+            $cart_id = $data['cart_id'] ?? null;
+            $quantity = $data['quantity'] ?? 1;
+            
+            if (!$cart_id || $quantity < 1) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Valid cart ID and quantity are required']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB cart for logged-in user
+                try {
+                    $query = "UPDATE cart_items SET quantity = ? WHERE id = ? AND user_id = ?";
+                    $stmt = $pdo->prepare($query);
+                    $result = $stmt->execute([$quantity, $cart_id, $user_id]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Quantity updated']);
+                        logApiRequest('update_quantity_success', ['user_id' => $user_id, 'cart_id' => $cart_id, 'quantity' => $quantity]);
+                    } else {
+                        throw new Exception('Failed to update quantity');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error updating quantity (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to update quantity']);
+                }
+            } else {
+                // Session cart for guests
+                try {
+                    $cart = getSessionCart();
+                    foreach ($cart as &$item) {
+                        if ($item['id'] == $cart_id) {
+                            $item['quantity'] = $quantity;
+                            break;
+                        }
+                    }
+                    saveSessionCart($cart);
+                    echo json_encode(['success' => true, 'message' => 'Quantity updated']);
+                    logApiRequest('update_quantity_success', ['guest' => true, 'cart_id' => $cart_id, 'quantity' => $quantity]);
+                } catch (Exception $e) {
+                    error_log('Error updating quantity (session): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to update quantity']);
+                }
+            }
+            exit;
+        }
+        
+        if ($action === 'remove_from_cart') {
+            $cart_id = $data['cart_id'] ?? null;
+            $product_id = $data['product_id'] ?? null;
+            
+            if (!$cart_id && !$product_id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Cart item ID is required']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB cart for logged-in user
+                try {
+                    if ($cart_id) {
+                        $query = "DELETE FROM cart_items WHERE id = ? AND user_id = ?";
+                        $stmt = $pdo->prepare($query);
+                        $result = $stmt->execute([$cart_id, $user_id]);
+                    } else {
+                        $query = "DELETE FROM cart_items WHERE user_id = ? AND product_id = ?";
+                        $stmt = $pdo->prepare($query);
+                        $result = $stmt->execute([$user_id, $product_id]);
+                    }
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Item removed from cart']);
+                        logApiRequest('remove_from_cart_success', ['user_id' => $user_id, 'cart_id' => $cart_id, 'product_id' => $product_id]);
+                    } else {
+                        throw new Exception('Failed to remove item from cart');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error removing from cart (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to remove item from cart']);
+                }
+            } else {
+                // Session cart for guests
+                try {
+                    $cart = getSessionCart();
+                    $cart = array_filter($cart, function($item) use ($cart_id, $product_id) {
+                        if ($cart_id) {
+                            return $item['id'] != $cart_id;
+                        } else {
+                            return $item['product_id'] != $product_id;
+                        }
+                    });
+                    saveSessionCart($cart);
+                    echo json_encode(['success' => true, 'message' => 'Item removed from cart']);
+                    logApiRequest('remove_from_cart_success', ['guest' => true, 'cart_id' => $cart_id, 'product_id' => $product_id]);
+                } catch (Exception $e) {
+                    error_log('Error removing from cart (session): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to remove item from cart']);
+                }
+            }
+            exit;
+        }
+        
+        if ($action === 'clear_cart') {
+            if ($user_id) {
+                // DB cart for logged-in user
+                try {
+                    $query = "DELETE FROM cart_items WHERE user_id = ?";
+                    $stmt = $pdo->prepare($query);
+                    $result = $stmt->execute([$user_id]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Cart cleared successfully']);
+                        logApiRequest('clear_cart_success', ['user_id' => $user_id]);
+                    } else {
+                        throw new Exception('Failed to clear cart');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error clearing cart (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to clear cart']);
+                }
+            } else {
+                // Session cart for guests
+                try {
+                    saveSessionCart([]);
+                    echo json_encode(['success' => true, 'message' => 'Cart cleared successfully']);
+                    logApiRequest('clear_cart_success', ['guest' => true]);
+                } catch (Exception $e) {
+                    error_log('Error clearing cart (session): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to clear cart']);
+                }
+            }
+            exit;
+        }
+        
+        // Unknown action
+        http_response_code(400);
+        echo json_encode(['error' => 'Unknown action']);
+        exit;
+        
+    } catch (Exception $e) {
+        error_log('General API error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+        exit;
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,18 +496,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -96,7 +535,7 @@
                         <line x1="3" y1="6" x2="21" y2="6"></line>
                         <path d="M16 10a4 4 0 0 1-8 0"></path>
                     </svg>
-                    <span class="badge" id="cartBadge">3</span>
+                    <span class="badge" id="cartBadge">0</span>
                 </button>
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <span></span>
@@ -112,11 +551,11 @@
         <div class="container">
             <!-- Breadcrumb -->
             <div class="breadcrumb">
-                <a href="index.html">Home</a>
+                <a href="index.php">Home</a>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9,18 15,12 9,6"></polyline>
                 </svg>
-                <a href="shop.html">Shop</a>
+                <a href="shop.php">Shop</a>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9,18 15,12 9,6"></polyline>
                 </svg>
@@ -138,7 +577,7 @@
                 <!-- Cart Items Section -->
                 <div class="cart-items-section">
                     <div class="section-header">
-                        <h2>Items in Cart (<span id="itemCount">3</span>)</h2>
+                        <h2>Items in Cart (<span id="itemCount">0</span>)</h2>
                         <button class="clear-all-btn" id="clearAllBtn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3,6 5,6 21,6"></polyline>
@@ -149,7 +588,7 @@
                     </div>
 
                     <div class="cart-items-container" id="cartItemsContainer">
-                        <!-- Cart items will be rendered here -->
+                        <!-- Cart items will be rendered by JS -->
                     </div>
 
                     <!-- Recommended Items -->
@@ -177,14 +616,14 @@
                         <div class="summary-content">
                             <div class="summary-line">
                                 <span>Subtotal</span>
-                                <span id="subtotalAmount">$23,850</span>
+                                <span id="subtotalAmount">$0.00</span>
                             </div>
                             
                             <div class="summary-divider"></div>
 
                             <div class="summary-line total-line">
                                 <span>Total</span>
-                                <span id="totalAmount">$26,496</span>
+                                <span id="totalAmount">$0.00</span>
                             </div>
                         </div>
 
@@ -196,7 +635,7 @@
                                     <polyline points="12,5 19,12 12,19"></polyline>
                                 </svg>
                             </button>
-                            <a href="shop.html" class="continue-shopping">
+                            <a href="shop.php" class="continue-shopping">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="19" y1="12" x2="5" y2="12"></line>
                                     <polyline points="12,19 5,12 12,5"></polyline>
@@ -256,7 +695,7 @@
                     </div>
                     <h2>Your Cart is Empty</h2>
                     <p>Discover our magnificent collection of authentic Egyptian artifacts and treasures.</p>
-                    <a href="shop.html" class="explore-btn">
+                    <a href="shop.php" class="explore-btn">
                         <span>Explore Collection</span>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -495,23 +934,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -532,93 +971,10 @@
         </div>
     </footer>
 
-    <!-- Cart Sidebar -->
-    <div class="sidebar-backdrop" id="cartBackdrop"></div>
-    <div class="sidebar" id="cartSidebar">
-        <div class="sidebar-header">
-            <h3>Shopping Cart</h3>
-            <button class="sidebar-close" id="cartClose">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="sidebar-content" id="cartContent">
-            <div class="cart-empty" id="cartEmpty">
-                <div class="empty-icon">🛒</div>
-                <h4>Your cart is empty</h4>
-                <p>Add some items to get started</p>
-            </div>
-            <div class="cart-items" id="cartItems"></div>
-        </div>
-        <div class="sidebar-footer" id="cartFooter">
-            <div class="cart-summary">
-                <div class="summary-row">
-                    <span>Subtotal:</span>
-                    <span id="cartSubtotal">$0</span>
-                </div>
-                <div class="summary-row total">
-                    <span>Total:</span>
-                    <span id="cartTotal">$0</span>
-                </div>
-            </div>
-            <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Wishlist Sidebar -->
-    <div class="sidebar-backdrop" id="wishlistBackdrop"></div>
-    <div class="sidebar" id="wishlistSidebar">
-        <div class="sidebar-header">
-            <h3>Wishlist</h3>
-            <button class="sidebar-close" id="wishlistClose">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="sidebar-content" id="wishlistContent">
-            <div class="wishlist-empty" id="wishlistEmpty">
-                <div class="empty-icon">💝</div>
-                <h4>Your wishlist is empty</h4>
-                <p>Save items you love for later</p>
-            </div>
-            <div class="wishlist-items" id="wishlistItems"></div>
-        </div>
-        <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
-            <div class="cart-actions">
-                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="js/auth-manager.js"></script>
+    <?php include 'includes/sidebar.html'; ?>
     <script src="js/sidebar-utils.js"></script>
+    <script src="js/script.js"></script>
     <script src="js/cart-script.js"></script>
-    <script>
-    document.addEventListener('mousedown', (e) => {
-        const cartSidebar = document.getElementById('cartSidebar');
-        const wishlistSidebar = document.getElementById('wishlistSidebar');
-        if (cartSidebar && cartSidebar.classList.contains('active') &&
-            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            cartSidebar.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
-            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            wishlistSidebar.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
-    </script>
+    <script src="js/auth-manager.js"></script>
 </body>
-</html>
+</html> 

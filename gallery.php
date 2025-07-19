@@ -16,9 +16,31 @@
     
     <link rel="stylesheet" href="css/gallery-styles.css">
     <link rel="stylesheet" href="css/sidebar-styles.css">
+    <style>
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+</style>
 
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-pyramid">
+                <img src="images/go3ran_.png" alt="Egyptian Creativity Loading">
+            </div>
+            <div class="loading-text">Egyptian Creativity</div>
+            <div class="loading-subtitle">Loading Ancient Wonders...</div>
+            <div class="loading-progress">
+                <div class="progress-bar"></div>
+            </div>
+            <button class="skip-btn" id="skipBtn">Skip</button>
+        </div>
+    </div>
+
     <!-- Animated Background (Same as Index Page) -->
     <div class="animated-bg">
         <div class="pyramid-bg"></div>
@@ -40,36 +62,21 @@
         </div>
     </div>
 
-    <!-- Loading Screen -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="loading-pyramid">
-                <img src="images/go3ran_.png" alt="Egyptian Creativity Loading">
-            </div>
-            <div class="loading-text">Egyptian Creativity</div>
-            <div class="loading-subtitle">Loading Ancient Wonders...</div>
-            <div class="loading-progress">
-                <div class="progress-bar"></div>
-            </div>
-            <button class="skip-btn" id="skipBtn">Skip</button>
-        </div>
-    </div>
-
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link active">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link active">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -133,6 +140,90 @@
                 <div class="suggestion-item">Sacred Jewelry</div>
                 <div class="suggestion-item">Ancient Decorations</div>
                 <div class="suggestion-item">Treasure Boxes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Preview Modal -->
+    <div class="product-preview-modal" id="productPreviewModal">
+        <div class="modal-backdrop" id="productPreviewBackdrop"></div>
+        <div class="modal-content product-preview-content">
+            <button class="modal-close product-preview-close" id="productPreviewClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            
+            <div class="product-preview-container">
+                <!-- Left Section - Product Image -->
+                <div class="product-preview-image-section">
+                    <div class="product-image-container">
+                        <img src="" alt="Product Image" id="previewProductImage" class="preview-product-image">
+                        <div class="product-watermark">
+                            <div class="watermark-text">
+                                <div class="watermark-main">THE EGYPTIAN CREATIVITY</div>
+                                <div class="watermark-sub">EGYPTIAN REPLICA ANTIQUE</div>
+                            </div>
+                            <div class="watermark-icon">𓂀</div>
+                        </div>
+                        <button class="image-nav-btn image-prev" id="imagePrev">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15,18 9,12 15,6"></polyline>
+                            </svg>
+                        </button>
+                        <button class="image-nav-btn image-next" id="imageNext">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9,18 15,12 9,6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Right Section - Product Details -->
+                <div class="product-preview-details-section">
+                    <div class="product-category-tag" id="previewProductCategory">JEWELRY</div>
+                    <h2 class="product-preview-title" id="previewProductTitle">EYE OF HORUS RING</h2>
+                    <p class="product-preview-description" id="previewProductDescription">
+                        Sacred Eye of Horus ring crafted in gold and turquoise, symbolizing protection and royal power.
+                    </p>
+                    
+                    <div class="product-specifications" id="previewProductSpecs">
+                        <div class="spec-item">
+                            <span class="spec-label">Materials:</span>
+                            <span class="spec-value">Sterling Silver, Gold Plating, Turquoise Inlay</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Sizes:</span>
+                            <span class="spec-value">Available in all sizes</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Weight:</span>
+                            <span class="spec-value">12g</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Symbolism:</span>
+                            <span class="spec-value">Protection and Divine Power</span>
+                        </div>
+                    </div>
+                    
+                    <div class="product-preview-actions">
+                        <button class="action-btn add-to-cart-btn" id="previewAddToCart">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            ADD TO CART
+                        </button>
+                        <button class="action-btn add-to-wishlist-btn" id="previewAddToWishlist">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            ADD TO WISHLIST
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -235,19 +326,43 @@
     </section>
 
     <!-- Gallery Grid Section -->
+    <?php
+    include 'includes/db.php';
+    // Fetch all gallery items
+    $gallery_items = [];
+    $stmt = $pdo->query("SELECT * FROM gallery_items ORDER BY created_at DESC");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $gallery_items[] = $row;
+    }
+    ?>
     <section class="gallery-grid-section" id="gallery">
         <div class="container">
             <div class="gallery-grid" id="galleryGrid">
-                <!-- Gallery items populated by JavaScript -->
+                <?php foreach (
+                    $gallery_items as $item): ?>
+                    <div class="gallery-item" data-id="<?php echo htmlspecialchars($item['id']); ?>">
+                        <div class="gallery-item-image">
+                            <img src="<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>" loading="lazy" />
+                            <div class="gallery-item-overlay"></div>
+                            <div class="gallery-item-category"><?php echo htmlspecialchars($item['category']); ?></div>
+                            <div class="gallery-item-actions">
+                                <button class="gallery-action-btn view-btn" title="Quick View" onclick="openProductPreview(<?php echo $item['id']; ?>)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </button>
+                                <button class="gallery-action-btn add-to-wishlist-btn" title="Add to Wishlist" onclick="addToWishlist(<?php echo $item['id']; ?>)">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
-            <div class="load-more-container">
-                <button class="btn btn-outline" id="loadMoreBtn">
-                    Load More Treasures
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6,9 12,15 18,9"></polyline>
-                    </svg>
-                </button>
-            </div>
+            <!-- Load More button can be handled with PHP pagination or AJAX if needed -->
         </div>
     </section>
 
@@ -349,23 +464,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -386,75 +501,14 @@
         </div>
     </footer>
 
-    <!-- Cart Sidebar -->
-    <div class="sidebar-backdrop" id="cartBackdrop"></div>
-    <div class="sidebar" id="cartSidebar">
-        <div class="sidebar-header">
-            <h3>Shopping Cart</h3>
-            <button class="sidebar-close" id="cartClose">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="sidebar-content" id="cartContent">
-            <div class="cart-empty" id="cartEmpty">
-                <div class="empty-icon">🛒</div>
-                <h4>Your cart is empty</h4>
-                <p>Add some treasures to get started</p>
-            </div>
-            <div class="cart-items" id="cartItems"></div>
-        </div>
-        <div class="sidebar-footer" id="cartFooter" style="display: none;">
-            <div class="cart-summary">
-                <div class="summary-row">
-                    <span>Subtotal:</span>
-                    <span id="cartSubtotal">$0</span>
-                </div>
-                <div class="summary-row total">
-                    <span>Total:</span>
-                    <span id="cartTotal">$0</span>
-                </div>
-            </div>
-            <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Wishlist Sidebar -->
-    <div class="sidebar-backdrop" id="wishlistBackdrop"></div>
-    <div class="sidebar" id="wishlistSidebar">
-        <div class="sidebar-header">
-            <h3>Wishlist</h3>
-            <button class="sidebar-close" id="wishlistClose">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-        <div class="sidebar-content" id="wishlistContent">
-            <div class="wishlist-empty" id="wishlistEmpty">
-                <div class="empty-icon">💝</div>
-                <h4>Your wishlist is empty</h4>
-                <p>Save items you love for later</p>
-            </div>
-            <div class="wishlist-items" id="wishlistItems"></div>
-        </div>
-        <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
-            <div class="cart-actions">
-                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
-            </div>
-        </div>
-    </div>
+    <?php include 'includes/sidebar.html'; ?>
 
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
 
     <script src="js/auth-manager.js"></script>
+    <script src="js/script.js"></script>
+
     <script src="js/sidebar-utils.js"></script>
     <script src="js/products-data.js"></script>
     <script src="js/gallery-script.js"></script>

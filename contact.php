@@ -1,3 +1,67 @@
+<?php 
+include 'includes/db.php';
+
+// Start session for authentication
+session_start();
+
+// Handle contact form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $subject = trim($_POST['subject'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+    
+    $response = ['success' => false, 'message' => ''];
+    
+    if (empty($name) || empty($email) || empty($subject) || empty($message)) {
+        $response['message'] = 'Please fill in all fields.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $response['message'] = 'Please enter a valid email address.';
+    } else {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message, sent_at) VALUES (?, ?, ?, ?, NOW())");
+            if ($stmt->execute([$name, $email, $subject, $message])) {
+                $response['success'] = true;
+                $response['message'] = 'Thank you for your message! We will get back to you soon.';
+            } else {
+                $response['message'] = 'Failed to send message. Please try again.';
+            }
+        } catch (Exception $e) {
+            $response['message'] = 'An error occurred. Please try again.';
+        }
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+
+// Handle newsletter subscription
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) {
+    $email = trim($_POST['newsletter_email'] ?? '');
+    $response = ['success' => false, 'message' => ''];
+    
+    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO newsletter_subscriptions (email, status, subscribed_at) VALUES (?, 'subscribed', NOW()) ON DUPLICATE KEY UPDATE status='subscribed', subscribed_at=NOW()");
+            if ($stmt->execute([$email])) {
+                $response['success'] = true;
+                $response['message'] = 'Thank you for subscribing to our newsletter!';
+            } else {
+                $response['message'] = 'Subscription failed. Please try again.';
+            }
+        } catch (Exception $e) {
+            $response['message'] = 'An error occurred. Please try again.';
+        }
+    } else {
+        $response['message'] = 'Please enter a valid email address.';
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,6 +83,63 @@
 
 </head>
 <body>
+<?php if ($skip_loading): ?>
+<script>window.skipContactLoading = true;</script>
+<?php endif; ?>
+
+<!-- Top-right notification for contact and newsletter forms -->
+<?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+    <?php if (isset($contact_success) && $contact_success): ?>
+        <div class="notification success contact-topright" id="contactTopRightMsg">Your sacred message has been sent successfully! Our master craftsmen will respond within 24 hours.</div>
+        <script>
+        setTimeout(function() {
+            var el = document.getElementById('contactTopRightMsg');
+            if (el) {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(function() { el.remove(); }, 600);
+            }
+        }, 4000);
+        </script>
+    <?php elseif (isset($contact_error) && $contact_error): ?>
+        <div class="notification error contact-topright" id="contactTopRightMsg"><?= htmlspecialchars($contact_error) ?></div>
+        <script>
+        setTimeout(function() {
+            var el = document.getElementById('contactTopRightMsg');
+            if (el) {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(function() { el.remove(); }, 600);
+            }
+        }, 4000);
+        </script>
+    <?php endif; ?>
+    <?php if (isset($newsletter_success) && $newsletter_success): ?>
+        <div class="notification success contact-topright" id="newsletterTopRightMsg">Welcome to the Egyptian Creativity family! You will receive ancient wisdom and exclusive offers.</div>
+        <script>
+        setTimeout(function() {
+            var el = document.getElementById('newsletterTopRightMsg');
+            if (el) {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(function() { el.remove(); }, 600);
+            }
+        }, 4000);
+        </script>
+    <?php elseif (isset($newsletter_error) && $newsletter_error): ?>
+        <div class="notification error contact-topright" id="newsletterTopRightMsg"><?= htmlspecialchars($newsletter_error) ?></div>
+        <script>
+        setTimeout(function() {
+            var el = document.getElementById('newsletterTopRightMsg');
+            if (el) {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(function() { el.remove(); }, 600);
+            }
+        }, 4000);
+        </script>
+    <?php endif; ?>
+<?php endif; ?>
     <!-- Animated Background (Same as Index Page) -->
     <div class="animated-bg">
         <div class="pyramid-bg"></div>
@@ -58,18 +179,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link active">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link active">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -258,7 +379,7 @@
                             <p>Share your inquiries about our ancient treasures. Our master craftsmen and experts will respond with the wisdom of the pharaohs.</p>
                         </div>
                         
-                        <form id="contactForm" class="contact-form">
+                        <form id="contactForm" class="contact-form" method="post" action="contact.php">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="name">Sacred Name *</label>
@@ -505,8 +626,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -533,7 +654,7 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+                <button class="btn btn-outline" onclick="window.location.href='wishlist.php'">View Wishlist</button>
             </div>
         </div>
     </div>
@@ -545,9 +666,9 @@
                 <div class="newsletter-icon">𓊃</div>
                 <h2 class="newsletter-title">Stay Connected with Ancient Wisdom</h2>
                 <p class="newsletter-subtitle">Be the first to discover new collections and exclusive pieces</p>
-                <form class="newsletter-form" id="newsletterForm">
+                <form class="newsletter-form" id="newsletterForm" method="post" action="contact.php">
                     <div class="form-group">
-                        <input type="email" class="newsletter-input" placeholder="Enter your email address" required>
+                        <input type="email" class="newsletter-input" name="newsletter_email" placeholder="Enter your email address" required>
                         <button type="submit" class="btn btn-primary newsletter-btn">
                             Subscribe
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -556,6 +677,11 @@
                             </svg>
                         </button>
                     </div>
+                    <?php if (isset($newsletter_success) && $newsletter_success): ?>
+                        <div class="notification success" style="margin-top: 1em;">Welcome to the Egyptian Creativity family! You will receive ancient wisdom and exclusive offers.</div>
+                    <?php elseif (isset($newsletter_error) && $newsletter_error): ?>
+                        <div class="notification error" style="margin-top: 1em;"><?= htmlspecialchars($newsletter_error) ?></div>
+                    <?php endif; ?>
                 </form>
             </div>
         </div>
@@ -608,23 +734,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -647,6 +773,8 @@
 
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
+    <?php include 'includes/sidebar.html'; ?>
+    <script src="js/script.js"></script>
 
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>
@@ -672,5 +800,6 @@
         }
     });
     </script>
+<?php include 'includes/sidebar.html'; ?>
 </body>
 </html>

@@ -142,9 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeContent();
   initializeSearchModal();
   initializeScrollAnimations();
-  initializeSidebars();
-  updateCartBadge();
-  updateWishlistBadge();
   ensureSidebarsClosed();
   
   console.log('🏺 Egyptian Creativity About page with Index animations initialized successfully!');
@@ -446,48 +443,10 @@ function changeStory(index) {
 
 // Initialize Content Sections
 function initializeContent() {
-  renderMasterpieces();
+  // renderMasterpieces(); // Disabled, now rendered by PHP
   renderValues();
-  renderTeam();
+  // renderTeam(); // Disabled, now rendered by PHP
   initializeScrollAnimations();
-}
-
-// Render Masterpieces Section with Auto-Scroll
-function renderMasterpieces() {
-  const masterpiecesCarousel = document.getElementById('masterpiecesCarousel');
-  if (!masterpiecesCarousel) return;
-
-  // Double the array for seamless infinite scroll
-  const extendedMasterpieces = [...masterpiecesData, ...masterpiecesData];
-
-  const masterpiecesHTML = `
-    <div class="masterpieces-track">
-      ${extendedMasterpieces.map(masterpiece => `
-        <div class="masterpiece-card">
-          <div class="masterpiece-image">
-            <img src="${masterpiece.image}" alt="${masterpiece.title}" loading="lazy">
-            <div class="masterpiece-overlay"></div>
-          </div>
-          <div class="masterpiece-info">
-            <h3 class="masterpiece-title">${masterpiece.title}</h3>
-            <p class="masterpiece-description">${masterpiece.description}</p>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-
-  masterpiecesCarousel.innerHTML = masterpiecesHTML;
-
-  // Pause animation on hover
-  const track = masterpiecesCarousel.querySelector('.masterpieces-track');
-  track.addEventListener('mouseenter', () => {
-    track.style.animationPlayState = 'paused';
-  });
-  
-  track.addEventListener('mouseleave', () => {
-    track.style.animationPlayState = 'running';
-  });
 }
 
 // Render Values Section
@@ -536,6 +495,7 @@ function getIconPath(iconName) {
   return icons[iconName] || '';
 }
 
+
 // Initialize Scroll Animations
 function initializeScrollAnimations() {
   const observerOptions = {
@@ -567,190 +527,6 @@ function ensureSidebarsClosed() {
   sidebars.forEach(sidebar => {
     sidebar.classList.remove('active');
   });
-}
-
-// Initialize Sidebars
-function initializeSidebars() {
-  const cartBtn = document.getElementById('cartBtn');
-  const wishlistBtn = document.getElementById('wishlistBtn');
-  const cartSidebar = document.getElementById('cartSidebar');
-  const wishlistSidebar = document.getElementById('wishlistSidebar');
-  const cartClose = document.getElementById('cartClose');
-  const wishlistClose = document.getElementById('wishlistClose');
-
-  function openSidebar(sidebar) {
-    if (sidebar) sidebar.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeSidebar(sidebar) {
-    if (sidebar) sidebar.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  if (cartBtn && cartSidebar) {
-    cartBtn.addEventListener('click', () => {
-      openSidebar(cartSidebar);
-      renderCartSidebar();
-    });
-  }
-
-  if (wishlistBtn && wishlistSidebar) {
-    wishlistBtn.addEventListener('click', () => {
-      openSidebar(wishlistSidebar);
-      renderWishlistSidebar();
-    });
-  }
-
-  if (cartClose && cartSidebar) {
-    cartClose.addEventListener('click', () => closeSidebar(cartSidebar));
-  }
-
-  if (wishlistClose && wishlistSidebar) {
-    wishlistClose.addEventListener('click', () => closeSidebar(wishlistSidebar));
-  }
-
-  // Close sidebar when clicking outside
-  document.addEventListener('mousedown', (e) => {
-    if (cartSidebar && cartSidebar.classList.contains('active') && 
-        !cartSidebar.contains(e.target) && !cartBtn.contains(e.target)) {
-      closeSidebar(cartSidebar);
-    }
-    if (wishlistSidebar && wishlistSidebar.classList.contains('active') && 
-        !wishlistSidebar.contains(e.target) && !wishlistBtn.contains(e.target)) {
-      closeSidebar(wishlistSidebar);
-    }
-  });
-
-  // ESC key closes any open sidebar
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      if (cartSidebar && cartSidebar.classList.contains('active')) closeSidebar(cartSidebar);
-      if (wishlistSidebar && wishlistSidebar.classList.contains('active')) closeSidebar(wishlistSidebar);
-    }
-  });
-}
-
-// Cart Functions
-function updateCartBadge() {
-  const cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-  const badge = document.getElementById('cartBadge');
-  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-  if (badge) {
-    badge.textContent = totalItems;
-    badge.style.display = totalItems > 0 ? 'flex' : 'none';
-  }
-}
-
-function updateWishlistBadge() {
-  const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-  const badge = document.getElementById('wishlistBadge');
-  if (badge) {
-    badge.textContent = wishlist.length;
-    badge.style.display = wishlist.length > 0 ? 'flex' : 'none';
-  }
-}
-
-function renderCartSidebar() {
-  const cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-  const cartEmpty = document.getElementById('cartEmpty');
-  const cartItems = document.getElementById('cartItems');
-  const cartFooter = document.getElementById('cartFooter');
-  const cartSubtotal = document.getElementById('cartSubtotal');
-  const cartTotal = document.getElementById('cartTotal');
-  
-  if (!cartEmpty || !cartItems || !cartFooter || !cartSubtotal || !cartTotal) return;
-  
-  if (cart.length === 0) {
-    cartEmpty.style.display = 'block';
-    cartItems.style.display = 'none';
-    cartFooter.style.display = 'none';
-    cartSubtotal.textContent = '$0';
-    cartTotal.textContent = '$0';
-  } else {
-    cartEmpty.style.display = 'none';
-    cartItems.style.display = 'block';
-    cartFooter.style.display = 'block';
-    
-    cartItems.innerHTML = cart.map(item => `
-      <div class="cart-item">
-        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-        <div class="cart-item-details">
-          <h4 class="cart-item-title">${item.name}</h4>
-          <div class="cart-item-price">${item.price} x ${item.quantity}</div>
-        </div>
-        <button class="cart-item-remove" onclick="removeFromCart(${item.id})" title="Remove item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3,6 5,6 21,6"></polyline>
-            <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-          </svg>
-        </button>
-      </div>
-    `).join('');
-    // Calculate subtotal and total
-    let subtotal = 0;
-    cart.forEach(item => {
-      // Remove $ and commas from price, convert to number
-      let price = 0;
-      if (typeof item.price === 'string') {
-        price = parseFloat(item.price.replace(/[$,]/g, ''));
-      } else {
-        price = item.price;
-      }
-      subtotal += price * (item.quantity || 1);
-    });
-    cartSubtotal.textContent = `$${subtotal.toLocaleString()}`;
-    cartTotal.textContent = `$${subtotal.toLocaleString()}`;
-  }
-}
-
-function renderWishlistSidebar() {
-  const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-  const wishlistEmpty = document.getElementById('wishlistEmpty');
-  const wishlistItems = document.getElementById('wishlistItems');
-  
-  if (!wishlistEmpty || !wishlistItems) return;
-  
-  if (wishlist.length === 0) {
-    wishlistEmpty.style.display = 'block';
-    wishlistItems.style.display = 'none';
-  } else {
-    wishlistEmpty.style.display = 'none';
-    wishlistItems.style.display = 'block';
-    
-    wishlistItems.innerHTML = wishlist.map(item => `
-      <div class="wishlist-item">
-        <img src="${item.image}" alt="${item.name}" class="wishlist-item-image">
-        <div class="wishlist-item-details">
-          <h4 class="wishlist-item-title">${item.name}</h4>
-          <div class="wishlist-item-price">${item.price}</div>
-        </div>
-        <button class="wishlist-item-remove" onclick="removeFromWishlist(${item.id})" title="Remove from wishlist">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
-        </button>
-      </div>
-    `).join('');
-  }
-}
-
-function removeFromCart(productId) {
-  let cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-  cart = cart.filter(item => item.id !== productId);
-  localStorage.setItem('egyptianLuxuryCart', JSON.stringify(cart));
-  updateCartBadge();
-  renderCartSidebar();
-  showNotification('Item removed from cart', 'info');
-}
-
-function removeFromWishlist(productId) {
-  let wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-  wishlist = wishlist.filter(item => item.id !== productId);
-  localStorage.setItem('egyptianWishlist', JSON.stringify(wishlist));
-  updateWishlistBadge();
-  renderWishlistSidebar();
-  showNotification('Item removed from wishlist', 'info');
 }
 
 // Show notification
@@ -831,16 +607,6 @@ document.getElementById('userBtn')?.addEventListener('click', () => {
     window.location.href = 'profile.html';
   } else {
     showNotification('You must login first to access your profile', 'error');
-  }
-});
-
-// Auto-refresh badges when localStorage changes (cross-tab sync)
-window.addEventListener('storage', (event) => {
-  if (event.key === 'egyptianLuxuryCart') {
-    updateCartBadge();
-  }
-  if (event.key === 'egyptianWishlist') {
-    updateWishlistBadge();
   }
 });
 

@@ -1245,6 +1245,8 @@ section {
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
+  z-index: 2; /* Always on top */
+  pointer-events: none; /* Not clickable */
 }
 
 .card-content {
@@ -1778,6 +1780,19 @@ section {
       grid-template-columns: 1fr 1fr;
       gap: 2rem;
   }
+  .footer-content {
+    justify-items: center;
+  }
+  .footer-section:first-child {
+    align-items: center;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  .footer-social {
+    justify-content: center !important;
+  }
 
   .testimonial-card {
       min-width: 350px;
@@ -1872,6 +1887,19 @@ section {
       grid-template-columns: 1fr;
       text-align: center;
       gap: 2rem;
+  }
+  .footer-content {
+    justify-items: center;
+  }
+  .footer-section:first-child {
+    align-items: center;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  .footer-social {
+    justify-content: center !important;
   }
 
   .form-group {

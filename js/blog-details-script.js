@@ -194,82 +194,110 @@ function initializeUserButton() {
 function initializeCart() {
     if (cartBtn && cartSidebar) {
         cartBtn.addEventListener('click', () => {
-            cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
             openSidebar(cartSidebar);
-            renderCartSidebar();
+            window.renderCartSidebar();
         });
     }
 }
 
-function updateCartBadge() {
-    // Always reload cart from localStorage to sync with cart page
-    cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-    const badge = document.getElementById('cartBadge');
-    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    if (badge) {
-        badge.textContent = totalItems;
-        badge.style.display = totalItems > 0 ? 'flex' : 'none';
-    }
-}
-
-function addToCart(productId) {
-    const product = getProductById(productId);
-    if (product) {
-        const existingItem = cart.find(item => item.id === productId);
-        if (existingItem) {
-            existingItem.quantity += 1;
-        } else {
-            cart.push({
-                ...product,
-                quantity: 1
-            });
+async function updateCartBadge() {
+    try {
+        const response = await fetch('cart.php?action=get_cart');
+        const data = await response.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('cartBadge');
+            const totalItems = data.items.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+            if (badge) {
+                badge.textContent = totalItems;
+                badge.style.display = totalItems > 0 ? 'flex' : 'none';
+            }
         }
-        saveCart();
-        updateCartBadge();
-        showNotification(`${product.name} added to cart!`, 'success');
+    } catch (error) {
+        console.error('Error updating cart badge:', error);
     }
 }
 
-function saveCart() {
-    localStorage.setItem('egyptianLuxuryCart', JSON.stringify(cart));
+async function addToCart(productId) {
+    try {
+        const response = await fetch('cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_to_cart',
+                product_id: productId,
+                quantity: 1
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification(data.message || 'Item added to cart!', 'success');
+            updateCartBadge();
+        } else {
+            showNotification(data.error || 'Failed to add to cart', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        showNotification('Error adding to cart', 'error');
+    }
 }
 
 // Wishlist Functions
 function initializeWishlist() {
     if (wishlistBtn && wishlistSidebar) {
         wishlistBtn.addEventListener('click', () => {
-            wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
             openSidebar(wishlistSidebar);
             renderWishlistSidebar();
         });
     }
 }
 
-function updateWishlistBadge() {
-    if (wishlistBadge) {
-        wishlistBadge.textContent = wishlist.length;
-        wishlistBadge.style.display = wishlist.length > 0 ? 'flex' : 'none';
-    }
-}
-
-function toggleWishlist(productId) {
-    const product = getProductById(productId);
-    if (product) {
-        const existingIndex = wishlist.findIndex(item => item.id === productId);
-        if (existingIndex > -1) {
-            wishlist.splice(existingIndex, 1);
-            showNotification(`${product.name} removed from wishlist!`, 'info');
-        } else {
-            wishlist.push(product);
-            showNotification(`${product.name} added to wishlist!`, 'success');
+async function updateWishlistBadge() {
+    try {
+        const response = await fetch('wishlist.php?action=get_wishlist');
+        const data = await response.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('wishlistBadge');
+            if (badge) {
+                badge.textContent = data.items.length;
+                badge.style.display = data.items.length > 0 ? 'flex' : 'none';
+            }
         }
-        saveWishlist();
-        updateWishlistBadge();
+    } catch (error) {
+        console.error('Error updating wishlist badge:', error);
     }
 }
 
-function saveWishlist() {
-    localStorage.setItem('egyptianWishlist', JSON.stringify(wishlist));
+async function toggleWishlist(productId) {
+    try {
+        const response = await fetch('wishlist.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_to_wishlist',
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification(data.message || 'Item added to wishlist!', 'success');
+            updateWishlistBadge();
+        } else {
+            showNotification(data.message || 'Failed to add to wishlist', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        showNotification('Error adding to wishlist', 'error');
+    }
 }
 
 // Helper Functions
@@ -455,46 +483,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Render Cart Sidebar
-function renderCartSidebar() {
-    const cartEmpty = document.getElementById('cartEmpty');
-    const cartItems = document.getElementById('cartItems');
-    const cartFooter = document.getElementById('cartFooter');
-    if (!cartEmpty || !cartItems || !cartFooter) return;
-    
-    if (cart.length === 0) {
-        cartEmpty.style.display = 'block';
-        cartItems.style.display = 'none';
-        cartFooter.style.display = 'none';
-    } else {
-        cartEmpty.style.display = 'none';
-        cartItems.style.display = 'block';
-        cartFooter.style.display = 'block';
-        cartItems.innerHTML = cart.map(item => `
-            <div class="cart-item">
-                <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                <div class="cart-item-details">
-                    <h4 class="cart-item-title">${item.name}</h4>
-                    <div class="cart-item-price">${item.price} x ${item.quantity}</div>
-                </div>
-                <button class="cart-item-remove" onclick="removeFromCartSidebar(${item.id})" title="Remove item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3,6 5,6 21,6"></polyline>
-                        <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                    </svg>
-                </button>
-            </div>
-        `).join('');
-        // Calculate subtotal and total using numeric price
-        const subtotal = cart.reduce((sum, item) => {
-            let priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^\d.]/g, ''));
-            return sum + (priceNum * item.quantity);
-        }, 0);
-        const subtotalEl = document.getElementById('cartSubtotal');
-        const totalEl = document.getElementById('cartTotal');
-        if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString()}`;
-        if (totalEl) totalEl.textContent = `$${subtotal.toLocaleString()}`;
-    }
-}
+// Remove the local function renderCartSidebar() { ... }
+// Instead, always call window.renderCartSidebar() when needed
 
 function removeFromCartSidebar(productId) {
     const index = cart.findIndex(item => item.id === productId);
@@ -502,7 +492,7 @@ function removeFromCartSidebar(productId) {
         cart.splice(index, 1);
         updateCartBadge();
         saveCart();
-        renderCartSidebar();
+        window.renderCartSidebar();
     }
 }
 

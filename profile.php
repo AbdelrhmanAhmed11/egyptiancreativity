@@ -1,3 +1,461 @@
+<?php 
+// API logic must be at the very top, before any HTML or whitespace
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', 'profile_errors.log');
+
+// Start session for authentication
+session_start();
+
+// Include database connection
+try {
+    include 'includes/db.php';
+    if (!isset($pdo)) {
+        throw new Exception('Database connection not established');
+    }
+} catch (Exception $e) {
+    error_log('Database connection error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed']);
+    exit;
+}
+
+// Helper: Check if user is logged in
+function getCurrentUserId() {
+    return isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
+}
+
+// Helper: Log API requests
+function logApiRequest($action, $data = null) {
+    $log = date('Y-m-d H:i:s') . ' - Profile Action: ' . $action;
+    if ($data) {
+        $log .= ' - Data: ' . json_encode($data);
+    }
+    error_log($log);
+}
+
+// Helper: Validate user data
+function validateUserData($data) {
+    $errors = [];
+    
+    if (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+        $errors[] = 'Invalid email format';
+    }
+    
+    if (isset($data['phone']) && !preg_match('/^[\+]?[1-9][\d]{0,15}$/', $data['phone'])) {
+        $errors[] = 'Invalid phone number format';
+    }
+    
+    if (isset($data['full_name']) && strlen($data['full_name']) > 100) {
+        $errors[] = 'Full name too long (max 100 characters)';
+    }
+    
+    return $errors;
+}
+
+// Handle API requests
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    
+    $action = $_GET['action'];
+    $user_id = getCurrentUserId();
+    
+    logApiRequest($action, ['user_id' => $user_id]);
+    
+    switch ($action) {
+        case 'get_profile':
+            try {
+                if (!$user_id) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'User not authenticated']);
+                    exit;
+                }
+                
+                $sql = "SELECT id, username, email, full_name, phone, profile_image, created_at, updated_at 
+                        FROM users WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$user_id]);
+            $user = $stmt->fetch();
+            
+            if ($user) {
+                    // Get user addresses
+                    $address_sql = "SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC";
+                    $address_stmt = $pdo->prepare($address_sql);
+                    $address_stmt->execute([$user_id]);
+                    $addresses = $address_stmt->fetchAll();
+                    
+                    // Get user stats
+                    $stats_sql = "SELECT 
+                                    (SELECT COUNT(*) FROM cart_items WHERE user_id = ?) as cart_items,
+                                    (SELECT COUNT(*) FROM wishlist_items WHERE user_id = ?) as wishlist_items,
+                                    (SELECT COUNT(*) FROM orders WHERE user_id = ?) as total_orders";
+                    $stats_stmt = $pdo->prepare($stats_sql);
+                    $stats_stmt->execute([$user_id, $user_id, $user_id]);
+                    $stats = $stats_stmt->fetch();
+                    
+                    $profile_data = [
+                        'user' => $user,
+                        'addresses' => $addresses,
+                        'stats' => $stats
+                    ];
+                    
+                    echo json_encode(['success' => true, 'profile' => $profile_data]);
+                    logApiRequest('get_profile_success', ['user_id' => $user_id]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['error' => 'User not found']);
+                    logApiRequest('get_profile_not_found', ['user_id' => $user_id]);
+                }
+            } catch (Exception $e) {
+                error_log('Error getting profile: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to get profile']);
+            }
+            exit;
+            
+        case 'get_orders':
+            try {
+                if (!$user_id) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'User not authenticated']);
+            exit;
+    }
+                
+                $sql = "SELECT o.*, COUNT(oi.id) as item_count 
+                        FROM orders o 
+                        LEFT JOIN order_items oi ON o.id = oi.order_id 
+                        WHERE o.user_id = ? 
+                        GROUP BY o.id 
+                        ORDER BY o.created_at DESC";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$user_id]);
+                $orders = $stmt->fetchAll();
+                
+                echo json_encode(['success' => true, 'orders' => $orders]);
+                logApiRequest('get_orders_success', ['user_id' => $user_id, 'count' => count($orders)]);
+                
+            } catch (Exception $e) {
+                error_log('Error getting orders: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to get orders']);
+            }
+            exit;
+            
+        case 'get_addresses':
+            try {
+                if (!$user_id) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'User not authenticated']);
+                    exit;
+                }
+                
+                $sql = "SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$user_id]);
+                $addresses = $stmt->fetchAll();
+                
+                echo json_encode(['success' => true, 'addresses' => $addresses]);
+                logApiRequest('get_addresses_success', ['user_id' => $user_id, 'count' => count($addresses)]);
+                
+            } catch (Exception $e) {
+                error_log('Error getting addresses: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to get addresses']);
+            }
+            exit;
+    }
+}
+
+// Handle POST requests (update profile)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    
+    try {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $action = $data['action'] ?? '';
+        $user_id = getCurrentUserId();
+        
+        logApiRequest($action, $data);
+        
+        if (!$user_id) {
+            http_response_code(401);
+            echo json_encode(['error' => 'User not authenticated']);
+            exit;
+        }
+    
+    switch ($action) {
+        case 'update_profile':
+                try {
+            $full_name = $data['full_name'] ?? '';
+            $phone = $data['phone'] ?? '';
+                    $email = $data['email'] ?? '';
+                    
+                    // Validate data
+                    $validation_errors = validateUserData([
+                        'full_name' => $full_name,
+                        'phone' => $phone,
+                        'email' => $email
+                    ]);
+                    
+                    if (!empty($validation_errors)) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Validation failed', 'details' => $validation_errors]);
+                        exit;
+                    }
+                    
+                    // Check if email is already taken by another user
+                    if ($email) {
+                        $check_sql = "SELECT id FROM users WHERE email = ? AND id != ?";
+                        $check_stmt = $pdo->prepare($check_sql);
+                        $check_stmt->execute([$email, $user_id]);
+                        if ($check_stmt->fetch()) {
+                            http_response_code(400);
+                            echo json_encode(['error' => 'Email already taken']);
+                            exit;
+                        }
+                    }
+                    
+                    $sql = "UPDATE users SET full_name = ?, phone = ?, email = ?, updated_at = NOW() WHERE id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $result = $stmt->execute([$full_name, $phone, $email, $user_id]);
+                    
+                    if ($result) {
+                echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+                        logApiRequest('update_profile_success', ['user_id' => $user_id]);
+                    } else {
+                        throw new Exception('Failed to update profile');
+                    }
+            } catch (Exception $e) {
+                    error_log('Error updating profile: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to update profile']);
+            }
+                exit;
+                
+            case 'add_address':
+                try {
+                    $address_data = [
+                        'recipient_name' => $data['recipient_name'] ?? '',
+                        'phone' => $data['phone'] ?? '',
+                        'address_line1' => $data['address_line1'] ?? '',
+                        'address_line2' => $data['address_line2'] ?? '',
+                        'city' => $data['city'] ?? '',
+                        'state' => $data['state'] ?? '',
+                        'postal_code' => $data['postal_code'] ?? '',
+                        'country' => $data['country'] ?? '',
+                        'is_default' => $data['is_default'] ?? false
+                    ];
+                    
+                    // Validate required fields
+                    if (empty($address_data['recipient_name']) || empty($address_data['address_line1']) || 
+                        empty($address_data['city']) || empty($address_data['country'])) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Required address fields missing']);
+                        exit;
+                    }
+                    
+                    // If this is default, unset other defaults
+                    if ($address_data['is_default']) {
+                        $update_sql = "UPDATE addresses SET is_default = 0 WHERE user_id = ?";
+                        $update_stmt = $pdo->prepare($update_sql);
+                        $update_stmt->execute([$user_id]);
+                    }
+                    
+                    $sql = "INSERT INTO addresses (user_id, recipient_name, phone, address_line1, address_line2, 
+                            city, state, postal_code, country, is_default, created_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                    $stmt = $pdo->prepare($sql);
+                    $result = $stmt->execute([
+                        $user_id, $address_data['recipient_name'], $address_data['phone'],
+                        $address_data['address_line1'], $address_data['address_line2'],
+                        $address_data['city'], $address_data['state'], $address_data['postal_code'],
+                        $address_data['country'], $address_data['is_default']
+                    ]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Address added successfully']);
+                        logApiRequest('add_address_success', ['user_id' => $user_id]);
+                    } else {
+                        throw new Exception('Failed to add address');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error adding address: ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to add address']);
+                }
+                exit;
+                
+            case 'update_address':
+                try {
+                    $address_id = $data['address_id'] ?? null;
+                    if (!$address_id) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Address ID required']);
+                        exit;
+                    }
+                    
+                    $address_data = [
+                        'recipient_name' => $data['recipient_name'] ?? '',
+                        'phone' => $data['phone'] ?? '',
+                        'address_line1' => $data['address_line1'] ?? '',
+                        'address_line2' => $data['address_line2'] ?? '',
+                        'city' => $data['city'] ?? '',
+                        'state' => $data['state'] ?? '',
+                        'postal_code' => $data['postal_code'] ?? '',
+                        'country' => $data['country'] ?? '',
+                        'is_default' => $data['is_default'] ?? false
+                    ];
+                    
+                    // Validate required fields
+                    if (empty($address_data['recipient_name']) || empty($address_data['address_line1']) || 
+                        empty($address_data['city']) || empty($address_data['country'])) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Required address fields missing']);
+                        exit;
+                    }
+                    
+                    // If this is default, unset other defaults
+                    if ($address_data['is_default']) {
+                        $update_sql = "UPDATE addresses SET is_default = 0 WHERE user_id = ? AND id != ?";
+                        $update_stmt = $pdo->prepare($update_sql);
+                        $update_stmt->execute([$user_id, $address_id]);
+                    }
+                    
+                    $sql = "UPDATE addresses SET recipient_name = ?, phone = ?, address_line1 = ?, 
+                            address_line2 = ?, city = ?, state = ?, postal_code = ?, country = ?, 
+                            is_default = ? WHERE id = ? AND user_id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $result = $stmt->execute([
+                        $address_data['recipient_name'], $address_data['phone'],
+                        $address_data['address_line1'], $address_data['address_line2'],
+                        $address_data['city'], $address_data['state'], $address_data['postal_code'],
+                        $address_data['country'], $address_data['is_default'], $address_id, $user_id
+                    ]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Address updated successfully']);
+                        logApiRequest('update_address_success', ['user_id' => $user_id, 'address_id' => $address_id]);
+                    } else {
+                        throw new Exception('Failed to update address');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error updating address: ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to update address']);
+                }
+                exit;
+                
+            case 'delete_address':
+                try {
+                    $address_id = $data['address_id'] ?? null;
+                    if (!$address_id) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Address ID required']);
+                        exit;
+                    }
+                    
+                    $sql = "DELETE FROM addresses WHERE id = ? AND user_id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $result = $stmt->execute([$address_id, $user_id]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Address deleted successfully']);
+                        logApiRequest('delete_address_success', ['user_id' => $user_id, 'address_id' => $address_id]);
+                    } else {
+                        throw new Exception('Failed to delete address');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error deleting address: ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to delete address']);
+                }
+                exit;
+                
+            case 'change_password':
+                try {
+                    $current_password = $data['current_password'] ?? '';
+                    $new_password = $data['new_password'] ?? '';
+                    $confirm_password = $data['confirm_password'] ?? '';
+                    
+                    if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'All password fields are required']);
+                        exit;
+                    }
+                    
+                    if ($new_password !== $confirm_password) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'New passwords do not match']);
+                        exit;
+                    }
+                    
+                    if (strlen($new_password) < 6) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Password must be at least 6 characters']);
+                        exit;
+                    }
+                    
+                    // Get current password hash
+                    $sql = "SELECT password_hash FROM users WHERE id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$user_id]);
+                    $user = $stmt->fetch();
+                    
+                    if (!$user || !password_verify($current_password, $user['password_hash'])) {
+                        http_response_code(400);
+                        echo json_encode(['error' => 'Current password is incorrect']);
+                        exit;
+                    }
+                    
+                    // Update password
+                    $new_password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+                    $update_sql = "UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?";
+                    $update_stmt = $pdo->prepare($update_sql);
+                    $result = $update_stmt->execute([$new_password_hash, $user_id]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Password changed successfully']);
+                        logApiRequest('change_password_success', ['user_id' => $user_id]);
+                    } else {
+                        throw new Exception('Failed to change password');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error changing password: ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to change password']);
+                }
+                exit;
+                
+            default:
+                http_response_code(400);
+                echo json_encode(['error' => 'Unknown action']);
+                exit;
+        }
+        
+    } catch (Exception $e) {
+        error_log('General profile API error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+            exit;
+    }
+}
+
+// Get user profile for display
+$user_id = getCurrentUserId();
+$user = null;
+
+if ($user_id) {
+    try {
+        $sql = "SELECT id, username, email, full_name, phone, profile_image, created_at, updated_at FROM users WHERE id = ?";
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$user_id]);
+$user = $stmt->fetch();
+    } catch (Exception $e) {
+        error_log('Error getting user data for display: ' . $e->getMessage());
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,18 +515,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -164,7 +622,7 @@
                                 <path d="M16 10a4 4 0 0 1-8 0"></path>
                             </svg>
                             <span>Order History</span>
-                            <span class="nav-badge">5</span>
+                            <span class="nav-badge" id="profileOrderBadge">5</span>
                         </button>
                         <button class="nav-item" data-section="wishlist">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -180,13 +638,7 @@
                             </svg>
                             <span>Addresses</span>
                         </button>
-                        <button class="nav-item" data-section="payment">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                                <line x1="1" y1="10" x2="23" y2="10"></line>
-                            </svg>
-                            <span>Payment Methods</span>
-                        </button>
+
                         <button class="nav-item" data-section="preferences">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -219,8 +671,8 @@
                                 </div>
                                 <div class="card-content">
                                     <h3>Total Orders</h3>
-                                    <p class="card-number">24</p>
-                                    <span class="card-change positive">+3 this month</span>
+                                    <p class="card-number" id="overviewOrderCount">5</p>
+                                    <span class="card-change positive">+2 this month</span>
                                 </div>
                             </div>
 
@@ -454,6 +906,138 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div class="order-info">
+                                        <h3>Order #EG-2024-002</h3>
+                                        <p>Placed on March 20, 2024</p>
+                                    </div>
+                                    <div class="order-status">
+                                        <span class="status-badge pending">Pending</span>
+                                    </div>
+                                </div>
+                                <div class="order-items">
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            <img src="images/5-1.jpg" alt="Sacred Ankh Pendant">
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>Sacred Ankh Pendant</h4>
+                                            <p>Symbol of eternal life and protection</p>
+                                            <span class="item-price">$3,750</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="order-footer">
+                                    <div class="order-total">
+                                        <strong>Total: $3,750</strong>
+                                    </div>
+                                    <div class="order-actions">
+                                        <button class="btn btn-outline">Track Order</button>
+                                        <button class="btn btn-outline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div class="order-info">
+                                        <h3>Order #EG-2024-003</h3>
+                                        <p>Placed on February 28, 2024</p>
+                                    </div>
+                                    <div class="order-status">
+                                        <span class="status-badge delivered">Delivered</span>
+                                    </div>
+                                </div>
+                                <div class="order-items">
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            <img src="images/5-3.jpg" alt="Royal Scarab Bracelet">
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>Royal Scarab Bracelet</h4>
+                                            <p>Ancient Egyptian royal jewelry</p>
+                                            <span class="item-price">$8,500</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="order-footer">
+                                    <div class="order-total">
+                                        <strong>Total: $8,500</strong>
+                                    </div>
+                                    <div class="order-actions">
+                                        <button class="btn btn-outline">Track Order</button>
+                                        <button class="btn btn-outline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div class="order-info">
+                                        <h3>Order #EG-2024-004</h3>
+                                        <p>Placed on January 15, 2024</p>
+                                    </div>
+                                    <div class="order-status">
+                                        <span class="status-badge delivered">Delivered</span>
+                                    </div>
+                                </div>
+                                <div class="order-items">
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            <img src="images/9-1.jpg" alt="Pharaoh's Crown">
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>Pharaoh's Crown</h4>
+                                            <p>Authentic replica of ancient royal headpiece</p>
+                                            <span class="item-price">$15,200</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="order-footer">
+                                    <div class="order-total">
+                                        <strong>Total: $15,200</strong>
+                                    </div>
+                                    <div class="order-actions">
+                                        <button class="btn btn-outline">Track Order</button>
+                                        <button class="btn btn-outline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="order-card">
+                                <div class="order-header">
+                                    <div class="order-info">
+                                        <h3>Order #EG-2024-005</h3>
+                                        <p>Placed on December 10, 2023</p>
+                                    </div>
+                                    <div class="order-status">
+                                        <span class="status-badge delivered">Delivered</span>
+                                    </div>
+                                </div>
+                                <div class="order-items">
+                                    <div class="order-item">
+                                        <div class="item-image">
+                                            <img src="images/10.jpg" alt="Sacred Eye of Horus">
+                                        </div>
+                                        <div class="item-details">
+                                            <h4>Sacred Eye of Horus</h4>
+                                            <p>Protective amulet with ancient symbolism</p>
+                                            <span class="item-price">$6,800</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="order-footer">
+                                    <div class="order-total">
+                                        <strong>Total: $6,800</strong>
+                                    </div>
+                                    <div class="order-actions">
+                                        <button class="btn btn-outline">Track Order</button>
+                                        <button class="btn btn-outline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -465,26 +1049,11 @@
                             </div>
                         </div>
 
-                        <div class="wishlist-grid">
-                            <div class="wishlist-item">
-                                <div class="item-image">
-                                    <img src="images/4-5-scaled.jpg" alt="Ancient Ankh Pendant">
-                                    <button class="remove-wishlist">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="item-content">
-                                    <h3>Ancient Ankh Pendant</h3>
-                                    <p>Symbol of eternal life crafted from pure gold</p>
-                                    <div class="item-price">$2,850</div>
-                                    <div class="item-actions">
-                                        <button class="btn btn-primary">Add to Cart</button>
-                                        <button class="btn btn-outline">View Details</button>
-                                    </div>
-                                </div>
+                        <div class="wishlist-grid" id="profileWishlistGrid">
+                            <!-- Wishlist items will be loaded here dynamically -->
+                            <div class="wishlist-loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading your wishlist...</p>
                             </div>
                         </div>
                     </section>
@@ -504,7 +1073,42 @@
                                 <span>Add New Address</span>
                             </button>
                         </div>
-                        <!-- Address content would be rendered here dynamically -->
+                        
+                        <div class="address-list">
+                            <div class="address-card default" data-address-id="address-1">
+                                <div class="address-header">
+                                    <h4>Home Address</h4>
+                                    <span class="status-badge">Default</span>
+                                </div>
+                                <div class="address-body">
+                                    <p><strong>John Doe</strong></p>
+                                    <p>123 Ancient Street</p>
+                                    <p>Cairo, Egypt 12345</p>
+                                    <p>Phone: +20 102 132 2002</p>
+                                </div>
+                                <div class="address-actions">
+                                    <button class="btn btn-outline edit-address-btn">Edit</button>
+                                    <button class="btn btn-danger">Delete</button>
+                                </div>
+                            </div>
+                            
+                            <div class="address-card" data-address-id="address-2">
+                                <div class="address-header">
+                                    <h4>Work Address</h4>
+                                </div>
+                                <div class="address-body">
+                                    <p><strong>John Doe</strong></p>
+                                    <p>456 Pyramid Avenue</p>
+                                    <p>Giza, Egypt 67890</p>
+                                    <p>Phone: +20 102 132 2002</p>
+                                </div>
+                                <div class="address-actions">
+                                    <button class="btn btn-outline edit-address-btn">Edit</button>
+                                    <button class="btn btn-danger">Delete</button>
+                                    <button class="btn btn-warning set-default-address">Set as Default</button>
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                     <section class="content-section" id="payment">
@@ -531,7 +1135,45 @@
                                 <p class="section-subtitle">Customize your Egyptian Creativity experience</p>
                             </div>
                         </div>
-                        <!-- Preferences content would be rendered here -->
+                        
+                        <form class="profile-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Email Notifications</label>
+                                    <div class="preference-options">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked>
+                                            <span>Order updates and tracking</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked>
+                                            <span>New product releases</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox">
+                                            <span>Special offers and discounts</span>
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked>
+                                            <span>Newsletter</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Currency</label>
+                                    <select class="form-input">
+                                        <option value="USD" selected>USD ($)</option>
+                                        <option value="EGP">EGP (E£)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-secondary">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Preferences</button>
+                            </div>
+                        </form>
                     </section>
                 </div>
             </div>
@@ -585,23 +1227,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -808,11 +1450,151 @@
             <div class="modal-header">
                 <h3>Order Details</h3>
                 <button class="modal-close" id="orderDetailsClose">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                 </button>
             </div>
             <div class="modal-body" id="orderDetailsBody">
                 <!-- Order details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Address Modal -->
+    <div class="modal" id="editAddressModal">
+        <div class="modal-backdrop" id="editAddressBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Address</h3>
+                <button class="modal-close" id="editAddressClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="editAddressForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editAddressName" class="form-label">Full Name</label>
+                        <input type="text" id="editAddressName" name="fullName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAddressPhone" class="form-label">Phone Number</label>
+                        <input type="tel" id="editAddressPhone" name="phone" class="form-input" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="editAddressStreet" class="form-label">Street Address</label>
+                        <input type="text" id="editAddressStreet" name="street" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAddressCity" class="form-label">City</label>
+                        <input type="text" id="editAddressCity" name="city" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAddressState" class="form-label">State / Province</label>
+                        <input type="text" id="editAddressState" name="state" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAddressZip" class="form-label">ZIP Code</label>
+                        <input type="text" id="editAddressZip" name="zip" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAddressCountry" class="form-label">Country</label>
+                        <input type="text" id="editAddressCountry" name="country" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelEditAddress">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Details Modal -->
+    <div class="modal" id="productDetailsModal">
+        <div class="modal-backdrop" id="productDetailsBackdrop"></div>
+        <div class="modal-content product-details-modal">
+            <div class="modal-header">
+                <h3>Product Details</h3>
+                <button class="modal-close" id="productDetailsClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="productDetailsBody">
+                <div class="product-details-content">
+                    <div class="product-image-section">
+                        <img id="productDetailImage" src="" alt="Product Image">
+                    </div>
+                    <div class="product-info-section">
+                        <h2 id="productDetailName"></h2>
+                        <p id="productDetailDescription"></p>
+                        <div class="product-price-section">
+                            <span class="product-price" id="productDetailPrice"></span>
+                        </div>
+                        <div class="product-actions">
+                            <button class="btn btn-primary" id="addToCartFromDetails">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                                Add to Cart
+                            </button>
+                            <button class="btn btn-outline" id="removeFromWishlistFromDetails">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                Remove from Wishlist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="orderDetailsModal">
+        <div class="modal-backdrop" id="orderDetailsBackdrop"></div>
+        <div class="modal-content order-details-modal">
+            <div class="modal-header">
+                <h3>Order Details</h3>
+                <button class="modal-close" id="orderDetailsClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="orderDetailsBody">
+                <!-- Order details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Tracking Modal -->
+    <div class="modal" id="orderTrackingModal">
+        <div class="modal-backdrop" id="orderTrackingBackdrop"></div>
+        <div class="modal-content order-tracking-modal">
+            <div class="modal-header">
+                <h3>Order Tracking</h3>
+                <button class="modal-close" id="orderTrackingClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="orderTrackingBody">
+                <!-- Order tracking will be loaded here -->
             </div>
         </div>
     </div>
@@ -849,8 +1631,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -877,10 +1659,14 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <button class="btn btn-outline" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+                <button class="btn btn-outline" onclick="window.location.href='wishlist.php'">View Wishlist</button>
             </div>
         </div>
     </div>
+
+
+    <?php include 'includes/sidebar.html'; ?>
+    <script src="js/script.js"></script>
 
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>

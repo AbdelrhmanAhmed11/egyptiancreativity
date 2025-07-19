@@ -1,3 +1,376 @@
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+include 'includes/db.php';
+
+// Start session for authentication
+session_start();
+
+// Helper function to get user ID if logged in
+function getUserId() {
+    return isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
+}
+
+// Helper for session cart/wishlist
+function getSessionCart() {
+    return isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+}
+function setSessionCart($cart) {
+    $_SESSION['cart'] = $cart;
+}
+function getSessionWishlist() {
+    return isset($_SESSION['wishlist']) ? $_SESSION['wishlist'] : [];
+}
+function setSessionWishlist($wishlist) {
+    $_SESSION['wishlist'] = $wishlist;
+}
+
+// Merge session cart/wishlist into user DB cart/wishlist on login
+if (isset($_GET['action']) && $_GET['action'] === 'merge_session_cart' && getUserId()) {
+    $user_id = getUserId();
+    $session_cart = getSessionCart();
+    $session_wishlist = getSessionWishlist();
+    // Merge cart
+    foreach ($session_cart as $item) {
+        $product_id = $item['product_id'];
+        $quantity = $item['quantity'];
+        // Check if already in DB
+        $check = $pdo->prepare("SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?");
+        $check->execute([$user_id, $product_id]);
+        $existing = $check->fetch(PDO::FETCH_ASSOC);
+        if ($existing) {
+            $new_quantity = $existing['quantity'] + $quantity;
+            $pdo->prepare("UPDATE cart_items SET quantity = ? WHERE id = ?")->execute([$new_quantity, $existing['id']]);
+        } else {
+            $pdo->prepare("INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)")->execute([$user_id, $product_id, $quantity]);
+        }
+    }
+    // Merge wishlist
+    foreach ($session_wishlist as $item) {
+        $product_id = $item['product_id'];
+        $check = $pdo->prepare("SELECT id FROM wishlist_items WHERE user_id = ? AND product_id = ?");
+        $check->execute([$user_id, $product_id]);
+        if (!$check->fetch()) {
+            $pdo->prepare("INSERT INTO wishlist_items (user_id, product_id) VALUES (?, ?)")->execute([$user_id, $product_id]);
+        }
+    }
+    // Clear session cart/wishlist
+    setSessionCart([]);
+    setSessionWishlist([]);
+    echo json_encode(['success' => true, 'message' => 'Session cart/wishlist merged']);
+    exit;
+}
+
+// Helper function to get sort clause
+function getSortClause($sort) {
+    switch ($sort) {
+        case 'price-low':
+            return 'p.price ASC';
+        case 'price-high':
+            return 'p.price DESC';
+        case 'name-az':
+            return 'p.name ASC';
+        case 'name-za':
+            return 'p.name DESC';
+        default:
+            return 'p.id DESC'; // Featured/Newest first
+    }
+}
+
+// Handle API requests
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    
+    $action = $_GET['action'];
+    
+    switch ($action) {
+        case 'get_products':
+            // Get products from database with filtering
+            $category = $_GET['category'] ?? 'all';
+            $sort = $_GET['sort'] ?? 'default';
+            $search = $_GET['search'] ?? '';
+            $min_price = $_GET['min_price'] ?? 0;
+            $max_price = $_GET['max_price'] ?? 50000;
+            $page = $_GET['page'] ?? 1;
+            $limit = $_GET['limit'] ?? 12;
+            $offset = ($page - 1) * $limit;
+            
+            // Build query
+            $where_conditions = [];
+            $params = [];
+            
+            if ($category !== 'all') {
+                $where_conditions[] = "c.name = ?";
+                $params[] = $category;
+            }
+            
+            if (!empty($search)) {
+                $where_conditions[] = "(p.name LIKE ? OR p.description LIKE ?)";
+                $params[] = "%$search%";
+                $params[] = "%$search%";
+            }
+            
+            if ($min_price > 0) {
+                $where_conditions[] = "p.price >= ?";
+                $params[] = $min_price;
+            }
+            
+            if ($max_price < 50000) {
+                $where_conditions[] = "p.price <= ?";
+                $params[] = $max_price;
+            }
+            
+            $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+            
+            // Count total products
+            $count_query = "SELECT COUNT(*) as total FROM products p 
+                           LEFT JOIN categories c ON p.category = c.id 
+                           $where_clause";
+            $count_stmt = $pdo->prepare($count_query);
+            $count_stmt->execute($params);
+            $total_products = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            // Make sure $limit and $offset are integers
+            $limit = (int)$limit;
+            $offset = (int)$offset;
+            // Get products with pagination
+            $query = "SELECT 
+                        p.id,
+                        p.name,
+                        p.description,
+                        p.price,
+                        p.product_sku,
+                        p.stock,
+                        p.has_box,
+                        p.blog_id,
+                        p.product_image,
+                        p.box_image,
+                        c.name as category_name,
+                        c.id as category_id
+                    FROM products p
+                    LEFT JOIN categories c ON p.category = c.id
+                    $where_clause
+                    ORDER BY " . getSortClause($sort) . "
+                    LIMIT $limit OFFSET $offset";
+            
+            $stmt = $pdo->prepare($query);
+            $stmt->execute($params);
+            $products = [];
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Use actual product image or fallback to placeholder
+                $product_image = $row['product_image'] ?: 'images/products/placeholder.jpg';
+                
+                // Format the data to match frontend expectations
+                $products[] = [
+                    'id' => $row['id'],
+                    'title' => $row['name'],
+                    'category' => strtolower($row['category_name']),
+                    'price' => floatval($row['price']),
+                    'originalPrice' => null, // Could be stored in separate table
+                    'image' => $product_image, // Use actual product image
+                    'description' => $row['description'],
+                    'rating' => 4.8, // Could be stored in separate table
+                    'reviews' => rand(10, 50), // Demo data
+                    'badges' => ['featured'], // Demo data
+                    'inStock' => $row['stock'] > 0,
+                    'quantity' => $row['stock'],
+                    'sku' => $row['product_sku'],
+                    'has_box' => isset($row['has_box']) ? (bool)$row['has_box'] : false,
+                    'box_image' => $row['box_image'], // Include box image if available
+                    'blog_id' => isset($row['blog_id']) ? $row['blog_id'] : null
+                ];
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'products' => $products,
+                'total' => $total_products,
+                'page' => $page,
+                'total_pages' => ceil($total_products / $limit)
+            ]);
+            exit;
+            
+        case 'get_categories':
+            // Get all categories
+            $query = "SELECT id, name, description FROM categories ORDER BY name";
+            $stmt = $pdo->prepare($query);
+            $stmt->execute();
+            $categories = [];
+            
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $categories[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name'],
+                    'description' => $row['description']
+                ];
+            }
+            
+            echo json_encode(['success' => true, 'categories' => $categories]);
+            exit;
+        case 'get_cart':
+            $user_id = getUserId();
+            if ($user_id) {
+                $stmt = $pdo->prepare("SELECT c.product_id, c.quantity, p.name, p.price, p.product_sku, p.stock FROM cart_items c JOIN products p ON c.product_id = p.id WHERE c.user_id = ?");
+                $stmt->execute([$user_id]);
+                $cart = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $cart = getSessionCart();
+            }
+            echo json_encode(['success' => true, 'cart' => $cart]);
+            exit;
+        case 'get_wishlist':
+            $user_id = getUserId();
+            if ($user_id) {
+                $stmt = $pdo->prepare("SELECT w.product_id, p.name, p.price, p.product_sku, p.stock FROM wishlist_items w JOIN products p ON w.product_id = p.id WHERE w.user_id = ?");
+                $stmt->execute([$user_id]);
+                $wishlist = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $wishlist = getSessionWishlist();
+            }
+            echo json_encode(['success' => true, 'wishlist' => $wishlist]);
+            exit;
+    }
+}
+
+// Fallback: If an API action is requested but not handled, return JSON error and exit
+if (isset($_GET['action'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Invalid API action']);
+    exit;
+}
+
+// Handle POST requests (add to cart/wishlist)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+    
+    $data = json_decode(file_get_contents('php://input'), true);
+    $action = $data['action'] ?? '';
+    $user_id = getUserId();
+    
+    switch ($action) {
+        case 'add_to_cart':
+            $product_id = $data['product_id'] ?? null;
+            $quantity = $data['quantity'] ?? 1;
+            
+            if (!$product_id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Product ID is required']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB cart
+                try {
+                    // Check if item already in cart
+                    $check_query = "SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?";
+                    $check_stmt = $pdo->prepare($check_query);
+                    $check_stmt->execute([$user_id, $product_id]);
+                    $existing_item = $check_stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($existing_item) {
+                        // Update quantity
+                        $new_quantity = $existing_item['quantity'] + $quantity;
+                        $update_query = "UPDATE cart_items SET quantity = ? WHERE id = ?";
+                        $update_stmt = $pdo->prepare($update_query);
+                        $result = $update_stmt->execute([$new_quantity, $existing_item['id']]);
+                        
+                        if ($result) {
+                            echo json_encode(['success' => true, 'message' => 'Cart updated', 'action' => 'updated']);
+                        } else {
+                            http_response_code(500);
+                            echo json_encode(['error' => 'Failed to update cart']);
+                        }
+                    } else {
+                        // Add new item
+                        $insert_query = "INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)";
+                        $insert_stmt = $pdo->prepare($insert_query);
+                        $result = $insert_stmt->execute([$user_id, $product_id, $quantity]);
+                        
+                        if ($result) {
+                            echo json_encode(['success' => true, 'message' => 'Item added to cart', 'action' => 'added']);
+                        } else {
+                            http_response_code(500);
+                            echo json_encode(['error' => 'Failed to add item to cart']);
+                        }
+                    }
+                } catch (Exception $e) {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Database error']);
+                }
+            } else {
+                // Session cart
+                $cart = getSessionCart();
+                $found = false;
+                foreach ($cart as &$item) {
+                    if ($item['product_id'] == $product_id) {
+                        $item['quantity'] += $quantity;
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $cart[] = ['product_id' => $product_id, 'quantity' => $quantity];
+                }
+                setSessionCart($cart);
+                echo json_encode(['success' => true, 'message' => 'Item added to cart (session)', 'action' => $found ? 'updated' : 'added']);
+            }
+            exit;
+            
+        case 'add_to_wishlist':
+            $product_id = $data['product_id'] ?? null;
+            
+            if (!$product_id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Product ID is required']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB wishlist
+                try {
+                    // Check if item already in wishlist
+                    $check_query = "SELECT id FROM wishlist_items WHERE user_id = ? AND product_id = ?";
+                    $check_stmt = $pdo->prepare($check_query);
+                    $check_stmt->execute([$user_id, $product_id]);
+                    
+                    if ($check_stmt->fetch()) {
+                        echo json_encode(['success' => false, 'message' => 'Item already in wishlist']);
+                    } else {
+                        // Add to wishlist
+                        $insert_query = "INSERT INTO wishlist_items (user_id, product_id) VALUES (?, ?)";
+                        $insert_stmt = $pdo->prepare($insert_query);
+                        $result = $insert_stmt->execute([$user_id, $product_id]);
+                        
+                        if ($result) {
+                            echo json_encode(['success' => true, 'message' => 'Item added to wishlist']);
+                        } else {
+                            http_response_code(500);
+                            echo json_encode(['error' => 'Failed to add item to wishlist']);
+                        }
+                    }
+                } catch (Exception $e) {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Database error']);
+                }
+            } else {
+                // Session wishlist
+                $wishlist = getSessionWishlist();
+                foreach ($wishlist as $item) {
+                    if ($item['product_id'] == $product_id) {
+                        echo json_encode(['success' => false, 'message' => 'Item already in wishlist (session)']);
+                        exit;
+                    }
+                }
+                $wishlist[] = ['product_id' => $product_id];
+                setSessionWishlist($wishlist);
+                echo json_encode(['success' => true, 'message' => 'Item added to wishlist (session)']);
+            }
+            exit;
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,18 +430,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link active">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link active">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -159,11 +532,11 @@
                     <div class="filter-controls">
                         <select class="filter-select" id="categorySelect">
                             <option value="all">All Categories</option>
-                            <option value="accessories">Accessories</option>
-                            <option value="decorations">Decorations</option>
-                            <option value="boxes">Boxes</option>
-                            <option value="game-boxes">Game Boxes</option>
-                            <option value="fashion">Fashion</option>
+                            <option value="Pharaonic Masks">Pharaonic Masks</option>
+                            <option value="Jewelry">Jewelry</option>
+                            <option value="Statues">Statues</option>
+                            <option value="Home Decor">Home Decor</option>
+                            <option value="Textiles">Textiles</option>
                         </select>
                         <select class="filter-select" id="sortSelect">
                             <option value="default">Featured</option>
@@ -317,8 +690,8 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
@@ -345,7 +718,7 @@
         </div>
         <div class="sidebar-footer" id="wishlistFooter" style="display: block;">
             <div class="cart-actions">
-                <button class="btn btn-outline" id="viewWishlistBtn" onclick="window.location.href='wishlist.html'">View Wishlist</button>
+                <button class="btn btn-outline" id="viewWishlistBtn" onclick="window.location.href='wishlist.php'">View Wishlist</button>
             </div>
         </div>
     </div>
@@ -397,23 +770,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -436,12 +809,13 @@
 
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
+    <?php include 'includes/sidebar.html'; ?>
+    <script src="js/script.js"></script>
 
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>
     <script src="js/shop-script.js"></script>
     <script src="js/products-data.js"></script>
-    <script src="js/script.js"></script>
     <script>
     document.addEventListener('mousedown', (e) => {
         const cartSidebar = document.getElementById('cartSidebar');
@@ -462,5 +836,6 @@
         }
     });
     </script>
+    <?php include 'includes/sidebar.html'; ?>
 </body>
 </html>

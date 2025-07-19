@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSearchModal();
     initializeStatsCounter();
     initializeTestimonials();
-    renderBlogSection();
+    // Remove the static blogData array and renderBlogSection function
 
     console.log('🏺 Egyptian Creativity website initialized successfully!');
 
@@ -672,73 +672,113 @@ function changeShowcase(index) {
 }
 
 // Cart Functions
-function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    const existingItem = cart.find(item => item.id === productId);
-
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({
-            ...product,
-            quantity: 1
+async function addToCart(productId) {
+    try {
+        const response = await fetch('cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_to_cart',
+                product_id: productId,
+                quantity: 1
+            })
         });
-    }
 
-    saveCart(); // Save immediately after update
-    updateCartBadge();
-    showNotification(`${product.name} added to cart!`, 'success');
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            const text = await response.text();
+            console.error('Server returned non-JSON for addToCart:', text);
+            showNotification('Server error: ' + text, 'error');
+            return;
+        }
+
+        if (data.success) {
+            showNotification(data.message || 'Item added to cart!', 'success');
+            updateCartBadge();
+        } else {
+            showNotification(data.error || 'Failed to add to cart', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        showNotification('Error adding to cart', 'error');
+    }
 }
 
-function updateCartBadge() {
-    // Always reload cart from localStorage to sync with cart page
-    cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-    const badge = document.getElementById('cartBadge');
-    const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    if (badge) {
-        badge.textContent = totalItems;
-        badge.style.display = totalItems > 0 ? 'flex' : 'none';
+async function updateCartBadge() {
+    try {
+        const response = await fetch('cart.php?action=get_cart');
+        const data = await response.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('cartBadge');
+            const items = data.cart_items || [];
+            const totalItems = items.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+            if (badge) {
+                badge.textContent = totalItems;
+                badge.style.display = totalItems > 0 ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating cart badge:', error);
     }
-}
-
-function saveCart() {
-    localStorage.setItem('egyptianLuxuryCart', JSON.stringify(cart));
 }
 
 // Wishlist Functions
-function toggleWishlist(productId) {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
+async function toggleWishlist(productId) {
+    try {
+        const response = await fetch('wishlist.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'add_to_wishlist',
+                product_id: productId
+            })
+        });
 
-    const existingIndex = wishlist.findIndex(item => item.id === productId);
+        let data;
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            const text = await response.text();
+            console.error('Server returned non-JSON for toggleWishlist:', text);
+            showNotification('Server error: ' + text, 'error');
+            return;
+        }
 
-    if (existingIndex > -1) {
-        wishlist.splice(existingIndex, 1);
-        saveWishlist(); // Save immediately after update
-        showNotification(`${product.name} removed from wishlist`, 'info');
-    } else {
-        wishlist.push(product);
-        saveWishlist(); // Save immediately after update
-        showNotification(`${product.name} added to wishlist!`, 'success');
+        if (data.success) {
+            showNotification(data.message || 'Item added to wishlist!', 'success');
+            updateWishlistBadge();
+        } else {
+            showNotification(data.message || 'Failed to add to wishlist', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        showNotification('Error adding to wishlist', 'error');
     }
-
-    updateWishlistBadge();
 }
 
-function updateWishlistBadge() {
-    // Always reload wishlist from localStorage to sync with wishlist page
-    wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-    const badge = document.getElementById('wishlistBadge');
-    if (badge) {
-        badge.textContent = wishlist.length;
-        badge.style.display = wishlist.length > 0 ? 'flex' : 'none';
+async function updateWishlistBadge() {
+    try {
+        const response = await fetch('wishlist.php?action=get_wishlist');
+        const data = await response.json();
+        
+        if (data.success) {
+            const badge = document.getElementById('wishlistBadge');
+            const items = data.wishlist || [];
+            if (badge) {
+                badge.textContent = items.length;
+                badge.style.display = items.length > 0 ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating wishlist badge:', error);
     }
-}
-
-function saveWishlist() {
-    localStorage.setItem('egyptianWishlist', JSON.stringify(wishlist));
 }
 
 // Notification System
@@ -795,16 +835,14 @@ function closeSidebar(sidebar) {
 
 if (cartBtn && cartSidebar) {
     cartBtn.addEventListener('click', () => {
-        cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-        openSidebar(cartSidebar);
         renderCartSidebar();
+        openSidebar(cartSidebar);
     });
 }
 if (wishlistBtn && wishlistSidebar) {
     wishlistBtn.addEventListener('click', () => {
-        wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-        openSidebar(wishlistSidebar);
         renderWishlistSidebar();
+        openSidebar(wishlistSidebar);
     });
 }
 if (cartClose && cartSidebar) {
@@ -879,131 +917,183 @@ function initializeSearchModal() {
     });
 }
 
-function renderCartSidebar() {
+async function renderCartSidebar(itemsArg) {
     const cartEmpty = document.getElementById('cartEmpty');
     const cartItems = document.getElementById('cartItems');
     const cartFooter = document.getElementById('cartFooter');
     if (!cartEmpty || !cartItems || !cartFooter) return;
-    
-    if (cart.length === 0) {
+    let items = itemsArg;
+    try {
+        if (!items) {
+            const response = await fetch('cart.php?action=get_cart');
+            const data = await response.json();
+            items = data.cart || [];
+        }
+        if (items && items.length > 0) {
+            cartEmpty.style.display = 'none';
+            cartItems.style.display = 'block';
+            cartFooter.style.display = 'block';
+            cartItems.innerHTML = items.map(item => {
+                if (item.cart_id !== undefined) {
+                    return `<div class="cart-item">
+                        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                        <div class="cart-item-details">
+                            <h4 class="cart-item-title">${item.name}</h4>
+                            <div class="cart-item-price">$${item.price.toLocaleString()} x ${item.quantity}</div>
+                        </div>
+                        <button class="cart-item-remove" onclick="removeFromCartSidebar('cart', ${item.cart_id}, ${item.id})" title="Remove item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3,6 5,6 21,6"></polyline>
+                                <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
+                            </svg>
+                        </button>
+                    </div>`;
+                } else {
+                    return `<div class="cart-item">
+                        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
+                        <div class="cart-item-details">
+                            <h4 class="cart-item-title">${item.name}</h4>
+                            <div class="cart-item-price">$${item.price.toLocaleString()} x ${item.quantity}</div>
+                        </div>
+                        <button class="cart-item-remove" onclick="removeFromCartSidebar('product', null, ${item.id})" title="Remove item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3,6 5,6 21,6"></polyline>
+                                <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
+                            </svg>
+                        </button>
+                    </div>`;
+                }
+            }).join('');
+            const subtotal = items.reduce((sum, item) => {
+                let priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^\d.]/g, ''));
+                return sum + (priceNum * item.quantity);
+            }, 0);
+            const subtotalEl = document.getElementById('cartSubtotal');
+            const totalEl = document.getElementById('cartTotal');
+            if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString()}`;
+            if (totalEl) totalEl.textContent = `$${subtotal.toLocaleString()}`;
+        } else {
+            cartEmpty.style.display = 'block';
+            cartItems.style.display = 'none';
+            cartFooter.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading cart data:', error);
         cartEmpty.style.display = 'block';
         cartItems.style.display = 'none';
         cartFooter.style.display = 'none';
-    } else {
-        cartEmpty.style.display = 'none';
-        cartItems.style.display = 'block';
-        cartFooter.style.display = 'block';
-        cartItems.innerHTML = cart.map(item => `
-            <div class="cart-item">
-                <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                <div class="cart-item-details">
-                    <h4 class="cart-item-title">${item.name}</h4>
-                    <div class="cart-item-price">${item.price} x ${item.quantity}</div>
-                </div>
-                <button class="cart-item-remove" onclick="removeFromCartSidebar(${item.id})" title="Remove item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3,6 5,6 21,6"></polyline>
-                        <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                    </svg>
-                </button>
-            </div>
-        `).join('');
-        
-        // Calculate subtotal and total using numeric price
-        const subtotal = cart.reduce((sum, item) => {
-            let priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^\d.]/g, ''));
-            return sum + (priceNum * item.quantity);
-        }, 0);
-        const subtotalEl = document.getElementById('cartSubtotal');
-        const totalEl = document.getElementById('cartTotal');
-        if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString()}`;
-        if (totalEl) totalEl.textContent = `$${subtotal.toLocaleString()}`;
     }
 }
 
-function removeFromCartSidebar(productId) {
-    const index = cart.findIndex(item => item.id === productId);
-    if (index > -1) {
-        cart.splice(index, 1);
-        updateCartBadge();
-        saveCart();
-        renderCartSidebar();
+// Accepts (type, cart_id, product_id)
+async function removeFromCartSidebar(type, cart_id, product_id) {
+    try {
+        let body = { action: 'remove_from_cart' };
+        if (type === 'cart' && cart_id) {
+            body.cart_id = cart_id;
+        } else if (type === 'product' && product_id) {
+            body.product_id = product_id;
+        }
+        const response = await fetch('cart.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        if (data.success) {
+            updateCartBadge();
+            renderCartSidebar();
+            showNotification('Item removed from cart', 'success');
+        } else {
+            showNotification(data.error || 'Failed to remove item', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing from cart:', error);
+        showNotification('Error removing from cart', 'error');
     }
 }
 
-function renderWishlistSidebar() {
+async function renderWishlistSidebar(itemsArg) {
     const wishlistEmpty = document.getElementById('wishlistEmpty');
     const wishlistItems = document.getElementById('wishlistItems');
     if (!wishlistEmpty || !wishlistItems) return;
-    
-    if (wishlist.length === 0) {
+    let items = itemsArg;
+    try {
+        if (!items) {
+            const response = await fetch('wishlist.php?action=get_wishlist');
+            const data = await response.json();
+            items = data.wishlist || [];
+        }
+        if (items && items.length > 0) {
+            wishlistEmpty.style.display = 'none';
+            wishlistItems.style.display = 'block';
+            wishlistItems.innerHTML = items.map(item => {
+                let displayName = item.name || item.title || '';
+                let displayPrice = item.price;
+                let priceStr = typeof displayPrice === 'number' ? `$${displayPrice.toLocaleString()}` : displayPrice;
+                return `
+                <div class="wishlist-item">
+                    <img src="${item.image}" alt="${displayName}" class="wishlist-item-image">
+                    <div class="wishlist-item-details">
+                        <h4 class="wishlist-item-title">${displayName}</h4>
+                        <div class="wishlist-item-price">${priceStr}</div>
+                    </div>
+                    <button class="wishlist-item-remove" onclick="removeFromWishlistSidebar(${item.id})" title="Remove from wishlist">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </button>
+                </div>
+                `;
+            }).join('');
+        } else {
+            wishlistEmpty.style.display = 'block';
+            wishlistItems.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading wishlist data:', error);
         wishlistEmpty.style.display = 'block';
         wishlistItems.style.display = 'none';
-    } else {
-        wishlistEmpty.style.display = 'none';
-        wishlistItems.style.display = 'block';
-        wishlistItems.innerHTML = wishlist.map(item => {
-            let displayName = item.name || item.title || '';
-            let displayPrice = item.price;
-            if (!displayPrice || displayPrice === 0) {
-                let found = products.find(p => p.id === item.id || p.name === item.name || p.title === item.title);
-                if (found) {
-                    displayPrice = found.price;
-                    displayName = found.name || found.title || displayName;
-                }
-            }
-            let priceStr = typeof displayPrice === 'number' ? `$${displayPrice.toLocaleString()}` : displayPrice;
-            
-            return `
-            <div class="wishlist-item">
-                <img src="${item.image}" alt="${displayName}" class="wishlist-item-image">
-                <div class="wishlist-item-details">
-                    <h4 class="wishlist-item-title">${displayName}</h4>
-                    <div class="wishlist-item-price">${priceStr}</div>
-                </div>
-                <button class="wishlist-item-remove" onclick="removeFromWishlistSidebar(${item.id})" title="Remove from wishlist">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                    </svg>
-                </button>
-            </div>
-            `;
-        }).join('');
     }
 }
 
-function removeFromWishlistSidebar(productId) {
-    const index = wishlist.findIndex(item => item.id === productId);
-    if (index > -1) {
-        wishlist.splice(index, 1);
-        updateWishlistBadge();
-        saveWishlist();
-        renderWishlistSidebar();
+async function removeFromWishlistSidebar(productId) {
+    try {
+        const response = await fetch('wishlist.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'remove_from_wishlist',
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateWishlistBadge();
+            renderWishlistSidebar();
+            showNotification('Item removed from wishlist', 'success');
+        } else {
+            showNotification(data.error || 'Failed to remove item', 'error');
+        }
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        showNotification('Error removing from wishlist', 'error');
     }
 }
 
-function addToCartFromWishlist(productId) {
-    addToCart(productId);
-    removeFromWishlistSidebar(productId);
+async function addToCartFromWishlist(productId) {
+    await addToCart(productId);
+    await removeFromWishlistSidebar(productId);
 }
 
 // Auto-refresh cart and wishlist data, badges, and sidebars when localStorage changes (cross-tab sync)
-window.addEventListener('storage', (event) => {
-    if (event.key === 'egyptianLuxuryCart') {
-        cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-        updateCartBadge();
-        if (cartSidebar && cartSidebar.classList.contains('active')) {
-            renderCartSidebar();
-        }
-    }
-    if (event.key === 'egyptianWishlist') {
-        wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-        updateWishlistBadge();
-        if (wishlistSidebar && wishlistSidebar.classList.contains('active')) {
-            renderWishlistSidebar();
-        }
-    }
-});
+// Removed since we're now using backend APIs
 
 // Keyboard Navigation
 document.addEventListener('keydown', (e) => {
@@ -1029,11 +1119,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Save data before page unload
-window.addEventListener('beforeunload', () => {
-    saveCart();
-    saveWishlist();
-});
+// Save data before page unload - removed since we're using backend APIs
 
 // Intersection Observer for animations
 const observerOptions = {
@@ -1059,47 +1145,24 @@ document.querySelectorAll('.collection-item, .blog-card, .feature, .testimonial-
 });
 
 // Render Blog Section on Index Page
-function renderBlogSection() {
-    const blogGrid = document.querySelector('.blog-grid');
-    if (!blogGrid) return;
-    blogGrid.innerHTML = blogData.map(blog => `
-        <article class="blog-card${blog.id === 1 ? ' featured' : ''}">
-            <div class="card-image">
-                <img src="${blog.image}" alt="${blog.title}">
-                ${blog.id === 1 ? '<div class="card-badge">Featured</div>' : ''}
-            </div>
-            <div class="card-content">
-                <div class="card-meta">
-                    <span class="card-date">${blog.date}</span>
-                    <span class="card-category">${blog.category}</span>
-                </div>
-                <h3 class="card-title">${blog.title}</h3>
-                <p class="card-excerpt">${blog.excerpt}</p>
-                <a href="#" class="card-link" data-blog-id="${blog.id}">Read More →</a>
-            </div>
-        </article>
-    `).join('');
-
-    // Add event listeners for Read More buttons
-    blogGrid.querySelectorAll('.card-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const blogId = parseInt(this.getAttribute('data-blog-id'));
-            // Check if blog exists in localStorage (simulate blog existence)
-            let blogs = JSON.parse(localStorage.getItem('egyptianCreativityBlogs')) || [];
-            let blog = blogs.find(b => b.id === blogId);
-            if (!blog) {
-                // If not found, add from blogData
-                const newBlog = blogData.find(b => b.id === blogId);
-                if (newBlog) {
-                    blogs.push(newBlog);
-                    localStorage.setItem('egyptianCreativityBlogs', JSON.stringify(blogs));
-                }
-            }
-            // Navigate to blog-details page
-            window.location.href = `blog-details.html?id=${blogId}`;
-        });
-    });
-}
+// Remove the static blogData array and renderBlogSection function
 
 console.log('🏺 Egyptian Creativity - Enhanced luxury website script loaded successfully!');
+
+// Add login check for checkout
+function proceedToCheckout() {
+    fetch('auth.php?action=check_login')
+        .then(res => res.json())
+        .then(data => {
+            if (data.logged_in) {
+                window.location.href = 'checkout.php';
+            } else {
+                window.location.href = 'auth.php?redirect=checkout.php';
+            }
+        })
+        .catch(() => {
+            window.location.href = 'auth.php?redirect=checkout.php';
+        });
+}
+window.renderCartSidebar = renderCartSidebar;
+window.renderWishlistSidebar = renderWishlistSidebar;

@@ -1,188 +1,10 @@
 // Egyptian Creativity Shop - Enhanced JavaScript
 
-// Product Data
-const PRODUCTS_DATA = [
-    {
-        id: 1,
-        title: "Ancient Pharaoh Mask",
-        category: "jewelry",
-        price: 12500,
-        originalPrice: 15000,
-        image: "images/1-7-scaled.jpg",
-        description: "An exquisite reproduction of the legendary burial mask, crafted with 24-karat gold and precious gemstones in the traditional Egyptian style.",
-        rating: 4.8,
-        reviews: 24,
-        badges: ["featured"],
-        inStock: true,
-        quantity: 15
-    },
-    {
-        id: 2,
-        title: "Sacred Ankh Pendant",
-        category: "jewelry",
-        price: 3750,
-        originalPrice: null,
-        image: "images/4-5-scaled.jpg",
-        description: "Symbol of eternal life, this magnificent ankh is crafted from pure gold with intricate engravings representing the cycle of life and death.",
-        rating: 4.9,
-        reviews: 18,
-        badges: ["new"],
-        inStock: true,
-        quantity: 8
-    },
-    {
-        id: 3,
-        title: "Royal Canopic Jars",
-        category: "boxes",
-        price: 8900,
-        originalPrice: 10500,
-        image: "images/5-1 (1).jpg",
-        description: "Four magnificent vessels representing the sons of Horus, each meticulously detailed with hieroglyphic inscriptions and gold leaf accents.",
-        rating: 4.7,
-        reviews: 32,
-        badges: ["sale"],
-        inStock: true,
-        quantity: 5
-    },
-    {
-        id: 4,
-        title: "Divine Scarab Amulet",
-        category: "jewelry",
-        price: 2850,
-        originalPrice: null,
-        image: "images/5-1.jpg",
-        description: "A stunning set of protective amulets featuring intricate scarab designs, symbolizing rebirth and eternal life in ancient Egyptian culture.",
-        rating: 4.6,
-        reviews: 15,
-        badges: [],
-        inStock: true,
-        quantity: 12
-    },
-    {
-        id: 5,
-        title: "Cleopatra's Crown Replica",
-        category: "accessories",
-        price: 18750,
-        originalPrice: null,
-        image: "images/5-3.jpg",
-        description: "A breathtaking reproduction of the legendary queen's crown, adorned with precious stones and intricate goldwork fit for royalty.",
-        rating: 4.9,
-        reviews: 28,
-        badges: ["featured"],
-        inStock: true,
-        quantity: 3,
-        buyWithBox: true,
-        boxPrice: 2500
-    },
-    {
-        id: 6,
-        title: "Hieroglyphic Papyrus Scroll",
-        category: "decorations",
-        price: 1250,
-        originalPrice: 1500,
-        image: "images/9-1.jpg",
-        description: "Authentic papyrus scroll featuring ancient Egyptian scenes and hieroglyphic texts, handcrafted by skilled artisans.",
-        rating: 4.5,
-        reviews: 41,
-        badges: ["sale"],
-        inStock: true,
-        quantity: 20
-    },
-    {
-        id: 7,
-        title: "Pharaoh's Scepter Replica",
-        category: "accessories",
-        price: 6500,
-        originalPrice: null,
-        image: "images/10.jpg",
-        description: "Magnificent replica of a pharaoh's ceremonial scepter with golden finish and precious stone inlays.",
-        rating: 4.8,
-        reviews: 12,
-        badges: ["new"],
-        inStock: true,
-        quantity: 2,
-        buyWithBox: true,
-        boxPrice: 1800
-    },
-    {
-        id: 8,
-        title: "Isis Goddess Statue",
-        category: "decorations",
-        price: 4200,
-        originalPrice: null,
-        image: "images/5-1 (1).jpg",
-        description: "Beautiful statue of the goddess Isis, protector of magic and motherhood, crafted in bronze with gold accents.",
-        rating: 4.7,
-        reviews: 19,
-        badges: [],
-        inStock: true,
-        quantity: 7
-    },
-    {
-        id: 9,
-        title: "Senet Game Board",
-        category: "accessories",
-        price: 3200,
-        originalPrice: 3800,
-        image: "images/9-1.jpg",
-        description: "Ancient Egyptian board game of Senet, the game of passing, complete with playing pieces and instructions.",
-        rating: 4.9,
-        reviews: 35,
-        badges: ["sale", "featured"],
-        inStock: true,
-        quantity: 4,
-        buyWithBox: true,
-        boxPrice: 1200
-    },
-    {
-        id: 10,
-        title: "Nefertiti Bust Replica",
-        category: "decorations",
-        price: 2800,
-        originalPrice: null,
-        image: "images/1-7-scaled.jpg",
-        description: "Stunning replica of the famous Nefertiti bust, capturing the beauty and elegance of the ancient queen.",
-        rating: 4.6,
-        reviews: 52,
-        badges: [],
-        inStock: true,
-        quantity: 25
-    },
-    {
-        id: 11,
-        title: "Egyptian Collar Necklace",
-        category: "jewelry",
-        price: 4200,
-        originalPrice: 5000,
-        image: "images/4-5-scaled.jpg",
-        description: "Elaborate collar necklace worn by Egyptian nobility, featuring intricate beadwork and golden elements.",
-        rating: 4.8,
-        reviews: 22,
-        badges: ["sale"],
-        inStock: true,
-        quantity: 6
-    },
-    {
-        id: 12,
-        title: "Tutankhamun Treasure Box",
-        category: "boxes",
-        price: 7200,
-        originalPrice: 8500,
-        image: "images/5-1 (1).jpg",
-        description: "Ornate treasure box inspired by Tutankhamun's tomb, with authentic hieroglyphic carvings and golden accents.",
-        rating: 4.9,
-        reviews: 16,
-        badges: ["sale", "featured"],
-        inStock: true,
-        quantity: 3
-    }
-];
-
 // Shop State Management Class
 class ShopManager {
     constructor() {
-        this.products = [...PRODUCTS_DATA];
-        this.filteredProducts = [...PRODUCTS_DATA];
+        this.products = [];
+        this.filteredProducts = [];
         this.currentCategory = 'all';
         this.currentSort = 'default';
         this.currentView = 'grid';
@@ -192,20 +14,60 @@ class ShopManager {
         this.priceRange = { min: 0, max: 50000 };
         this.cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
         this.wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
+        this.totalProducts = 0;
+        this.totalPages = 0;
 
         this.init();
     }
 
     // Initialize the shop
-    init() {
+    async init() {
         this.bindEvents();
         this.handleURLParameters();
-        this.applyFilters();
         this.initializeLoading();
         this.updateCartBadge();
         this.updateWishlistBadge();
-        this.initializeSidebars();
+        // this.initializeSidebars(); // Removed local sidebar initialization
         ensureSidebarsClosed();
+        await this.loadProducts();
+    }
+
+    // Load products from database
+    async loadProducts() {
+        try {
+            const params = new URLSearchParams({
+                action: 'get_products',
+                category: this.currentCategory,
+                sort: this.currentSort,
+                search: this.searchQuery,
+                min_price: this.priceRange.min,
+                max_price: this.priceRange.max,
+                page: this.currentPage,
+                limit: this.itemsPerPage
+            });
+
+            const response = await fetch(`shop.php?${params}`);
+            const data = await response.json();
+
+            if (data.success) {
+                this.products = data.products;
+                this.filteredProducts = data.products;
+                this.totalProducts = data.total;
+                this.totalPages = data.total_pages;
+                
+                this.renderProducts();
+                this.updateResultsInfo();
+                this.renderPagination();
+                
+                console.log(`📦 Loaded ${this.products.length} products from database`);
+            } else {
+                console.error('Failed to load products:', data.error);
+                this.showNotification('Failed to load products', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+            this.showNotification('Error loading products', 'error');
+        }
     }
 
     // Handle URL parameters for category filtering
@@ -213,7 +75,7 @@ class ShopManager {
         const urlParams = new URLSearchParams(window.location.search);
         const category = urlParams.get('category');
         
-        if (category && ['jewelry', 'decorations', 'boxes', 'accessories'].includes(category)) {
+        if (category && ['jewelry', 'decorations', 'boxes', 'accessories', 'Pharaonic Masks', 'Jewelry', 'Statues', 'Home Decor', 'Textiles'].includes(category)) {
             this.currentCategory = category;
             
             // Update the category select dropdown if it exists
@@ -394,10 +256,10 @@ class ShopManager {
             });
         }
         if (cartBtn) {
-            cartBtn.addEventListener('click', () => this.openSidebar('cartSidebar'));
+            cartBtn.addEventListener('click', () => window.renderCartSidebar());
         }
         if (wishlistBtn) {
-            wishlistBtn.addEventListener('click', () => this.openSidebar('wishlistSidebar'));
+            wishlistBtn.addEventListener('click', () => window.renderWishlistSidebar());
         }
 
         // Modal and sidebar controls
@@ -497,10 +359,10 @@ class ShopManager {
     }
 
     // Initialize sidebars
-    initializeSidebars() {
-        this.renderCart();
-        this.renderWishlist();
-    }
+    // initializeSidebars() {
+    //     this.renderCart();
+    //     this.renderWishlist();
+    // }
 
     // Set view mode
     setView(view) {
@@ -519,38 +381,16 @@ class ShopManager {
     }
 
     // Apply filters and sorting
-    applyFilters() {
-        let filtered = [...this.products];
-
-        // Category filter
-        if (this.currentCategory !== 'all') {
-            filtered = filtered.filter(product => product.category === this.currentCategory);
-        }
-
-        // Search filter
-        if (this.searchQuery) {
-            const query = this.searchQuery.toLowerCase();
-            filtered = filtered.filter(product => 
-                product.title.toLowerCase().includes(query) ||
-                product.description.toLowerCase().includes(query) ||
-                product.category.toLowerCase().includes(query)
-            );
-        }
-
-        // Price filter
-        filtered = filtered.filter(product => 
-            product.price >= this.priceRange.min && 
-            product.price <= this.priceRange.max
-        );
-
-        // Sorting
-        this.applySorting(filtered);
-
-        this.filteredProducts = filtered;
+    async applyFilters() {
+        console.log("🔍 Applying filters...");
+        
+        // Reset to first page when filters change
         this.currentPage = 1;
-        this.renderProducts();
-        this.updateResultsInfo();
-        this.renderPagination();
+        
+        // Load products with current filters
+        await this.loadProducts();
+        
+        console.log(`✅ Filters applied: ${this.filteredProducts.length} products found`);
     }
 
     // Apply sorting
@@ -583,11 +423,7 @@ class ShopManager {
         grid.classList.toggle('grid-view', this.currentView === 'grid');
         grid.classList.toggle('list-view', this.currentView === 'list');
 
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-        const productsToShow = this.filteredProducts.slice(startIndex, endIndex);
-
-        if (productsToShow.length === 0) {
+        if (this.products.length === 0) {
             grid.innerHTML = `
                 <div class="no-products">
                     <div class="empty-icon">
@@ -604,30 +440,28 @@ class ShopManager {
             return;
         }
 
-        grid.innerHTML = productsToShow.map(product => this.createProductCard(product, this.currentView)).join('');
+        grid.innerHTML = this.products.map(product => this.createProductCard(product, this.currentView)).join('');
     }
 
     // Create product card HTML
     createProductCard(product, view = 'grid') {
         const cardClass = view === 'list' ? 'product-card list' : 'product-card';
         
-        // Generate buy with box checkbox for accessories
-        const buyWithBoxCheckbox = product.category === 'accessories' && product.buyWithBox ? `
+        // Generate buy with box checkbox for products with has_box
+        const buyWithBoxCheckbox = product.has_box ? `
             <div class="buy-with-box-container">
                 <label class="buy-with-box-checkbox">
-                    <input type="checkbox" class="buy-with-box-input" data-product-id="${product.id}" data-box-price="${product.boxPrice}">
+                    <input type="checkbox" class="buy-with-box-input" data-product-id="${product.id}">
                     <span class="checkmark"></span>
-                    <div class="checkbox-content">
-                        <span class="checkbox-label">Buy with the Box</span>
-                    </div>
+                    <span class="checkbox-label">Buy with the Box</span>
                 </label>
             </div>
         ` : '';
 
-        // Add Read more... link for 3 random items (IDs 2, 5, 7) only (remove for id 8)
-        const readMoreLink = [2, 5, 7].includes(product.id) ? `
+        // Add Read more... link if blog_id is set
+        const readMoreLink = product.blog_id ? `
             <div class="read-more-container">
-                <a href="blog-details.html?id=${product.id}" class="read-more-link">Read more...</a>
+                <a href="blog-details.php?id=${product.blog_id}" class="read-more-link">Read more...</a>
             </div>
         ` : '';
         
@@ -655,7 +489,7 @@ class ShopManager {
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                             </svg>
                         </button>
-                        <button class="product-action-btn" onclick="window.shop.addToCart(${product.id})" title="Add to Cart">
+                        <button class="product-action-btn" onclick="window.shop.addToCart(${product.id})">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                                 <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -726,16 +560,15 @@ class ShopManager {
         const resultsInfo = document.getElementById('resultsInfo');
         if (!resultsInfo) return;
 
+        const total = this.totalProducts;
         const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-        const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredProducts.length);
-        const total = this.filteredProducts.length;
+        const endIndex = Math.min(startIndex + this.itemsPerPage - 1, total);
         
         resultsInfo.textContent = `Showing ${startIndex}-${endIndex} of ${total} ancient treasures`;
     }
 
     // Render pagination
     renderPagination() {
-        const totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
         const paginationNumbers = document.getElementById('paginationNumbers');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
@@ -743,12 +576,12 @@ class ShopManager {
         if (!paginationNumbers || !prevBtn || !nextBtn) return;
 
         prevBtn.disabled = this.currentPage === 1;
-        nextBtn.disabled = this.currentPage === totalPages || totalPages === 0;
+        nextBtn.disabled = this.currentPage === this.totalPages || this.totalPages === 0;
         
         let paginationHTML = '';
         const maxVisiblePages = 5;
         let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
         
         if (endPage - startPage < maxVisiblePages - 1) {
             startPage = Math.max(1, endPage - maxVisiblePages + 1);
@@ -767,13 +600,10 @@ class ShopManager {
     }
 
     // Go to specific page
-    goToPage(page) {
-        const totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
-        if (page >= 1 && page <= totalPages) {
+    async goToPage(page) {
+        if (page >= 1 && page <= this.totalPages) {
             this.currentPage = page;
-            this.renderProducts();
-            this.updateResultsInfo();
-            this.renderPagination();
+            await this.loadProducts();
             
             // Scroll to products
             document.getElementById('productsGrid')?.scrollIntoView({ behavior: 'smooth' });
@@ -781,36 +611,67 @@ class ShopManager {
     }
 
     // Cart functionality
-    addToCart(productId) {
-        const product = this.products.find(p => p.id === productId);
-        if (!product) return;
-
-        // Check if buy with box is selected for accessories
-        const buyWithBoxCheckbox = document.querySelector(`.buy-with-box-input[data-product-id="${productId}"]`);
-        const buyWithBox = buyWithBoxCheckbox ? buyWithBoxCheckbox.checked : false;
-
-        const existingItem = this.cart.find(item => item.id === productId);
-        
-        if (existingItem) {
-            existingItem.quantity += 1;
-            // Update box option if it changed
-            if (existingItem.buyWithBox !== buyWithBox) {
-                existingItem.buyWithBox = buyWithBox;
+    async addToCart(productId) {
+        try {
+            // Find the product data
+            const product = this.products.find(p => p.id === productId);
+            if (!product) {
+                this.showNotification('Product not found', 'error');
+                return;
             }
-        } else {
-            this.cart.push({
-                ...product,
-                quantity: 1,
-                buyWithBox: buyWithBox
-            });
-        }
 
-        this.saveCart();
-        this.updateCartBadge();
-        this.renderCart();
-        
-        const boxText = buyWithBox ? ' with the box' : '';
-        this.showNotification(`${product.title}${boxText} added to cart!`, 'success');
+            // Use global cart manager if available
+            if (window.cartManager) {
+                const productData = {
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    price: product.price,
+                    quantity: 1,
+                    image: product.image || 'images/1-7-scaled.jpg',
+                    sku: product.sku || `SKU-${product.id}`,
+                    features: product.features || ['Handcrafted', 'Premium Quality'],
+                    badge: product.badge || null,
+                    availability: product.availability || 'in-stock',
+                    maxQuantity: product.maxQuantity || 10
+                };
+                
+                const success = await window.cartManager.addToCart(productData);
+                if (success) {
+                    this.showNotification(`${product.name} added to cart`, 'success');
+                } else {
+                    this.showNotification('Failed to add to cart', 'error');
+                }
+            } else {
+                // Fallback to direct API call
+                const response = await fetch('shop.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'add_to_cart',
+                        product_id: productId,
+                        quantity: 1
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.showNotification(data.message, 'success');
+                    // Update cart display if cart manager is available
+                    if (window.updateCartDisplay) {
+                        window.updateCartDisplay();
+                    }
+                } else {
+                    this.showNotification(data.message || 'Failed to add to cart', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            this.showNotification('Error adding to cart', 'error');
+        }
     }
 
     removeFromCart(productId) {
@@ -903,23 +764,31 @@ class ShopManager {
     }
 
     // Wishlist functionality
-    addToWishlist(productId) {
-        const product = this.products.find(p => p.id === productId);
-        if (!product) return;
+    async addToWishlist(productId) {
+        try {
+            const response = await fetch('shop.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'add_to_wishlist',
+                    product_id: productId
+                })
+            });
 
-        const existingIndex = this.wishlist.findIndex(item => item.id === productId);
-        
-        if (existingIndex > -1) {
-            this.wishlist.splice(existingIndex, 1);
-            this.showNotification(`${product.title} removed from wishlist`, 'info');
-        } else {
-            this.wishlist.push(product);
-            this.showNotification(`${product.title} added to wishlist!`, 'success');
+            const data = await response.json();
+
+            if (data.success) {
+                this.showNotification(data.message, 'success');
+                this.updateWishlistBadge();
+            } else {
+                this.showNotification(data.message || 'Failed to add to wishlist', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding to wishlist:', error);
+            this.showNotification('Error adding to wishlist', 'error');
         }
-
-        this.saveWishlist();
-        this.updateWishlistBadge();
-        this.renderWishlist();
     }
 
     removeFromWishlist(productId) {
@@ -992,34 +861,33 @@ class ShopManager {
         
         if (!modal || !modalBody) return;
 
-        // Generate images section - show gift box for accessories
-        const imagesSection = product.category === 'accessories' ? `
-            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-                <img src="${product.image}" alt="${product.title}" style="width:280px; height:280px; border-radius:16px; box-shadow:0 4px 24px rgba(27,41,81,0.12); object-fit:cover; background:#f5f5f5;" />
-                <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--pyramid-gold); font-size: 1.2rem;">
-                    <span>+</span>
-                    <img src="images/gift-box.jpg" alt="Gift Box" style="width:200px; height:200px; border-radius:16px; box-shadow:0 2px 12px rgba(27,41,81,0.12); object-fit:cover;" />
+        // Show both main image and box image ONLY if has_box is true
+        let imagesSection = '';
+        if (product.has_box) {
+            imagesSection = `
+                <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+                    <img src="${product.image}" alt="${product.title}" style="width:320px; height:320px; border-radius:16px; box-shadow:0 4px 24px rgba(27,41,81,0.12); object-fit:cover; background:#f5f5f5;" />
+                    <img src="images/gift-box.jpg" alt="Gift Box" style="width:220px; height:220px; border-radius:16px; box-shadow:0 2px 12px rgba(27,41,81,0.12); object-fit:cover; margin-top:1rem; background:#f5f5f5;" />
                 </div>
-            </div>
-        ` : `
-            <img src="${product.image}" alt="${product.title}" style="width:320px; height:320px; border-radius:16px; box-shadow:0 4px 24px rgba(27,41,81,0.12); object-fit:cover; background:#f5f5f5;" />
-        `;
+            `;
+        } else {
+            imagesSection = `<img src="${product.image}" alt="${product.title}" style="width:320px; height:320px; border-radius:16px; box-shadow:0 4px 24px rgba(27,41,81,0.12); object-fit:cover; background:#f5f5f5;" />`;
+        }
 
-        // Generate buy with box checkbox for accessories
-        const buyWithBoxCheckbox = product.category === 'accessories' && product.buyWithBox ? `
-            <div style="margin: 1rem 0; padding: 0.75rem; background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(203, 138, 88, 0.3); border-radius: 12px;">
-                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; user-select: none;">
-                    <input type="checkbox" id="quickViewBuyWithBox" style="position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0;">
-                    <span id="quickViewCheckmark" style="height: 20px; width: 20px; background: rgba(255, 255, 255, 0.1); border: 2px solid var(--soft-gold); border-radius: 4px; position: relative; transition: all 0.3s ease;"></span>
-                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--pyramid-gold); text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);">Buy with the Box</span>
+        // Show the checkbox for any product with has_box = 1
+        const buyWithBoxCheckbox = product.has_box ? `
+            <div class="buy-with-box-container" style="margin: 1rem 0;">
+                <label class="buy-with-box-checkbox">
+                    <input type="checkbox" class="buy-with-box-input" data-product-id="${product.id}">
+                    <span class="checkbox-label">Buy with the Box</span>
                 </label>
             </div>
         ` : '';
 
-        // Add Read more... link for 3 random items (IDs 2, 5, 7) only
-        const readMoreLink = [2, 5, 7].includes(product.id) ? `
+        // Add Read more... link for products with blog_id
+        const readMoreLink = product.blog_id ? `
             <div style="margin-top:1.2rem; text-align:left;">
-                <a href="blog-details.html?id=${product.id}" class="read-more-link">Read more...</a>
+                <a href="blog-details.php?id=${product.blog_id}" class="read-more-link">Read more...</a>
             </div>
         ` : '';
 
@@ -1032,6 +900,7 @@ class ShopManager {
                     <div style="font-size:1.3rem; color:var(--pyramid-gold); margin-bottom:1rem;">Price: <b style='color:var(--pyramid-gold);'>$${product.price.toLocaleString()}</b></div>
                     <div style="font-size:1.1rem; color:var(--soft-yellow); margin-bottom:1.5rem; line-height:1.6;">${product.description}</div>
                     ${buyWithBoxCheckbox}
+                    ${readMoreLink}
                     <div style='display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; align-items:center; margin-bottom:1rem;'>
                         <div style='display:flex; align-items:center; gap:0.5rem;'>
                             <button type='button' id='quickViewQtyMinus' style='width:2.2rem; height:2.2rem; border-radius:50%; border:1px solid rgba(203, 138, 88, 0.5); background:rgba(255,255,255,0.1); font-size:1.2rem; cursor:pointer; color:var(--text-light);'>-</button>
@@ -1041,7 +910,6 @@ class ShopManager {
                         <button class="add-to-cart-btn" id="quickViewAddToCart" style="width:100%;">Add to Cart</button>
                         <button class="wishlist-btn" onclick="window.shop.addToWishlist(${product.id})" style="width:100%; margin-left:-0.5rem;">♡ Wishlist</button>
                     </div>
-                    ${readMoreLink}
                 </div>
             </div>
         `;
@@ -1136,19 +1004,19 @@ class ShopManager {
     }
 
     // Sidebar management
-    openSidebar(sidebarId) {
-        const sidebar = document.getElementById(sidebarId);
-        if (sidebar) {
-            sidebar.classList.add('active');
-        }
-    }
+    // openSidebar(sidebarId) {
+    //     const sidebar = document.getElementById(sidebarId);
+    //     if (sidebar) {
+    //         sidebar.classList.add('active');
+    //     }
+    // }
 
-    closeSidebar(sidebarId) {
-        const sidebar = document.getElementById(sidebarId);
-        if (sidebar) {
-            sidebar.classList.remove('active');
-        }
-    }
+    // closeSidebar(sidebarId) {
+    //     const sidebar = document.getElementById(sidebarId);
+    //     if (sidebar) {
+    //         sidebar.classList.remove('active');
+    //     }
+    // }
 
     // Show notification
     showNotification(message, type = 'info') {
@@ -1232,7 +1100,30 @@ document.addEventListener('click', (e) => {
 });
 
 // Global functions for backward compatibility
-window.addToCart = (productId) => window.shop?.addToCart(productId);
+window.addToCart = (productId) => {
+    if (window.cartManager && window.shop) {
+        // Use cart manager if available
+        const product = window.shop.products.find(p => p.id === productId);
+        if (product) {
+            const productData = {
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                price: product.price,
+                quantity: 1,
+                image: product.image || 'images/1-7-scaled.jpg',
+                sku: product.sku || `SKU-${product.id}`,
+                features: product.features || ['Handcrafted', 'Premium Quality'],
+                badge: product.badge || null,
+                availability: product.availability || 'in-stock',
+                maxQuantity: product.maxQuantity || 10
+            };
+            return window.cartManager.addToCart(productData);
+        }
+    }
+    // Fallback to shop's addToCart
+    return window.shop?.addToCart(productId);
+};
 window.addToWishlist = (productId) => window.shop?.addToWishlist(productId);
 
 console.log('🏺 Egyptian Creativity Shop - Enhanced luxury website loaded successfully!');

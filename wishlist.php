@@ -1,3 +1,398 @@
+<?php
+// API logic must be at the very top, before any HTML or whitespace
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', 'wishlist_errors.log');
+
+// Start session
+session_start();
+
+// Include database connection
+try {
+    include 'includes/db.php';
+    if (!isset($pdo)) {
+        throw new Exception('Database connection not established');
+    }
+} catch (Exception $e) {
+    error_log('Database connection error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed']);
+    exit;
+}
+
+// Helper: Check if user is logged in
+function getCurrentUserId() {
+    return isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
+}
+
+// Helper: Get session wishlist (for guests)
+function getSessionWishlist() {
+    return isset($_SESSION['wishlist']) ? $_SESSION['wishlist'] : [];
+}
+
+// Helper: Save session wishlist
+function saveSessionWishlist($wishlist) {
+    $_SESSION['wishlist'] = $wishlist;
+}
+
+// Helper: Find product details
+function getProductDetails($pdo, $product_id) {
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
+        $stmt->execute([$product_id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log('Error getting product details: ' . $e->getMessage());
+        return false;
+    }
+}
+
+// Helper: Log API requests
+function logApiRequest($action, $data = null) {
+    $log = date('Y-m-d H:i:s') . ' - Wishlist Action: ' . $action;
+    if ($data) {
+        $log .= ' - Data: ' . json_encode($data);
+    }
+    error_log($log);
+}
+
+
+// --- API/AJAX HANDLING ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
+    $action = $_GET['action'];
+    $user_id = getCurrentUserId();
+    
+    logApiRequest($action, ['user_id' => $user_id]);
+    
+    if ($action === 'get_wishlist') {
+        try {
+            if ($user_id) {
+                // DB wishlist for logged-in user
+                $sql = "SELECT w.id, p.id as product_id, p.name, p.description, p.price, 
+                        p.product_sku, p.stock, c.name as category_name 
+                    FROM wishlist_items w
+                    JOIN products p ON w.product_id = p.id
+                    LEFT JOIN categories c ON p.category = c.id
+                    WHERE w.user_id = ?
+                    ORDER BY w.added_at DESC";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$user_id]);
+            $wishlist_items = [];
+            
+            while ($row = $stmt->fetch()) {
+                $wishlist_items[] = [
+                    'id' => $row['id'],
+                    'product_id' => $row['product_id'],
+                        'name' => $row['name'],
+                        'description' => $row['description'],
+                        'price' => floatval($row['price']),
+                        'category' => $row['category_name'],
+                        'image' => 'images/1-7-scaled.jpg',
+                        'inStock' => $row['stock'] > 0,
+                        'quantity' => $row['stock']
+                    ];
+                }
+                
+                echo json_encode(['success' => true, 'wishlist' => $wishlist_items]);
+                logApiRequest('get_wishlist_success', ['user_id' => $user_id, 'items_count' => count($wishlist_items)]);
+                
+            } else {
+                // Session wishlist for guests
+                $wishlist = getSessionWishlist();
+                $wishlist_items = [];
+                
+                foreach ($wishlist as $item) {
+                    $product = getProductDetails($pdo, $item['product_id']);
+                    if ($product) {
+                        $wishlist_items[] = [
+                            'id' => $item['product_id'],
+                            'product_id' => $item['product_id'],
+                            'name' => $product['name'],
+                            'description' => $product['description'],
+                            'price' => floatval($product['price']),
+                            'category' => $product['category'],
+                            'image' => 'images/1-7-scaled.jpg',
+                            'inStock' => $product['stock'] > 0,
+                            'quantity' => $product['stock']
+                        ];
+                    }
+                }
+                
+                echo json_encode(['success' => true, 'wishlist' => $wishlist_items]);
+                logApiRequest('get_wishlist_success', ['guest' => true, 'items_count' => count($wishlist_items)]);
+            }
+            
+        } catch (Exception $e) {
+            error_log('Error getting wishlist: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to get wishlist items']);
+        }
+        exit;
+    }
+    
+    if ($action === 'get_recommended') {
+        try {
+            // Get product IDs already in wishlist
+            $wishlist_ids = [];
+            if ($user_id) {
+                $stmt = $pdo->prepare("SELECT product_id FROM wishlist_items WHERE user_id = ?");
+                $stmt->execute([$user_id]);
+                $wishlist_ids = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+            } else {
+                $wishlist = getSessionWishlist();
+                foreach ($wishlist as $item) {
+                    $wishlist_ids[] = $item['product_id'];
+                }
+            }
+            
+            // Get recommended products not in wishlist (limit 8)
+            $placeholders = count($wishlist_ids) > 0 ? implode(',', array_fill(0, count($wishlist_ids), '?')) : '';
+            $sql = "SELECT id, name, description, price, product_sku, stock, category FROM products";
+            if ($placeholders) {
+                $sql .= " WHERE id NOT IN ($placeholders) AND stock > 0";
+            } else {
+                $sql .= " WHERE stock > 0";
+            }
+            $sql .= " ORDER BY RAND() LIMIT 8";
+            
+            $stmt = $pdo->prepare($sql);
+            if ($placeholders) {
+                $stmt->execute($wishlist_ids);
+            } else {
+                $stmt->execute();
+            }
+            
+            $recommended = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $recommended[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name'],
+                    'description' => $row['description'],
+                    'price' => floatval($row['price']),
+                    'sku' => $row['product_sku'],
+                    'category' => $row['category'],
+                    'image' => 'images/1-7-scaled.jpg',
+                    'inStock' => $row['stock'] > 0,
+                    'quantity' => $row['stock']
+                ];
+            }
+            
+            echo json_encode(['success' => true, 'recommended' => $recommended]);
+            logApiRequest('get_recommended_success', ['items_count' => count($recommended)]);
+            
+        } catch (Exception $e) {
+            error_log('Error getting recommended items: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to get recommended items']);
+        }
+            exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $action = $data['action'] ?? '';
+        $user_id = getCurrentUserId();
+    
+        logApiRequest($action, $data);
+    
+        if ($action === 'add_to_wishlist') {
+            $product_id = $data['product_id'] ?? null;
+            
+            if (!$product_id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Product ID is required']);
+                exit;
+            }
+            
+            // Validate product exists
+            $product = getProductDetails($pdo, $product_id);
+            if (!$product) {
+                http_response_code(404);
+                echo json_encode(['error' => 'Product not found']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB wishlist for logged-in user
+                try {
+                $check_sql = "SELECT id FROM wishlist_items WHERE user_id = ? AND product_id = ?";
+                $check_stmt = $pdo->prepare($check_sql);
+                $check_stmt->execute([$user_id, $product_id]);
+                
+                if ($check_stmt->fetch()) {
+                    echo json_encode(['success' => false, 'message' => 'Item already in wishlist']);
+                        logApiRequest('add_to_wishlist_already_exists', ['user_id' => $user_id, 'product_id' => $product_id]);
+                } else {
+                    $insert_sql = "INSERT INTO wishlist_items (user_id, product_id, added_at) VALUES (?, ?, NOW())";
+                    $insert_stmt = $pdo->prepare($insert_sql);
+                    $result = $insert_stmt->execute([$user_id, $product_id]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Item added to wishlist']);
+                            logApiRequest('add_to_wishlist_success', ['user_id' => $user_id, 'product_id' => $product_id]);
+                        } else {
+                            throw new Exception('Failed to add item to wishlist');
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log('Error adding to wishlist (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to add item to wishlist']);
+                }
+            } else {
+                // Session wishlist for guests
+                try {
+                    $wishlist = getSessionWishlist();
+                    $already_exists = false;
+                    
+                    foreach ($wishlist as $item) {
+                        if ($item['product_id'] == $product_id) {
+                            $already_exists = true;
+                            break;
+                        }
+                    }
+                    
+                    if ($already_exists) {
+                        echo json_encode(['success' => false, 'message' => 'Item already in wishlist']);
+                        logApiRequest('add_to_wishlist_already_exists', ['guest' => true, 'product_id' => $product_id]);
+                    } else {
+                        $wishlist[] = [
+                            'product_id' => $product_id,
+                            'added_at' => date('Y-m-d H:i:s')
+                        ];
+                        saveSessionWishlist($wishlist);
+                        echo json_encode(['success' => true, 'message' => 'Item added to wishlist']);
+                        logApiRequest('add_to_wishlist_success', ['guest' => true, 'product_id' => $product_id]);
+                }
+            } catch (Exception $e) {
+                    error_log('Error adding to wishlist (session): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to add item to wishlist']);
+                }
+            }
+            exit;
+        }
+            
+        if ($action === 'remove_from_wishlist') {
+            $product_id = $data['product_id'] ?? null;
+            
+            if (!$product_id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Product ID is required']);
+                exit;
+            }
+            
+            if ($user_id) {
+                // DB wishlist for logged-in user
+            try {
+                $delete_sql = "DELETE FROM wishlist_items WHERE user_id = ? AND product_id = ?";
+                $delete_stmt = $pdo->prepare($delete_sql);
+                $result = $delete_stmt->execute([$user_id, $product_id]);
+                
+                if ($result) {
+                    echo json_encode(['success' => true, 'message' => 'Item removed from wishlist']);
+                        logApiRequest('remove_from_wishlist_success', ['user_id' => $user_id, 'product_id' => $product_id]);
+                } else {
+                        throw new Exception('Failed to remove item from wishlist');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error removing from wishlist (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to remove item from wishlist']);
+                }
+            } else {
+                // Session wishlist for guests
+                try {
+                    $wishlist = getSessionWishlist();
+                    $initial_count = count($wishlist);
+                    $wishlist = array_filter($wishlist, function($item) use ($product_id) {
+                        return $item['product_id'] != $product_id;
+                    });
+                    
+                    if (count($wishlist) < $initial_count) {
+                        saveSessionWishlist($wishlist);
+                        echo json_encode(['success' => true, 'message' => 'Item removed from wishlist']);
+                        logApiRequest('remove_from_wishlist_success', ['guest' => true, 'product_id' => $product_id]);
+                    } else {
+                        echo json_encode(['error' => 'Item not found in wishlist']);
+                        logApiRequest('remove_from_wishlist_not_found', ['guest' => true, 'product_id' => $product_id]);
+                }
+            } catch (Exception $e) {
+                    error_log('Error removing from wishlist (session): ' . $e->getMessage());
+                http_response_code(500);
+                    echo json_encode(['error' => 'Failed to remove item from wishlist']);
+                }
+            }
+            exit;
+        }
+        
+        if ($action === 'clear_wishlist') {
+            if ($user_id) {
+                // DB wishlist for logged-in user
+                try {
+                    $query = "DELETE FROM wishlist_items WHERE user_id = ?";
+                    $stmt = $pdo->prepare($query);
+                    $result = $stmt->execute([$user_id]);
+                    
+                    if ($result) {
+                        echo json_encode(['success' => true, 'message' => 'Wishlist cleared successfully']);
+                        logApiRequest('clear_wishlist_success', ['user_id' => $user_id]);
+                    } else {
+                        throw new Exception('Failed to clear wishlist');
+                    }
+                } catch (Exception $e) {
+                    error_log('Error clearing wishlist (DB): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to clear wishlist']);
+            }
+            } else {
+                // Session wishlist for guests
+                try {
+                    saveSessionWishlist([]);
+                    echo json_encode(['success' => true, 'message' => 'Wishlist cleared successfully']);
+                    logApiRequest('clear_wishlist_success', ['guest' => true]);
+                } catch (Exception $e) {
+                    error_log('Error clearing wishlist (session): ' . $e->getMessage());
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Failed to clear wishlist']);
+                }
+            }
+            exit;
+        }
+        
+        // Unknown action
+        http_response_code(400);
+        echo json_encode(['error' => 'Unknown action']);
+        exit;
+        
+    } catch (Exception $e) {
+        error_log('General wishlist API error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal server error']);
+            exit;
+    }
+}
+
+// Get wishlist items for display
+$wishlist_items = [];
+$user_id = getCurrentUserId(); // Use helper function
+
+$sql = "SELECT w.id, p.id as product_id, p.name, p.description, p.price, p.product_sku, p.stock, c.name as category_name
+        FROM wishlist_items w
+        JOIN products p ON w.product_id = p.id
+        LEFT JOIN categories c ON p.category = c.id
+        WHERE w.user_id = ?
+        ORDER BY w.added_at DESC";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$user_id]);
+while ($row = $stmt->fetch()) {
+    $wishlist_items[] = $row;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,18 +455,18 @@
     <!-- Header -->
     <header class="header" id="header">
         <div class="header-container">
-            <a href="index.html" class="logo">
+            <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
             
             <nav class="nav-menu" id="navMenu">
-                <a href="index.html" class="nav-link">HOME</a>
-                <a href="about.html" class="nav-link">ABOUT US</a>
-                <a href="gallery.html" class="nav-link">GALLERY</a>
-                <a href="blog.html" class="nav-link">BLOGS</a>
-                <a href="shop.html" class="nav-link">SHOP</a>
-                <a href="contact.html" class="nav-link">CONTACT</a>
-                <a href="auth.html" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <a href="index.php" class="nav-link">HOME</a>
+                <a href="about.php" class="nav-link">ABOUT US</a>
+                <a href="gallery.php" class="nav-link">GALLERY</a>
+                <a href="blog.php" class="nav-link">BLOGS</a>
+                <a href="shop.php" class="nav-link">SHOP</a>
+                <a href="contact.php" class="nav-link">CONTACT</a>
+                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
             
             <div class="header-actions">
@@ -232,7 +627,7 @@
                 </div>
                 <h2>Your Sacred Collection Awaits</h2>
                 <p>Begin your journey through ancient Egyptian creativity and mystical artifacts</p>
-                <button class="btn btn-primary" onclick="window.location.href='shop.html'">
+                <button class="btn btn-primary" onclick="window.location.href='shop.php'">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12l2 2 4-4"></path>
@@ -311,23 +706,23 @@
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About</a></li>
-                        <li><a href="gallery.html">Gallery</a></li>
-                        <li><a href="blog.html">Blog</a></li>
-                        <li><a href="shop.html">shop</a></li>
-                        <li><a href="contact.html">Contact</a></li>
+                        <li><a href="index.php">Home</a></li>
+                        <li><a href="about.php">About</a></li>
+                        <li><a href="gallery.php">Gallery</a></li>
+                        <li><a href="blog.php">Blog</a></li>
+                        <li><a href="shop.php">shop</a></li>
+                        <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
-                        <li><a href="shop.html?category=accessories">Accessories</a></li>
-                        <li><a href="shop.html?category=decorations">Decorations</a></li>
-                        <li><a href="shop.html?category=boxes">Boxes</a></li>
-                        <li><a href="shop.html?category=game-boxes">Game Boxes</a></li>
-                        <li><a href="shop.html?category=fashion">Fashion</a></li>
+                        <li><a href="shop.php?category=accessories">Accessories</a></li>
+                        <li><a href="shop.php?category=decorations">Decorations</a></li>
+                        <li><a href="shop.php?category=boxes">Boxes</a></li>
+                        <li><a href="shop.php?category=game-boxes">Game Boxes</a></li>
+                        <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
                 
@@ -412,15 +807,17 @@
                 </div>
             </div>
             <div class="cart-actions">
-                <a class="btn btn-outline" href="cart.html">View Cart</a>
-                <a class="btn btn-primary" href="cart.html">Checkout</a>
+                <a class="btn btn-outline" href="cart.php">View Cart</a>
+                <a class="btn btn-primary" href="cart.php">Checkout</a>
             </div>
         </div>
     </div>
 
+    <?php include 'includes/sidebar.html'; ?>
+    <script src="js/script.js"></script>
+
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>
-    <script src="js/script.js"></script>
     <script src="js/wishlist-script.js"></script>
     <script>
     document.addEventListener('mousedown', (e) => {
