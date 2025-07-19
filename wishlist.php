@@ -69,39 +69,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
         try {
             if ($user_id) {
                 // DB wishlist for logged-in user
-                $sql = "SELECT w.id, p.id as product_id, p.name, p.description, p.price, 
-                        p.product_sku, p.stock, c.name as category_name 
-                    FROM wishlist_items w
-                    JOIN products p ON w.product_id = p.id
-                    LEFT JOIN categories c ON p.category = c.id
-                    WHERE w.user_id = ?
-                    ORDER BY w.added_at DESC";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([$user_id]);
-            $wishlist_items = [];
-            
-            while ($row = $stmt->fetch()) {
-                $wishlist_items[] = [
-                    'id' => $row['id'],
-                    'product_id' => $row['product_id'],
+                $sql = "SELECT w.id, p.id as product_id, p.name, p.description, p.price, p.product_sku, p.stock, c.name as category_name, p.product_image FROM wishlist_items w JOIN products p ON w.product_id = p.id LEFT JOIN categories c ON p.category = c.id WHERE w.user_id = ? ORDER BY w.added_at DESC";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$user_id]);
+                $wishlist_items = [];
+                while ($row = $stmt->fetch()) {
+                    $wishlist_items[] = [
+                        'id' => $row['id'],
+                        'product_id' => $row['product_id'],
                         'name' => $row['name'],
                         'description' => $row['description'],
                         'price' => floatval($row['price']),
                         'category' => $row['category_name'],
-                        'image' => 'images/1-7-scaled.jpg',
+                        'image' => $row['product_image'] ? $row['product_image'] : 'images/products/placeholder.jpg',
                         'inStock' => $row['stock'] > 0,
                         'quantity' => $row['stock']
                     ];
                 }
-                
                 echo json_encode(['success' => true, 'wishlist' => $wishlist_items]);
                 logApiRequest('get_wishlist_success', ['user_id' => $user_id, 'items_count' => count($wishlist_items)]);
-                
             } else {
                 // Session wishlist for guests
                 $wishlist = getSessionWishlist();
                 $wishlist_items = [];
-                
                 foreach ($wishlist as $item) {
                     $product = getProductDetails($pdo, $item['product_id']);
                     if ($product) {
@@ -112,17 +102,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                             'description' => $product['description'],
                             'price' => floatval($product['price']),
                             'category' => $product['category'],
-                            'image' => 'images/1-7-scaled.jpg',
+                            'image' => $product['product_image'] ? $product['product_image'] : 'images/products/placeholder.jpg',
                             'inStock' => $product['stock'] > 0,
                             'quantity' => $product['stock']
                         ];
                     }
                 }
-                
                 echo json_encode(['success' => true, 'wishlist' => $wishlist_items]);
                 logApiRequest('get_wishlist_success', ['guest' => true, 'items_count' => count($wishlist_items)]);
             }
-            
         } catch (Exception $e) {
             error_log('Error getting wishlist: ' . $e->getMessage());
             http_response_code(500);
@@ -148,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
             
             // Get recommended products not in wishlist (limit 8)
             $placeholders = count($wishlist_ids) > 0 ? implode(',', array_fill(0, count($wishlist_ids), '?')) : '';
-            $sql = "SELECT id, name, description, price, product_sku, stock, category FROM products";
+            $sql = "SELECT id, name, description, price, product_sku, stock, category, product_image FROM products";
             if ($placeholders) {
                 $sql .= " WHERE id NOT IN ($placeholders) AND stock > 0";
             } else {
@@ -172,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                     'price' => floatval($row['price']),
                     'sku' => $row['product_sku'],
                     'category' => $row['category'],
-                    'image' => 'images/1-7-scaled.jpg',
+                    'image' => $row['product_image'] ? $row['product_image'] : 'images/products/placeholder.jpg',
                     'inStock' => $row['stock'] > 0,
                     'quantity' => $row['stock']
                 ];
@@ -839,5 +827,22 @@ while ($row = $stmt->fetch()) {
         }
     });
     </script>
+    <script>
+function updateWishlistBadge() {
+    let count = 0;
+    try {
+        // Try localStorage (for guests)
+        const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+        count = Array.isArray(wishlist) ? wishlist.length : 0;
+    } catch (e) { count = 0; }
+    var badge = document.getElementById('wishlistBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+    }
+}
+document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+// Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
+</script>
 </body>
 </html>

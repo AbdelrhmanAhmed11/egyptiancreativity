@@ -206,6 +206,26 @@
     </section>
 
     <!-- Featured Article -->
+    <?php
+    // Fetch blog posts (no joins, just use image and author fields)
+    $blog_posts = [];
+    $sql = "SELECT * FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC, created_at DESC";
+    $stmt = $pdo->query($sql);
+    while ($row = $stmt->fetch()) {
+        $blog_posts[] = $row;
+    }
+    // Find the most recent featured blog post
+    $featured_blog = null;
+    foreach ($blog_posts as $post) {
+        if (!empty($post['featured'])) {
+            $featured_blog = $post;
+            break;
+        }
+    }
+    if (!$featured_blog && count($blog_posts) > 0) {
+        $featured_blog = $blog_posts[0]; // fallback to latest
+    }
+    ?>
     <section class="featured-article" id="featured">
         <div class="container">
             <div class="section-header">
@@ -216,42 +236,40 @@
                     where history meets mystery and wisdom transcends time.
                 </p>
             </div>
-            
+            <?php if ($featured_blog): ?>
             <div class="featured-content">
                 <div class="featured-image">
-                    <img src="images/5-1.jpg" alt="The Queens of Ancient Egypt" loading="lazy">
+                    <img src="<?php echo htmlspecialchars($featured_blog['image'] ?: 'images/blogs/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($featured_blog['title']); ?>" loading="lazy">
                     <div class="featured-overlay">
                         <div class="featured-category">Featured</div>
                     </div>
                 </div>
                 <div class="featured-text">
-                    <h2 class="featured-title">The Queens of Ancient Egypt: Legacies of Power and Beauty</h2>
+                    <h2 class="featured-title"><?php echo htmlspecialchars($featured_blog['title']); ?></h2>
                     <div class="featured-meta">
                         <span class="meta-item">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
-                            Admin
+                            <?php echo htmlspecialchars($featured_blog['author'] ?: '-'); ?>
                         </span>
                         <span class="meta-item">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <polyline points="12,6 12,12 16,14"></polyline>
                             </svg>
-                            5 min read
+                            <!-- Optionally add read time here -->
                         </span>
                         <span class="meta-item">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path>
                             </svg>
-                            April 13, 2025
+                            <?php echo $featured_blog['published_at'] ? date('M d, Y', strtotime($featured_blog['published_at'])) : date('M d, Y', strtotime($featured_blog['created_at'])); ?>
                         </span>
                     </div>
-                    <p class="featured-description">
-                        Ancient Egypt was home to numerous powerful queens who left an indelible mark on history. From Nefertiti to Cleopatra, these remarkable women wielded influence and authority alongside their pharaoh counterparts, shaping the destiny of one of history's greatest civilizations.
-                    </p>
-                    <a href="blog-details.php?id=3" class="read-more-btn">
+                    <p class="featured-description"><?php echo htmlspecialchars($featured_blog['excerpt']); ?></p>
+                    <a href="blog-details.php?id=<?php echo $featured_blog['id']; ?>" class="read-more-btn">
                         <span>Read Full Article</span>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -260,6 +278,7 @@
                     </a>
                 </div>
             </div>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -272,27 +291,6 @@
                 <p class="section-description">
                     Explore our collection of articles organized by topics that fascinate and educate.
                 </p>
-            </div>
-            
-            <div class="filter-buttons" id="filterButtons">
-                <button class="filter-btn active" data-filter="all">
-                    <span>All Articles</span>
-                </button>
-                <button class="filter-btn" data-filter="history">
-                    <span>History</span>
-                </button>
-                <button class="filter-btn" data-filter="artifacts">
-                    <span>Artifacts</span>
-                </button>
-                <button class="filter-btn" data-filter="royalty">
-                    <span>Royalty</span>
-                </button>
-                <button class="filter-btn" data-filter="culture">
-                    <span>Culture</span>
-                </button>
-                <button class="filter-btn" data-filter="mythology">
-                    <span>Mythology</span>
-                </button>
             </div>
             
             <div class="search-container">
@@ -310,50 +308,37 @@
 
     <!-- Articles Grid Section -->
     <?php
-    // Fetch blog posts with their images (if any)
+    // Fetch all published blog posts
     $blog_posts = [];
-    $sql = "SELECT bp.*, u.full_name AS author_name, m.file_path AS image_path
-            FROM blog_posts bp
-            LEFT JOIN users u ON bp.author_id = u.id
-            LEFT JOIN media_relations mr ON mr.entity_type = 'blog_post' AND mr.entity_id = bp.id AND mr.relation_type = 'thumbnail'
-            LEFT JOIN media m ON mr.media_id = m.id
-            WHERE bp.status = 'published'
-            ORDER BY bp.published_at DESC, bp.created_at DESC";
+    $sql = "SELECT * FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC, created_at DESC";
     $stmt = $pdo->query($sql);
     while ($row = $stmt->fetch()) {
         $blog_posts[] = $row;
     }
+    // Pagination logic
+    $per_page = 6;
+    $total_blogs = count($blog_posts);
+    $total_pages = ceil($total_blogs / $per_page);
+    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $start = ($page - 1) * $per_page;
+    $blogs_to_show = array_slice($blog_posts, $start, $per_page);
     ?>
     <section class="articles-section" id="articles">
         <div class="container">
             <div class="articles-grid" id="articlesGrid">
-                <?php if (count($blog_posts) > 0): ?>
-                    <?php foreach ($blog_posts as $post): ?>
+                <?php if (count($blogs_to_show) > 0): ?>
+                    <?php foreach ($blogs_to_show as $post): ?>
                         <article class="article-card" data-id="<?php echo $post['id']; ?>">
                             <div class="card-image">
-                                <img src="<?php echo htmlspecialchars($post['image_path'] ?? 'images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" loading="lazy">
-                                <div class="card-overlay">
-                                    <div class="card-category"><?php echo htmlspecialchars($post['excerpt'] ? explode(' ', $post['excerpt'])[0] : ''); ?></div>
-                                </div>
+                                <img src="<?php echo htmlspecialchars($post['image'] ?: 'images/blogs/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>" loading="lazy">
+                                <div class="card-overlay"></div>
                             </div>
                             <div class="card-content">
-                                <h3 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h3>
                                 <div class="card-meta">
-                                    <span class="meta-item">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="12" cy="7" r="4"></circle>
-                                        </svg>
-                                        <?php echo htmlspecialchars($post['author_name'] ?? 'Admin'); ?>
-                                    </span>
-                                    <span class="meta-item">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <polyline points="12,6 12,12 16,14"></polyline>
-                                        </svg>
-                                        <?php echo $post['published_at'] ? date('M d, Y', strtotime($post['published_at'])) : ''; ?>
-                                    </span>
+                                    <span class="card-date"><?php echo $post['published_at'] ? date('M d, Y', strtotime($post['published_at'])) : date('M d, Y', strtotime($post['created_at'])); ?></span>
+                                    <span class="card-author">By <?php echo htmlspecialchars($post['author'] ?: '-'); ?></span>
                                 </div>
+                                <h3 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h3>
                                 <p class="card-excerpt"><?php echo htmlspecialchars($post['excerpt']); ?></p>
                                 <a href="blog-details.php?id=<?php echo $post['id']; ?>" class="card-link">
                                     <span>Read More</span>
@@ -369,16 +354,34 @@
                     <div style="color:#fff;font-size:1.2rem;text-align:center;padding:2rem;">No blog posts found.</div>
                 <?php endif; ?>
             </div>
-            <div class="load-more-container">
-                <button class="btn btn-outline" id="loadMoreBtn">
-                    Load More Articles
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6,9 12,15 18,9"></polyline>
-                    </svg>
-                </button>
+            <div class="pagination-bar" style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 32px;">
+                <?php if ($page > 1): ?>
+                    <a href="?page=<?php echo $page-1; ?>" class="pagination-btn">&lt; Previous</a>
+                <?php else: ?>
+                    <span class="pagination-btn disabled">&lt; Previous</span>
+                <?php endif; ?>
+                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                    <?php if ($i == $page): ?>
+                        <span class="pagination-btn active"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="?page=<?php echo $i; ?>" class="pagination-btn"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+                <?php if ($page < $total_pages): ?>
+                    <a href="?page=<?php echo $page+1; ?>" class="pagination-btn">Next &gt;</a>
+                <?php else: ?>
+                    <span class="pagination-btn disabled">Next &gt;</span>
+                <?php endif; ?>
             </div>
         </div>
     </section>
+    <style>
+    .pagination-bar { margin-top: 32px; }
+    .pagination-btn { display: inline-block; min-width: 48px; padding: 10px 22px; border-radius: 24px; background: rgba(255,255,255,0.08); color: #fff; font-weight: 600; font-size: 1.1rem; text-align: center; text-decoration: none; border: 2px solid #eac85b; margin: 0 4px; transition: background 0.2s, color 0.2s, border 0.2s; cursor: pointer; }
+    .pagination-btn.active { background: #ffe066; color: #222; border-color: #ffe066; box-shadow: 0 2px 8px rgba(234,200,91,0.15); }
+    .pagination-btn.disabled { opacity: 0.5; cursor: not-allowed; border-color: #eac85b; }
+    .pagination-btn:hover:not(.active):not(.disabled) { background: #eac85b; color: #222; border-color: #eac85b; }
+    </style>
 
     <!-- Cart Sidebar -->
     <div class="sidebar-backdrop" id="cartBackdrop"></div>
@@ -539,24 +542,21 @@
     <script src="js/sidebar-utils.js"></script>
     <script src="js/products-data.js"></script>
     <script>
-    document.addEventListener('mousedown', (e) => {
-        const cartSidebar = document.getElementById('cartSidebar');
-        const wishlistSidebar = document.getElementById('wishlistSidebar');
-        if (cartSidebar && cartSidebar.classList.contains('active') &&
-            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            cartSidebar.classList.remove('active');
-            document.body.style.overflow = '';
+    function updateWishlistBadge() {
+        let count = 0;
+        try {
+            // Try localStorage (for guests)
+            const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+            count = Array.isArray(wishlist) ? wishlist.length : 0;
+        } catch (e) { count = 0; }
+        var badge = document.getElementById('wishlistBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
         }
-        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
-            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            wishlistSidebar.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
+    }
+    document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+    // Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
     </script>
 </body>
 </html>

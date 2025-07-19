@@ -1,66 +1,61 @@
-<?php 
-include 'includes/db.php';
+<?php include 'includes/db.php'; 
+// Start session for authentication 
+session_start(); 
 
-// Start session for authentication
-session_start();
+// Handle contact form submission 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) { 
+    $name = trim($_POST['name'] ?? ''); 
+    $email = trim($_POST['email'] ?? ''); 
+    $subject = trim($_POST['subject'] ?? ''); 
+    $message = trim($_POST['message'] ?? ''); 
+    $response = ['success' => false, 'message' => '']; 
+    
+    if (empty($name) || empty($email) || empty($subject) || empty($message)) { 
+        $response['message'] = 'Please fill in all fields.'; 
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) { 
+        $response['message'] = 'Please enter a valid email address.'; 
+    } else { 
+        try { 
+            $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message, sent_at) VALUES (?, ?, ?, ?, NOW())"); 
+            if ($stmt->execute([$name, $email, $subject, $message])) { 
+                $response['success'] = true; 
+                $response['message'] = 'Thank you for your message! We will get back to you soon.'; 
+            } else { 
+                $response['message'] = 'Failed to send message. Please try again.'; 
+            } 
+        } catch (Exception $e) { 
+            $response['message'] = 'An error occurred. Please try again.'; 
+        } 
+    } 
+    header('Content-Type: application/json'); 
+    echo json_encode($response); 
+    exit; 
+} 
 
-// Handle contact form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $subject = trim($_POST['subject'] ?? '');
-    $message = trim($_POST['message'] ?? '');
+// Handle newsletter subscription 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) { 
+    $email = trim($_POST['newsletter_email'] ?? ''); 
+    $response = ['success' => false, 'message' => '']; 
     
-    $response = ['success' => false, 'message' => ''];
-    
-    if (empty($name) || empty($email) || empty($subject) || empty($message)) {
-        $response['message'] = 'Please fill in all fields.';
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $response['message'] = 'Please enter a valid email address.';
-    } else {
-        try {
-            $stmt = $pdo->prepare("INSERT INTO contact_messages (name, email, subject, message, sent_at) VALUES (?, ?, ?, ?, NOW())");
-            if ($stmt->execute([$name, $email, $subject, $message])) {
-                $response['success'] = true;
-                $response['message'] = 'Thank you for your message! We will get back to you soon.';
-            } else {
-                $response['message'] = 'Failed to send message. Please try again.';
-            }
-        } catch (Exception $e) {
-            $response['message'] = 'An error occurred. Please try again.';
-        }
-    }
-    
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit;
-}
-
-// Handle newsletter subscription
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) {
-    $email = trim($_POST['newsletter_email'] ?? '');
-    $response = ['success' => false, 'message' => ''];
-    
-    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        try {
-            $stmt = $pdo->prepare("INSERT INTO newsletter_subscriptions (email, status, subscribed_at) VALUES (?, 'subscribed', NOW()) ON DUPLICATE KEY UPDATE status='subscribed', subscribed_at=NOW()");
-            if ($stmt->execute([$email])) {
-                $response['success'] = true;
-                $response['message'] = 'Thank you for subscribing to our newsletter!';
-            } else {
-                $response['message'] = 'Subscription failed. Please try again.';
-            }
-        } catch (Exception $e) {
-            $response['message'] = 'An error occurred. Please try again.';
-        }
-    } else {
-        $response['message'] = 'Please enter a valid email address.';
-    }
-    
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit;
-}
+    if (filter_var($email, FILTER_VALIDATE_EMAIL)) { 
+        try { 
+            $stmt = $pdo->prepare("INSERT INTO newsletter_subscriptions (email, status, subscribed_at) VALUES (?, 'subscribed', NOW()) ON DUPLICATE KEY UPDATE status='subscribed', subscribed_at=NOW()"); 
+            if ($stmt->execute([$email])) { 
+                $response['success'] = true; 
+                $response['message'] = 'Thank you for subscribing to our newsletter!'; 
+            } else { 
+                $response['message'] = 'Subscription failed. Please try again.'; 
+            } 
+        } catch (Exception $e) { 
+            $response['message'] = 'An error occurred. Please try again.'; 
+        } 
+    } else { 
+        $response['message'] = 'Please enter a valid email address.'; 
+    } 
+    header('Content-Type: application/json'); 
+    echo json_encode($response); 
+    exit; 
+} 
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,77 +64,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us | Egyptian Creativity - Luxury Ancient Artifacts Collection</title>
     <meta name="description" content="Get in touch with Egyptian Creativity for inquiries about authentic Egyptian artifacts and luxury decorative items">
-
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="images/go3ran_.png">
-
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
-
+    
     <link rel="stylesheet" href="css/contact-styles.css">
     <link rel="stylesheet" href="css/sidebar-styles.css">
-
 </head>
 <body>
-<?php if ($skip_loading): ?>
-<script>window.skipContactLoading = true;</script>
-<?php endif; ?>
+    <?php if (isset($skip_loading) && $skip_loading): ?>
+    <script>window.skipContactLoading = true;</script>
+    <?php endif; ?>
 
-<!-- Top-right notification for contact and newsletter forms -->
-<?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
-    <?php if (isset($contact_success) && $contact_success): ?>
-        <div class="notification success contact-topright" id="contactTopRightMsg">Your sacred message has been sent successfully! Our master craftsmen will respond within 24 hours.</div>
-        <script>
-        setTimeout(function() {
-            var el = document.getElementById('contactTopRightMsg');
-            if (el) {
-                el.style.transition = 'opacity 0.5s';
-                el.style.opacity = '0';
-                setTimeout(function() { el.remove(); }, 600);
-            }
-        }, 4000);
-        </script>
-    <?php elseif (isset($contact_error) && $contact_error): ?>
-        <div class="notification error contact-topright" id="contactTopRightMsg"><?= htmlspecialchars($contact_error) ?></div>
-        <script>
-        setTimeout(function() {
-            var el = document.getElementById('contactTopRightMsg');
-            if (el) {
-                el.style.transition = 'opacity 0.5s';
-                el.style.opacity = '0';
-                setTimeout(function() { el.remove(); }, 600);
-            }
-        }, 4000);
-        </script>
-    <?php endif; ?>
-    <?php if (isset($newsletter_success) && $newsletter_success): ?>
-        <div class="notification success contact-topright" id="newsletterTopRightMsg">Welcome to the Egyptian Creativity family! You will receive ancient wisdom and exclusive offers.</div>
-        <script>
-        setTimeout(function() {
-            var el = document.getElementById('newsletterTopRightMsg');
-            if (el) {
-                el.style.transition = 'opacity 0.5s';
-                el.style.opacity = '0';
-                setTimeout(function() { el.remove(); }, 600);
-            }
-        }, 4000);
-        </script>
-    <?php elseif (isset($newsletter_error) && $newsletter_error): ?>
-        <div class="notification error contact-topright" id="newsletterTopRightMsg"><?= htmlspecialchars($newsletter_error) ?></div>
-        <script>
-        setTimeout(function() {
-            var el = document.getElementById('newsletterTopRightMsg');
-            if (el) {
-                el.style.transition = 'opacity 0.5s';
-                el.style.opacity = '0';
-                setTimeout(function() { el.remove(); }, 600);
-            }
-        }, 4000);
-        </script>
-    <?php endif; ?>
-<?php endif; ?>
     <!-- Animated Background (Same as Index Page) -->
     <div class="animated-bg">
         <div class="pyramid-bg"></div>
@@ -182,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
             <a href="index.php" class="logo">
                 <img src="images/logo_-removebg-preview.png" alt="Logo" style="height:100px;width:250px;object-fit:contain;border-radius:8px;" />
             </a>
-            
             <nav class="nav-menu" id="navMenu">
                 <a href="index.php" class="nav-link">HOME</a>
                 <a href="about.php" class="nav-link">ABOUT US</a>
@@ -192,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                 <a href="contact.php" class="nav-link active">CONTACT</a>
                 <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
             </nav>
-            
             <div class="header-actions">
                 <button class="header-icon" id="searchBtn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -246,8 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     <span class="line">Masters</span>
                 </h1>
                 <p class="hero-description">
-                    We're here to guide you through our collection of authentic Egyptian artifacts 
-                    and answer any questions about our ancient treasures.
+                    We're here to guide you through our collection of authentic Egyptian artifacts and answer any questions about our ancient treasures.
                 </p>
                 <div class="hero-stats">
                     <div class="stat">
@@ -380,6 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                         </div>
                         
                         <form id="contactForm" class="contact-form" method="post" action="contact.php">
+                            <input type="hidden" name="contact_form" value="1">
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="name">Sacred Name *</label>
@@ -453,9 +392,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
 
                 <div class="faq-list">
                     <div class="faq-item">
-                        <div class="faq-question">
+                        <div class="faq-question" data-faq-trigger>
                             <h3>How authentic are your Egyptian creativity?</h3>
-                            <button class="faq-toggle">
+                            <button class="faq-toggle" type="button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="faq-icon-plus">
                                     <path d="M5 12h14"/>
                                     <path d="M12 5v14"/>
@@ -471,9 +410,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     </div>
 
                     <div class="faq-item">
-                        <div class="faq-question">
+                        <div class="faq-question" data-faq-trigger>
                             <h3>Do you ship your treasures worldwide?</h3>
-                            <button class="faq-toggle">
+                            <button class="faq-toggle" type="button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="faq-icon-plus">
                                     <path d="M5 12h14"/>
                                     <path d="M12 5v14"/>
@@ -489,9 +428,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     </div>
 
                     <div class="faq-item">
-                        <div class="faq-question">
+                        <div class="faq-question" data-faq-trigger>
                             <h3>What sacred payment methods do you accept?</h3>
-                            <button class="faq-toggle">
+                            <button class="faq-toggle" type="button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="faq-icon-plus">
                                     <path d="M5 12h14"/>
                                     <path d="M12 5v14"/>
@@ -507,9 +446,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     </div>
 
                     <div class="faq-item">
-                        <div class="faq-question">
+                        <div class="faq-question" data-faq-trigger>
                             <h3>What is your sacred return policy?</h3>
-                            <button class="faq-toggle">
+                            <button class="faq-toggle" type="button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="faq-icon-plus">
                                     <path d="M5 12h14"/>
                                     <path d="M12 5v14"/>
@@ -525,9 +464,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     </div>
 
                     <div class="faq-item">
-                        <div class="faq-question">
+                        <div class="faq-question" data-faq-trigger>
                             <h3>Do you create custom Egyptian creativity?</h3>
-                            <button class="faq-toggle">
+                            <button class="faq-toggle" type="button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="faq-icon-plus">
                                     <path d="M5 12h14"/>
                                     <path d="M12 5v14"/>
@@ -543,9 +482,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     </div>
 
                     <div class="faq-item">
-                        <div class="faq-question">
+                        <div class="faq-question" data-faq-trigger>
                             <h3>How long does crafting take for custom orders?</h3>
-                            <button class="faq-toggle">
+                            <button class="faq-toggle" type="button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="faq-icon-plus">
                                     <path d="M5 12h14"/>
                                     <path d="M12 5v14"/>
@@ -677,11 +616,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                             </svg>
                         </button>
                     </div>
-                    <?php if (isset($newsletter_success) && $newsletter_success): ?>
-                        <div class="notification success" style="margin-top: 1em;">Welcome to the Egyptian Creativity family! You will receive ancient wisdom and exclusive offers.</div>
-                    <?php elseif (isset($newsletter_error) && $newsletter_error): ?>
-                        <div class="notification error" style="margin-top: 1em;"><?= htmlspecialchars($newsletter_error) ?></div>
-                    <?php endif; ?>
                 </form>
             </div>
         </div>
@@ -730,7 +664,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                         </a>
                     </div>
                 </div>
-                
+
                 <div class="footer-section">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
@@ -742,7 +676,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                         <li><a href="contact.php">Contact</a></li>
                     </ul>
                 </div>
-                
+
                 <div class="footer-section">
                     <h4>Categories</h4>
                     <ul class="footer-links">
@@ -753,7 +687,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                         <li><a href="shop.php?category=fashion">Fashion</a></li>
                     </ul>
                 </div>
-                
+
                 <div class="footer-section">
                     <h4>Contact</h4>
                     <ul class="footer-links">
@@ -764,7 +698,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
                     </ul>
                 </div>
             </div>
-            
             <div class="footer-bottom">
                 <p>&copy; 2025 Egyptian Creativity. All rights reserved.</p>
             </div>
@@ -773,33 +706,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['newsletter_email'])) 
 
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
+
     <?php include 'includes/sidebar.html'; ?>
     <script src="js/script.js"></script>
 
-    <script src="js/auth-manager.js"></script>
-    <script src="js/sidebar-utils.js"></script>
-    <script src="js/products-data.js"></script>
     <script src="js/contact-script.js"></script>
+    <script src="js/sidebar-utils.js"></script>
     <script>
-    document.addEventListener('mousedown', (e) => {
-        const cartSidebar = document.getElementById('cartSidebar');
-        const wishlistSidebar = document.getElementById('wishlistSidebar');
-        if (cartSidebar && cartSidebar.classList.contains('active') &&
-            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            cartSidebar.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
-            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            wishlistSidebar.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
-    </script>
-<?php include 'includes/sidebar.html'; ?>
+function updateWishlistBadge() {
+    let count = 0;
+    try {
+        // Try localStorage (for guests)
+        const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+        count = Array.isArray(wishlist) ? wishlist.length : 0;
+    } catch (e) { count = 0; }
+    var badge = document.getElementById('wishlistBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+    }
+}
+document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+// Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
+</script>
 </body>
 </html>

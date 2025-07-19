@@ -4,12 +4,7 @@ include 'includes/db.php';
 $blog_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 $blog = null;
 if ($blog_id) {
-    $sql = "SELECT bp.*, u.full_name AS author_name, m.file_path AS image_path
-            FROM blog_posts bp
-            LEFT JOIN users u ON bp.author_id = u.id
-            LEFT JOIN media_relations mr ON mr.entity_type = 'blog_post' AND mr.entity_id = bp.id AND mr.relation_type = 'thumbnail'
-            LEFT JOIN media m ON mr.media_id = m.id
-            WHERE bp.id = ? AND bp.status = 'published'";
+    $sql = "SELECT * FROM blog_posts WHERE id = ? AND status = 'published'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$blog_id]);
     $blog = $stmt->fetch();
@@ -26,6 +21,7 @@ if ($blog_id) {
     <link rel="stylesheet" href="css/blog-details-styles.css">
     <link rel="stylesheet" href="css/sidebar-styles.css">
     <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Animated Background (Same as Index Page) -->
@@ -62,7 +58,12 @@ if ($blog_id) {
                 <a href="blog.php" class="nav-link active">BLOGS</a>
                 <a href="shop.php" class="nav-link">SHOP</a>
                 <a href="contact.php" class="nav-link">CONTACT</a>
-                <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <?php session_start(); ?>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="logout.php" class="nav-link" id="loginLogoutBtn">LOGOUT</a>
+                <?php else: ?>
+                    <a href="auth.php" class="nav-link" id="loginLogoutBtn">LOGIN</a>
+                <?php endif; ?>
             </nav>
             <div class="header-actions">
                 <button class="header-icon" id="searchBtn">
@@ -100,58 +101,124 @@ if ($blog_id) {
         </div>
     </header>
 
-    <!-- Blog Details Hero Section -->
-    <section class="hero blog-details-hero">
-        <div class="hero-content">
-            <div class="container">
-                <div class="blog-details-content" id="blogDetailsContent">
-                    <?php if ($blog): ?>
-                        <div class="blog-header">
-                            <div class="blog-meta">
-                                <span class="blog-category"><?php echo htmlspecialchars($blog['category'] ?? ''); ?></span>
-                                <span class="blog-date"><?php echo $blog['published_at'] ? date('F j, Y', strtotime($blog['published_at'])) : ''; ?></span>
-                            </div>
-                            <h1 class="blog-title"><?php echo htmlspecialchars($blog['title']); ?></h1>
+    <!-- Blog Details Section -->
+    <main class="blog-details-main">
+        <div class="container">
+            <?php if ($blog): ?>
+                <article class="blog-article-card">
+                    <!-- Blog Header -->
+                    <header class="blog-article-header">
+                        <div class="blog-meta-info">
+                            <span class="blog-category-badge">ROYALTY & HISTORY</span>
+                            <time class="blog-date-display"><?php echo $blog['published_at'] ? date('F j, Y', strtotime($blog['published_at'])) : date('F j, Y', strtotime($blog['created_at'])); ?></time>
                         </div>
-                        <div class="blog-hero-image">
-                            <img src="<?php echo htmlspecialchars($blog['image_path'] ?? 'images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($blog['title']); ?>">
+                        <h1 class="blog-main-title"><?php echo htmlspecialchars($blog['title']); ?></h1>
+                    </header>
+
+                    <!-- Blog Hero Image -->
+                    <div class="blog-hero-container">
+                        <img src="<?php echo htmlspecialchars($blog['image'] ?: 'images/blogs/placeholder.jpg'); ?>" 
+                             alt="<?php echo htmlspecialchars($blog['title']); ?>" 
+                             class="blog-hero-img">
+                        <div class="blog-brand-overlay">
+                            <img src="images/logo_-removebg-preview.png" alt="Egyptian Creativity" class="brand-logo-overlay">
                         </div>
-                        <div class="blog-content">
-                            <div class="blog-text">
-                                <?php echo $blog['content']; ?>
-                            </div>
-                            <div class="blog-actions">
-                                <a href="blog.php" class="btn btn-outline">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                                        <polyline points="12,19 5,12 12,5"></polyline>
-                                    </svg>
-                                    Back to Blog
-                                </a>
-                                <button class="btn btn-primary" onclick="shareBlog()">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                                        <polyline points="16,6 12,2 8,6"></polyline>
-                                        <line x1="12" y1="2" x2="12" y2="15"></line>
-                                    </svg>
-                                    Share Article
-                                </button>
-                            </div>
+                    </div>
+
+                    <!-- Blog Content -->
+                    <div class="blog-content-section">
+                        <div class="blog-excerpt">
+                            <?php echo nl2br(htmlspecialchars($blog['excerpt'])); ?>
                         </div>
-                    <?php else: ?>
-                        <div class="blog-not-found">
-                            <h2>Blog Not Found</h2>
-                            <p>The blog post you are looking for does not exist.</p>
-                            <a href="blog.php" class="btn btn-primary">Back to Blog</a>
+                        
+                        <div class="blog-full-content">
+                            <?php echo $blog['content']; ?>
                         </div>
-                    <?php endif; ?>
+                    </div>
+
+                    <!-- Blog Actions -->
+                    <footer class="blog-actions-footer">
+                        <a href="blog.php" class="btn-back-to-blog">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12,19 5,12 12,5"></polyline>
+                            </svg>
+                            BACK TO BLOG
+                        </a>
+                        <button class="btn-share-article" onclick="shareArticle()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                                <polyline points="16,6 12,2 8,6"></polyline>
+                                <line x1="12" y1="2" x2="12" y2="15"></line>
+                            </svg>
+                            SHARE ARTICLE
+                        </button>
+                    </footer>
+                </article>
+            <?php else: ?>
+                <div class="blog-not-found-container">
+                    <div class="blog-not-found">
+                        <h2>Blog Not Found</h2>
+                        <p>The blog post you are looking for does not exist.</p>
+                        <a href="blog.php" class="btn-back-to-blog">Back to Blog</a>
+                    </div>
                 </div>
+            <?php endif; ?>
+        </div>
+    </main>
+
+    <!-- Search Modal -->
+    <div class="modal search-modal" id="searchModal">
+        <div class="modal-backdrop" id="searchBackdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Search Our Collection</h3>
+                <button class="modal-close" id="searchClose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="search-input-container">
+                <input type="text" class="search-input" placeholder="Search for ancient treasures..." id="searchInput">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+            </div>
+            <div class="search-suggestions">
+                <div class="suggestion-item">Ancient Artifacts</div>
+                <div class="suggestion-item">Pharaoh Masks</div>
+                <div class="suggestion-item">Sacred Jewelry</div>
+                <div class="suggestion-item">Egyptian Decor</div>
+                <div class="suggestion-item">Custom Orders</div>
             </div>
         </div>
-    </section>
+    </div>
+
     <?php include 'includes/sidebar.html'; ?>
+    <script src="js/auth-manager.js"></script>
+
     <script src="js/sidebar-utils.js"></script>
-    <script src="js/script.js"></script>
+    <script src="js/blog-details-script.js"></script>
+    <script>
+function updateWishlistBadge() {
+    let count = 0;
+    try {
+        // Try localStorage (for guests)
+        const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+        count = Array.isArray(wishlist) ? wishlist.length : 0;
+    } catch (e) { count = 0; }
+    var badge = document.getElementById('wishlistBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+    }
+}
+document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+// Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
+</script>
 </body>
 </html>
 <footer class="footer" id="contact">

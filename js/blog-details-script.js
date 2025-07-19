@@ -4,125 +4,6 @@
 let cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
 let wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
 
-// Blog Data
-const blogs = {
-    '1': {
-        title: "The Senet Games of King Tutankhamun",
-        category: "History & Artifacts",
-        date: "April 15, 2025",
-        image: "images/1-7-scaled.jpg",
-        content: `
-            <p>King Tutankhamun was buried with no fewer than five senet game boxes. Senet was an ancient Egyptian board game popular with all classes. Archaeological evidence reveals that senet was played by both royalty and commoners, and it was believed to have spiritual significance in the afterlife.</p>
-            
-            <p>The game consisted of a board with 30 squares arranged in three rows of ten. Players would move pieces along the board based on throws of dice or casting sticks. The game was not just entertainment but was thought to represent the journey of the soul through the afterlife.</p>
-            
-            <p>The senet boards found in Tutankhamun's tomb were made of precious materials including ebony, ivory, and gold, indicating the high status of the young pharaoh. These artifacts provide valuable insights into the daily life and beliefs of ancient Egyptians.</p>
-            
-            <p>Modern scholars believe that senet may have been one of the earliest board games in human history, with evidence of similar games dating back to 3500 BCE. The game's popularity spanned over 2000 years, making it one of the most enduring forms of entertainment in ancient civilization.</p>
-        `
-    },
-    '2': {
-        title: "The Road of Rams",
-        category: "History & Culture",
-        date: "April 12, 2025",
-        image: "images/10.jpg",
-        content: `
-            <p>The Sphinx Avenue (the Rams Road) is a royal avenue that connects the Karnak Temple in the north with the Luxor Temple in the south. It was established for the purpose of witnessing the annual celebrations and religious processions in ancient Thebes.</p>
-            
-            <p>This magnificent avenue was lined with hundreds of ram-headed sphinxes, each representing the god Amun-Ra. The rams were symbols of fertility and power, embodying the divine authority of the pharaohs who ruled from Thebes.</p>
-            
-            <p>The avenue served as the main ceremonial route during the annual Opet Festival, when the sacred barques of Amun, Mut, and Khonsu were carried from Karnak to Luxor Temple. This procession was one of the most important religious events in ancient Egypt.</p>
-            
-            <p>Today, the Avenue of the Sphinxes is being restored and excavated, revealing more about the grandeur of ancient Thebes and the religious practices that shaped Egyptian civilization for thousands of years.</p>
-        `
-    },
-    '3': {
-        title: "The Queens of Ancient Egypt",
-        category: "Royalty & History",
-        date: "April 10, 2025",
-        image: "images/4-5-scaled.jpg",
-        content: `
-            <p>Ancient Egypt was home to numerous powerful and influential queens who left an indelible mark on the land of the pharaohs. From the Old Kingdom to the New Kingdom, these queens held significant roles in Egyptian society, politics, and religion.</p>
-            
-            <p>Among the most famous was Hatshepsut, who ruled as pharaoh in her own right during the 18th Dynasty. She commissioned numerous building projects, including her magnificent mortuary temple at Deir el-Bahari, and led successful military campaigns.</p>
-            
-            <p>Nefertiti, the wife of Akhenaten, was another influential queen who played a crucial role in the religious revolution of the Amarna Period. Her beauty and power are immortalized in the famous bust discovered in 1912.</p>
-            
-            <p>Cleopatra VII, the last active ruler of the Ptolemaic Kingdom, was perhaps the most famous Egyptian queen. Her political alliances and relationships with Julius Caesar and Mark Antony shaped the course of Mediterranean history.</p>
-        `
-    },
-    '4': {
-        title: "Queen Nefertiti: The Beautiful One",
-        category: "Royalty & History",
-        date: "April 8, 2025",
-        image: "images/5-1.jpg",
-        content: `
-            <p>Queen Nefertiti, whose name means 'the beautiful one has come,' was the wife of King Amenhotep IV, the famous pharaoh of the Eighteenth Dynasty, and the protector of Tutankhamun. Her legacy endures through her iconic bust and her influence on Egyptian art and culture.</p>
-            
-            <p>Nefertiti played a crucial role in the religious revolution initiated by her husband, who changed his name to Akhenaten and established the worship of the sun disk Aten as the state religion. Together, they moved the capital to Amarna and transformed Egyptian art and culture.</p>
-            
-            <p>The famous bust of Nefertiti, discovered in 1912 by German archaeologist Ludwig Borchardt, has become one of the most recognizable symbols of ancient Egypt. The bust's perfect proportions and serene expression have made it an icon of beauty and grace.</p>
-            
-            <p>Despite her prominence during her lifetime, much about Nefertiti's later life remains mysterious. Some scholars believe she may have ruled as pharaoh after Akhenaten's death, possibly under the name Smenkhkare or Neferneferuaten.</p>
-        `
-    },
-    '5': {
-        title: "Sandals of Tutankhamun",
-        category: "Artifacts & Royalty",
-        date: "April 5, 2025",
-        image: "images/5-3.jpg",
-        content: `
-            <p>Among the many treasures found in Tutankhamun's tomb were his golden sandals. These exquisite pieces of footwear were crafted with incredible detail, featuring golden straps and soles, and were intended to accompany the young king into the afterlife.</p>
-            
-            <p>The sandals were made of gold and decorated with intricate patterns, including images of enemies that the pharaoh would symbolically trample underfoot. This was a common motif in ancient Egyptian royal regalia, symbolizing the pharaoh's power over his enemies.</p>
-            
-            <p>The craftsmanship of these sandals demonstrates the incredible skill of ancient Egyptian artisans. The gold was beaten into thin sheets and carefully shaped to create comfortable, wearable footwear that was also a work of art.</p>
-            
-            <p>These sandals, along with other items of royal clothing and jewelry found in the tomb, provide valuable insights into the daily life and ceremonial practices of the Egyptian court during the 18th Dynasty.</p>
-        `
-    },
-    '6': {
-        title: "Heka and the Hammer Nakakha",
-        category: "Mythology & Culture",
-        date: "April 3, 2025",
-        image: "images/9-1.jpg",
-        content: `
-            <p>The stick (Heka) and the hammer (Nakakha) were originally attributes of the ancient Egyptian god. The shepherd's stick symbolized royalty and the hammer symbolized the fertility of the land and power over the forces of nature.</p>
-            
-            <p>Heka, the shepherd's crook, was one of the most important symbols of royal authority in ancient Egypt. It represented the pharaoh's role as the shepherd of his people, guiding and protecting them like a shepherd does his flock.</p>
-            
-            <p>The Nakakha, or flail, was often paired with the Heka and together they formed the most recognizable symbols of pharaonic power. The flail was associated with the god Osiris and symbolized the pharaoh's authority to punish and reward.</p>
-            
-            <p>These symbols were not just decorative but had deep religious and political significance. They connected the earthly ruler to the divine realm and emphasized the pharaoh's role as the intermediary between the gods and the people.</p>
-        `
-    },
-    '7': {
-        title: "Pharaoh's Scepter Replica",
-        category: "Accessories & Royalty",
-        date: "April 18, 2025",
-        image: "images/10.jpg",
-        content: `
-            <p>The Pharaoh's Scepter Replica is a magnificent recreation of the ceremonial staff once wielded by Egypt's divine rulers. Symbolizing authority, power, and the connection between the pharaoh and the gods, the scepter was an essential part of royal regalia.</p>
-            <p>This replica is crafted with a golden finish and inlaid with precious stones, echoing the opulence of the original artifacts found in ancient tombs. The scepter's design features intricate engravings and a balanced weight, making it both a stunning display piece and a tangible link to Egypt's storied past.</p>
-            <h3>Product Details</h3>
-            <ul>
-                <li><strong>Materials:</strong> Brass Core, Gold Plating, Semi-precious Stones</li>
-                <li><strong>Dimensions:</strong> 75cm length</li>
-                <li><strong>Weight:</strong> 800g</li>
-                <li><strong>Display:</strong> Includes wooden stand</li>
-            </ul>
-            <h3>Collector's Insights</h3>
-            <ul>
-                <li>Symbol of divine authority and leadership</li>
-                <li>Handcrafted with attention to historical accuracy</li>
-                <li>Perfect for display in a study, office, or collection room</li>
-            </ul>
-            <p>Whether you are a passionate collector or a lover of ancient history, the Pharaoh's Scepter Replica brings a piece of Egypt's royal legacy into your home.</p>
-            <p><a href="shop.html">&larr; Return to Shop</a></p>
-        `
-    }
-};
-
 // DOM Elements
 const header = document.getElementById('header');
 const userBtn = document.getElementById('userBtn');
@@ -142,11 +23,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUserButton();
     initializeCart();
     initializeWishlist();
-    renderBlogDetails();
     updateCartBadge();
     updateWishlistBadge();
     initializeSearchModal();
     ensureSidebarsClosed();
+    initializeBlogAnimations();
     
     console.log('🏺 Blog Details page initialized successfully!');
 });
@@ -300,107 +181,69 @@ async function toggleWishlist(productId) {
     }
 }
 
-// Helper Functions
-function getProductById(productId) {
-    // This would typically fetch from a products database
-    // For now, return a mock product
-    return {
-        id: productId,
-        name: "Egyptian Artifact",
-        price: "$1,000",
-        image: "images/1-7-scaled.jpg"
-    };
-}
-
-// Get blog id from URL
-function getBlogId() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('id');
-}
-
-// Render blog details
-function renderBlogDetails() {
-    const blogId = getBlogId();
-    let blog = null;
-    // First, try to get from localStorage
-    const blogsFromStorage = JSON.parse(localStorage.getItem('egyptianCreativityBlogs')) || [];
-    blog = blogsFromStorage.find(b => String(b.id) === String(blogId));
-    // If not found, fall back to static blogs object
-    if (!blog) {
-        blog = blogs[blogId];
+// Blog Animations
+function initializeBlogAnimations() {
+    // Animate blog card on load
+    const blogCard = document.querySelector('.blog-article-card');
+    if (blogCard) {
+        // Add entrance animation
+        blogCard.style.opacity = '0';
+        blogCard.style.transform = 'translateY(40px)';
+        
+        setTimeout(() => {
+            blogCard.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+            blogCard.style.opacity = '1';
+            blogCard.style.transform = 'translateY(0)';
+        }, 100);
     }
-    const container = document.getElementById('blogDetailsContent');
+}
+
+// Share functionality
+function shareArticle() {
+    const url = window.location.href;
     
-    if (!blog) {
-        container.innerHTML = `
-            <div class="blog-not-found">
-                <h2>Blog Not Found</h2>
-                <p>The blog post you are looking for does not exist.</p>
-                <a href="blog.html" class="btn btn-primary">Back to Blog</a>
-            </div>
-        `;
-        return;
-    }
-
-    // If blog is from localStorage, use .content or .excerpt as content
-    let blogContent = blog.content;
-    if (!blogContent) {
-        // Fallback: use excerpt if no content
-        blogContent = `<p>${blog.excerpt || 'No content available.'}</p>`;
-    }
-
-    container.innerHTML = `
-        <div class="blog-header">
-            <div class="blog-meta">
-                <span class="blog-category">${blog.category}</span>
-                <span class="blog-date">${blog.date}</span>
-            </div>
-            <h1 class="blog-title">${blog.title}</h1>
-        </div>
-        <div class="blog-hero-image">
-            <img src="${blog.image}" alt="${blog.title}">
-        </div>
-        <div class="blog-content">
-            <div class="blog-text">
-                ${blogContent}
-            </div>
-            <div class="blog-actions">
-                <a href="blog.html" class="btn btn-outline">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12,19 5,12 12,5"></polyline>
-                    </svg>
-                    Back to Blog
-                </a>
-                <button class="btn btn-primary" onclick="shareBlog()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                        <polyline points="16,6 12,2 8,6"></polyline>
-                        <line x1="12" y1="2" x2="12" y2="15"></line>
-                    </svg>
-                    Share Article
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// Share blog function
-function shareBlog() {
     if (navigator.share) {
         navigator.share({
             title: document.title,
-            url: window.location.href
+            text: 'Check out this amazing blog post about Egyptian culture and history!',
+            url: url
+        }).then(() => {
+            showNotification('Article shared successfully!', 'success');
+        }).catch((error) => {
+            console.log('Error sharing:', error);
+            fallbackShare(url);
         });
     } else {
-        // Fallback: copy to clipboard
-        navigator.clipboard.writeText(window.location.href).then(() => {
-            showNotification('Link copied to clipboard!', 'success');
-        });
+        fallbackShare(url);
     }
 }
 
-// Notification system
+function fallbackShare(url) {
+    // Fallback: copy to clipboard
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+            showNotification('Link copied to clipboard!', 'success');
+        }).catch(() => {
+            showNotification('Unable to copy link', 'error');
+        });
+    } else {
+        // Older browser fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showNotification('Link copied to clipboard!', 'success');
+        } catch (err) {
+            showNotification('Unable to copy link', 'error');
+        }
+        document.body.removeChild(textArea);
+    }
+}
+
+// Enhanced notification system
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -419,40 +262,62 @@ function showNotification(message, type = 'info') {
     
     notification.innerHTML = `${icon}<span>${message}</span>`;
     
-    if (notificationContainer) {
-        notificationContainer.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 100);
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 4000);
+    // Create notification container if it doesn't exist
+    let container = document.getElementById('notificationContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notificationContainer';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+        document.body.appendChild(container);
     }
+    
+    // Add notification styles
+    notification.style.cssText = `
+        background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        transform: translateX(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: 300px;
+    `;
+    
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
 }
 
-// Keyboard Navigation
-document.addEventListener('keydown', (e) => {
-    // Escape key closes modals
-    if (e.key === 'Escape') {
-        const navMenu = document.getElementById('navMenu');
-        if (navMenu && navMenu.classList.contains('active')) {
-            navMenu.classList.remove('active');
-        }
-    }
-});
-
-// Sidebar open/close logic for cart and wishlist (copied from script.js)
+// Sidebar Functions
 function openSidebar(sidebar) {
     if (sidebar) sidebar.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
+
 function closeSidebar(sidebar) {
     if (sidebar) sidebar.classList.remove('active');
     document.body.style.overflow = '';
@@ -461,11 +326,12 @@ function closeSidebar(sidebar) {
 if (cartClose && cartSidebar) {
     cartClose.addEventListener('click', () => closeSidebar(cartSidebar));
 }
+
 if (wishlistClose && wishlistSidebar) {
     wishlistClose.addEventListener('click', () => closeSidebar(wishlistSidebar));
 }
+
 // Close sidebar when clicking outside content
-// (optional, for better UX)
 document.addEventListener('mousedown', (e) => {
     if (cartSidebar && cartSidebar.classList.contains('active') && !cartSidebar.querySelector('.sidebar-content').contains(e.target) && !cartSidebar.querySelector('.sidebar-header').contains(e.target)) {
         closeSidebar(cartSidebar);
@@ -474,27 +340,20 @@ document.addEventListener('mousedown', (e) => {
         closeSidebar(wishlistSidebar);
     }
 });
-// ESC key closes any open sidebar
+
+// Keyboard Navigation
 document.addEventListener('keydown', (e) => {
+    // Escape key closes modals and sidebars
     if (e.key === 'Escape') {
+        const navMenu = document.getElementById('navMenu');
+        if (navMenu && navMenu.classList.contains('active')) {
+            navMenu.classList.remove('active');
+        }
+        
         if (cartSidebar && cartSidebar.classList.contains('active')) closeSidebar(cartSidebar);
         if (wishlistSidebar && wishlistSidebar.classList.contains('active')) closeSidebar(wishlistSidebar);
     }
 });
-
-// Render Cart Sidebar
-// Remove the local function renderCartSidebar() { ... }
-// Instead, always call window.renderCartSidebar() when needed
-
-function removeFromCartSidebar(productId) {
-    const index = cart.findIndex(item => item.id === productId);
-    if (index > -1) {
-        cart.splice(index, 1);
-        updateCartBadge();
-        saveCart();
-        window.renderCartSidebar();
-    }
-}
 
 // Render Wishlist Sidebar
 function renderWishlistSidebar() {
@@ -540,6 +399,25 @@ function removeFromWishlistSidebar(productId) {
     }
 }
 
+function removeFromCartSidebar(productId) {
+    const index = cart.findIndex(item => item.id === productId);
+    if (index > -1) {
+        cart.splice(index, 1);
+        updateCartBadge();
+        saveCart();
+        window.renderCartSidebar();
+    }
+}
+
+function saveCart() {
+    localStorage.setItem('egyptianLuxuryCart', JSON.stringify(cart));
+}
+
+function saveWishlist() {
+    localStorage.setItem('egyptianWishlist', JSON.stringify(wishlist));
+}
+
+// Search Modal
 function initializeSearchModal() {
     const searchBtn = document.getElementById('searchBtn');
     const searchModal = document.getElementById('searchModal');
@@ -567,13 +445,30 @@ function initializeSearchModal() {
     const suggestions = document.querySelectorAll('.suggestion-item');
     suggestions.forEach(suggestion => {
         suggestion.addEventListener('click', () => {
-            if (searchInput) searchInput.value = suggestion.textContent;
-            searchModal.classList.remove('active');
+            if (searchInput) {
+                const query = suggestion.textContent.trim();
+                searchModal.classList.remove('active');
+                if (query) {
+                    window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+                }
+            }
         });
     });
+    // Enter key in search input
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                searchModal.classList.remove('active');
+                if (query) {
+                    window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+                }
+            }
+        });
+    }
     // ESC key closes modal
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && searchModal.classList.contains('active')) {
+        if (e.key === 'Escape' && searchModal && searchModal.classList.contains('active')) {
             searchModal.classList.remove('active');
         }
     });
@@ -581,8 +476,33 @@ function initializeSearchModal() {
 
 // Ensure all sidebars are closed by default
 function ensureSidebarsClosed() {
-  const sidebars = document.querySelectorAll('.sidebar');
-  sidebars.forEach(sidebar => {
-    sidebar.classList.remove('active');
-  });
+    const sidebars = document.querySelectorAll('.sidebar');
+    sidebars.forEach(sidebar => {
+        sidebar.classList.remove('active');
+    });
 }
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Page visibility API for better performance
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Pause animations when page is not visible
+        document.body.style.animationPlayState = 'paused';
+    } else {
+        // Resume animations when page becomes visible
+        document.body.style.animationPlayState = 'running';
+    }
+});

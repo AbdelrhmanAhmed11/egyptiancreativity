@@ -1,5 +1,4 @@
 // Egyptian Creativity Contact Page - Enhanced JavaScript
-
 // DOM Elements
 const header = document.getElementById('header');
 const loadingOverlay = document.getElementById('loadingOverlay');
@@ -44,9 +43,6 @@ class ContactManager {
         this.setupScrollEffects();
         this.setupFAQ();
         this.setupAnimations();
-        // this.updateCartBadge(); // Removed as per edit hint
-        // this.updateWishlistBadge(); // Removed as per edit hint
-        // ensureSidebarsClosed(); // Removed as per edit hint
     }
 
     // Initialize loading animation
@@ -65,10 +61,12 @@ class ContactManager {
         }, 150);
 
         // Skip button
-        skipBtn.addEventListener('click', () => {
-            clearInterval(interval);
-            this.hideLoading();
-        });
+        if (skipBtn) {
+            skipBtn.addEventListener('click', () => {
+                clearInterval(interval);
+                this.hideLoading();
+            });
+        }
 
         // Auto hide after 3 seconds
         setTimeout(() => {
@@ -147,11 +145,11 @@ class ContactManager {
         }
 
         if (cartBtn) {
-            cartBtn.addEventListener('click', () => window.openSidebar('cartSidebar'));
+            cartBtn.addEventListener('click', () => this.openSidebar('cartSidebar'));
         }
 
         if (wishlistBtn) {
-            wishlistBtn.addEventListener('click', () => window.openSidebar('wishlistSidebar'));
+            wishlistBtn.addEventListener('click', () => this.openSidebar('wishlistSidebar'));
         }
 
         // Modal controls
@@ -168,19 +166,10 @@ class ContactManager {
             btn.addEventListener('click', (e) => {
                 const sidebar = e.target.closest('.sidebar');
                 if (sidebar) {
-                    window.closeSidebar(sidebar.id);
+                    this.closeSidebar(sidebar.id);
                 }
             });
         });
-
-        // Forms
-        // Remove or comment out the following lines in the bindEvents() method:
-        // if (contactForm) {
-        //     contactForm.addEventListener('submit', (e) => this.handleContactForm(e));
-        // }
-        // if (newsletterForm) {
-        //     newsletterForm.addEventListener('submit', (e) => this.handleNewsletterForm(e));
-        // }
 
         // Search functionality
         if (searchInput) {
@@ -196,7 +185,7 @@ class ContactManager {
                     this.closeModal('searchModal');
                     // Redirect to shop with search query
                     setTimeout(() => {
-                        window.location.href = `shop.html?search=${encodeURIComponent(e.target.textContent)}`;
+                        window.location.href = `shop.php?search=${encodeURIComponent(e.target.textContent)}`;
                     }, 1000);
                 }
             });
@@ -206,16 +195,16 @@ class ContactManager {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.closeModal('searchModal');
-                window.closeSidebar('cartSidebar');
-                window.closeSidebar('wishlistSidebar');
+                this.closeSidebar('cartSidebar');
+                this.closeSidebar('wishlistSidebar');
             }
         });
 
         // Click outside to close sidebars
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.sidebar') && !e.target.closest('.header-icon')) {
-                window.closeSidebar('cartSidebar');
-                window.closeSidebar('wishlistSidebar');
+                this.closeSidebar('cartSidebar');
+                this.closeSidebar('wishlistSidebar');
             }
         });
 
@@ -265,12 +254,30 @@ class ContactManager {
         });
     }
 
-    // Setup FAQ functionality
+    // Setup FAQ functionality - FIXED VERSION
     setupFAQ() {
         faqItems.forEach(item => {
+            // Get both the question div and the toggle button
             const question = item.querySelector('.faq-question');
+            const toggleBtn = item.querySelector('.faq-toggle');
+            
+            // Add click event to the entire question area
             if (question) {
-                question.addEventListener('click', () => this.toggleFAQ(item));
+                question.addEventListener('click', (e) => {
+                    // Prevent double triggering when clicking the button
+                    if (e.target.closest('.faq-toggle')) {
+                        return;
+                    }
+                    this.toggleFAQ(item);
+                });
+            }
+            
+            // Add click event to the toggle button
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleFAQ(item);
+                });
             }
         });
     }
@@ -282,7 +289,7 @@ class ContactManager {
 
         const isOpen = !answer?.classList.contains('hidden');
 
-        // Close all FAQs
+        // Close all FAQs first
         faqItems.forEach(item => {
             const itemAnswer = item.querySelector('.faq-answer');
             const itemPlusIcon = item.querySelector('.faq-icon-plus');
@@ -333,7 +340,7 @@ class ContactManager {
         if (modal) {
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
-            
+
             if (modalId === 'searchModal' && searchInput) {
                 setTimeout(() => searchInput.focus(), 100);
             }
@@ -348,127 +355,26 @@ class ContactManager {
         }
     }
 
-    // Cart functionality
-    // async updateCartBadge() { // Removed as per edit hint
-    //     try {
-    //         const response = await fetch('cart.php?action=get_cart');
-    //         const data = await response.json();
-            
-    //         if (data.success) {
-    //             const totalItems = data.items.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
-    //             if (cartBadge) {
-    //                 cartBadge.textContent = totalItems;
-    //                 cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
-    //             }
-    //         }
-    //     } catch (error) {
-    //         console.error('Error updating cart badge:', error);
-    //     }
-    // }
+    // Sidebar management
+    openSidebar(sidebarId) {
+        if (window.sidebarManager) {
+            if (sidebarId === 'cartSidebar') {
+                window.sidebarManager.openCartSidebar();
+            } else if (sidebarId === 'wishlistSidebar') {
+                window.sidebarManager.openWishlistSidebar();
+            }
+        }
+    }
 
-    // async updateWishlistBadge() { // Removed as per edit hint
-    //     try {
-    //         const response = await fetch('wishlist.php?action=get_wishlist');
-    //         const data = await response.json();
-            
-    //         if (data.success) {
-    //             if (wishlistBadge) {
-    //                 wishlistBadge.textContent = data.items.length;
-    //                 wishlistBadge.style.display = data.items.length > 0 ? 'flex' : 'none';
-    //             }
-    //         }
-    //     } catch (error) {
-    //         console.error('Error updating wishlist badge:', error);
-    //     }
-    // }
-
-    // Remove from cart
-    // async removeFromCart(productId) { // Removed as per edit hint
-    //     try {
-    //         const response = await fetch('cart.php', {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: JSON.stringify({
-    //                 action: 'remove_from_cart',
-    //                 product_id: productId
-    //             })
-    //         });
-
-    //         const data = await response.json();
-
-    //         if (data.success) {
-    //             window.renderCartSidebar();
-    //             this.updateCartBadge();
-    //             this.showNotification('Item removed from cart', 'success');
-    //         } else {
-    //             this.showNotification(data.error || 'Failed to remove item', 'error');
-    //         }
-    //     } catch (error) {
-    //         console.error('Error removing from cart:', error);
-    //         this.showNotification('Error removing from cart', 'error');
-    //     }
-    // }
-
-    // Add to cart
-    // async addToCart(productId) { // Removed as per edit hint
-    //     try {
-    //         const response = await fetch('cart.php', {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: JSON.stringify({
-    //                 action: 'add_to_cart',
-    //                 product_id: productId,
-    //                 quantity: 1
-    //             })
-    //         });
-
-    //         const data = await response.json();
-
-    //         if (data.success) {
-    //             this.showNotification(data.message || 'Item added to cart!', 'success');
-    //             this.updateCartBadge();
-    //             window.renderCartSidebar();
-    //         } else {
-    //             this.showNotification(data.error || 'Failed to add to cart', 'error');
-    //         }
-    //     } catch (error) {
-    //         console.error('Error adding to cart:', error);
-    //         this.showNotification('Error adding to cart', 'error');
-    //     }
-    // }
-
-    // Remove from wishlist
-    // async removeFromWishlist(productId) { // Removed as per edit hint
-    //     try {
-    //         const response = await fetch('wishlist.php', {
-    //             method: 'POST',
-    //             headers: {
-    //                 'Content-Type': 'application/json',
-    //             },
-    //             body: JSON.stringify({
-    //                 action: 'remove_from_wishlist',
-    //                 product_id: productId
-    //             })
-    //         });
-
-    //         const data = await response.json();
-
-    //         if (data.success) {
-    //             window.renderWishlistSidebar();
-    //             this.updateWishlistBadge();
-    //             this.showNotification('Item removed from wishlist', 'success');
-    //         } else {
-    //             this.showNotification(data.error || 'Failed to remove item', 'error');
-    //         }
-    //     } catch (error) {
-    //         console.error('Error removing from wishlist:', error);
-    //         this.showNotification('Error removing from wishlist', 'error');
-    //     }
-    // }
+    closeSidebar(sidebarId) {
+        if (window.sidebarManager) {
+            if (sidebarId === 'cartSidebar') {
+                window.sidebarManager.closeCartSidebar();
+            } else if (sidebarId === 'wishlistSidebar') {
+                window.sidebarManager.closeWishlistSidebar();
+            }
+        }
+    }
 
     // Handle search
     handleSearch(e) {
@@ -479,97 +385,28 @@ class ContactManager {
         }
     }
 
-    // Handle contact form submission
-    handleContactForm(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(contactForm);
-        const name = formData.get('name');
-        const email = formData.get('email');
-        const subject = formData.get('subject');
-        const message = formData.get('message');
-
-        if (!name || !email || !subject || !message) {
-            this.showNotification('Please fill in all required fields.', 'error');
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            this.showNotification('Please enter a valid email address.', 'error');
-            return;
-        }
-
-        const submitBtn = contactForm.querySelector('.submit-btn');
-        const originalText = submitBtn.innerHTML;
-        
-        submitBtn.innerHTML = '<span>Sending Sacred Message...</span>';
-        submitBtn.disabled = true;
-
-        // Simulate form submission
-        setTimeout(() => {
-            this.showNotification('Your sacred message has been sent successfully! Our master craftsmen will respond within 24 hours.', 'success');
-            contactForm.reset();
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }, 2000);
-    }
-
-    // Handle newsletter form submission
-    handleNewsletterForm(e) {
-        e.preventDefault();
-        
-        const emailInput = newsletterForm.querySelector('.newsletter-input');
-        const email = emailInput.value.trim();
-
-        if (!email) {
-            this.showNotification('Please enter your email address.', 'error');
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            this.showNotification('Please enter a valid email address.', 'error');
-            return;
-        }
-
-        const submitBtn = newsletterForm.querySelector('.newsletter-btn');
-        const originalText = submitBtn.innerHTML;
-        
-        submitBtn.innerHTML = '<span>Subscribing...</span>';
-        submitBtn.disabled = true;
-
-        // Simulate form submission
-        setTimeout(() => {
-            this.showNotification('Welcome to the Egyptian Creativity family! You will receive ancient wisdom and exclusive offers.', 'success');
-            newsletterForm.reset();
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }, 1500);
-    }
-
     // Show notification
     showNotification(message, type = 'info') {
         if (!notificationContainer) return;
 
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        
+
         const icons = {
             success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22,4 12,14.01 9,11.01"></polyline></svg>',
             error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
             info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
         };
-        
+
         notification.innerHTML = `
             ${icons[type] || icons.info}
             <span>${message}</span>
         `;
-        
+
         notificationContainer.appendChild(notification);
-        
+
         setTimeout(() => notification.classList.add('show'), 100);
-        
+
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => {
@@ -604,7 +441,7 @@ class ContactManager {
 document.addEventListener('DOMContentLoaded', () => {
     window.contactManager = new ContactManager();
 
-    // --- Mobile menu toggle logic (added for contact page) ---
+    // Mobile menu toggle logic
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navMenu = document.getElementById('navMenu');
     const navLinks = document.querySelectorAll('.nav-link');
@@ -616,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.style.overflow = '';
         }
     }
+
     function openMobileMenu() {
         if (navMenu) {
             navMenu.classList.add('active');
@@ -623,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.style.overflow = 'hidden';
         }
     }
+
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', () => {
             const isActive = navMenu.classList.contains('active');
@@ -633,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
     // Close mobile menu when a nav link is clicked (on mobile)
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
@@ -641,29 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    // --- End mobile menu logic ---
-});
-
-// Auto-refresh cart and wishlist data, badges when localStorage changes (cross-tab sync)
-window.addEventListener('storage', (event) => {
-    if (event.key === 'egyptianLuxuryCart') {
-        if (window.contactManager) {
-            window.contactManager.cart = JSON.parse(localStorage.getItem('egyptianLuxuryCart')) || [];
-            // window.contactManager.updateCartBadge(); // Removed as per edit hint
-            if (cartSidebar && cartSidebar.classList.contains('active')) {
-                // window.renderCartSidebar(); // Removed as per edit hint
-            }
-        }
-    }
-    if (event.key === 'egyptianWishlist') {
-        if (window.contactManager) {
-            window.contactManager.wishlist = JSON.parse(localStorage.getItem('egyptianWishlist')) || [];
-            // window.contactManager.updateWishlistBadge(); // Removed as per edit hint
-            if (wishlistSidebar && wishlistSidebar.classList.contains('active')) {
-                // window.renderWishlistSidebar(); // Removed as per edit hint
-            }
-        }
-    }
 });
 
 // Handle escape key for closing modals and sidebars
@@ -681,21 +498,4 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Handle window load event
-window.addEventListener('load', () => {
-    // Update badges on load
-    if (window.contactManager) {
-        // window.contactManager.updateCartBadge(); // Removed as per edit hint
-        // window.contactManager.updateWishlistBadge(); // Removed as per edit hint
-    }
-});
-
 console.log('🏺 Egyptian Creativity Contact - Enhanced luxury website loaded successfully!');
-
-// Ensure all sidebars are closed by default
-function ensureSidebarsClosed() {
-  const sidebars = document.querySelectorAll('.sidebar');
-  sidebars.forEach(sidebar => {
-    sidebar.classList.remove('active');
-  });
-}

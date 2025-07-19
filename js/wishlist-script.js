@@ -438,11 +438,30 @@ class EgyptianWishlist {
         }
     }
 
-    renderWishlist() {
+    async renderWishlist() {
         if (!this.elements.wishlistGrid) return;
 
         this.filteredItems = [...this.wishlistItems];
         this.applyFilters();
+
+        // For guest/session wishlist, fetch product details if missing
+        const needsDetails = this.filteredItems.some(item => !item.name || !item.price);
+        if (needsDetails && this.filteredItems.length > 0) {
+            const ids = this.filteredItems.map(item => item.product_id || item.id).filter(Boolean);
+            const detailsResp = await fetch('cart.php?action=get_products&ids=' + ids.join(','));
+            const detailsData = await detailsResp.json();
+            const detailsMap = {};
+            (detailsData.products || []).forEach(prod => { detailsMap[prod.id] = prod; });
+            this.filteredItems = this.filteredItems.map(item => {
+                const prod = detailsMap[item.product_id || item.id] || {};
+                return {
+                    ...item,
+                    name: item.name || prod.title || prod.name || 'Product',
+                    price: (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : (typeof prod.price === 'number' ? prod.price : 0),
+                    image: item.image || prod.image || 'images/products/placeholder.jpg',
+                };
+            });
+        }
 
         if (this.filteredItems.length === 0) {
             this.showEmptyState();
@@ -1025,21 +1044,24 @@ class EgyptianWishlist {
     }
 }
 
-// Global wishlist instance
-window.wishlist = null;
+// Expose wishlist instance globally
+if (typeof window !== 'undefined') {
+    window.wishlist = new EgyptianWishlist();
+    window.wishlist.init();
+}
 
 // DOM Content Loaded Event
 document.addEventListener('DOMContentLoaded', () => {
     // Create wishlist instance
-    window.wishlist = new EgyptianWishlist();
+    // window.wishlist = new EgyptianWishlist(); // This line is now handled globally
 
     // Initialize wishlist
     try {
         // Initialize loading animation
-        window.wishlist.initializeLoading();
+        // window.wishlist.initializeLoading(); // This line is now handled globally
         
         // Initialize main functionality
-        window.wishlist.init();
+        // window.wishlist.init(); // This line is now handled globally
     } catch (error) {
         console.error('Failed to initialize wishlist:', error);
     }

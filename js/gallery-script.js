@@ -25,16 +25,16 @@ window.openProductPreview = function(productId) {
             
             product = {
                 id: productId,
-                title: image?.alt || `Gallery Item ${productId}`,
-                category: category?.textContent || 'Artifact',
+                title: galleryItem.getAttribute('data-title') || image?.alt || `Gallery Item ${productId}`,
+                category: galleryItem.getAttribute('data-category') || category?.textContent || 'Artifact',
                 price: 0,
-                image: image?.src || 'images/1-7-scaled.jpg',
-                description: `Exquisite Egyptian artifact with authentic craftsmanship and timeless beauty.`,
+                image: galleryItem.getAttribute('data-image') || image?.src || 'images/1-7-scaled.jpg',
+                description: galleryItem.getAttribute('data-description') || `Exquisite Egyptian artifact with authentic craftsmanship and timeless beauty.`,
                 specs: {
-                    "Materials": "Authentic Egyptian Materials",
-                    "Dimensions": "Various sizes available",
-                    "Weight": "Varies by item",
-                    "Origin": "Handcrafted in Egypt"
+                    "Materials": galleryItem.getAttribute('data-materials') || "-",
+                    "Dimensions": galleryItem.getAttribute('data-dimensions') || "-",
+                    "Weight": galleryItem.getAttribute('data-weight') || "-",
+                    "Origin": galleryItem.getAttribute('data-origin') || "-"
                 }
             };
             console.log('Created product from gallery item:', product);
@@ -555,17 +555,28 @@ function initializeSearch() {
         });
     }
     
-    // Search functionality
+    // Search suggestions click
+    const suggestions = document.querySelectorAll('.suggestion-item');
+    suggestions.forEach(suggestion => {
+        suggestion.addEventListener('click', () => {
+            const searchInput = document.getElementById('searchInput');
+            const query = suggestion.textContent.trim();
+            searchModal.classList.remove('active');
+            if (query) {
+                window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+            }
+        });
+    });
+    // Enter key in search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            searchGallery(query);
-        });
-        
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
                 searchModal.classList.remove('active');
+                if (query) {
+                    window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+                }
             }
         });
     }

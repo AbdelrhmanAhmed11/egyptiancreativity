@@ -120,6 +120,12 @@ try {
                     </svg>
                     Blogs
                 </a>
+                <a href="masterpieces.php" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"></polygon>
+                    </svg>
+                    Masterpieces
+                </a>
                 <a href="orders.php" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
@@ -127,6 +133,24 @@ try {
                         <path d="M16 10a4 4 0 0 1-8 0"></path>
                     </svg>
                     Orders
+                </a>
+                <a href="analytics.php" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="17" x2="9" y2="13"></line>
+                        <line x1="15" y1="17" x2="15" y2="7"></line>
+                        <line x1="12" y1="17" x2="12" y2="10"></line>
+                    </svg>
+                    Analytics
+                </a>
+                <a href="logs.php" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="8" y1="8" x2="16" y2="8"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                        <line x1="8" y1="16" x2="16" y2="16"></line>
+                    </svg>
+                    Logs
                 </a>
                 <a href="settings.php" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

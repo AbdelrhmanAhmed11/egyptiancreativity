@@ -839,15 +839,35 @@ class EgyptianLuxuryCart {
     }
   }
 
-  // Render cart items
-  renderCart() {
+  async renderCart(itemsArg) {
     const container = document.getElementById("cartItemsContainer");
     const emptyState = document.getElementById("emptyCartState");
     const cartLayout = document.querySelector(".cart-layout");
 
-    console.log('[DEBUG] renderCart: cartItems.length =', this.cartItems.length);
+    let items = itemsArg || this.cartItems;
+    // For guest/session cart, fetch product details if missing
+    const needsDetails = items.some(item => !item.name || !item.price);
+    if (needsDetails && items.length > 0) {
+        const ids = items.map(item => item.product_id || item.id).filter(Boolean);
+        const detailsResp = await fetch('cart.php?action=get_products&ids=' + ids.join(','));
+        const detailsData = await detailsResp.json();
+        const detailsMap = {};
+        (detailsData.products || []).forEach(prod => { detailsMap[prod.id] = prod; });
+        items = items.map(item => {
+            const prod = detailsMap[item.product_id || item.id] || {};
+            return {
+                ...item,
+                name: item.name || prod.title || prod.name || 'Product',
+                price: (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : (typeof prod.price === 'number' ? prod.price : 0),
+                image: item.image || prod.image || 'images/products/placeholder.jpg',
+            };
+        });
+        this.cartItems = items;
+    }
 
-    if (!Array.isArray(this.cartItems) || this.cartItems.length === 0) {
+    console.log('[DEBUG] renderCart: cartItems.length =', items.length);
+
+    if (!Array.isArray(items) || items.length === 0) {
       if (cartLayout) cartLayout.style.display = "none";
       if (emptyState) emptyState.style.display = "flex";
       // Update sidebar to show empty state
@@ -861,7 +881,7 @@ class EgyptianLuxuryCart {
     if (!container) return;
 
     try {
-    container.innerHTML = this.cartItems
+    container.innerHTML = items
       .map(
           (item, index) => {
             try {
@@ -873,12 +893,12 @@ class EgyptianLuxuryCart {
                 </div>
                 <div class="item-details">
                     <h3 class="item-name">${item.name}</h3>
-                    <p class="item-description">${item.description}</p>
+                    <p class="item-description">${item.description || ''}</p>
                     <div class="item-features">
                         ${(item.features || []).map((feature) => `<span class="feature-tag">${feature}</span>`).join("")}
                     </div>
                     <div class="item-meta">
-                        <span class="item-sku">SKU: ${item.sku}</span>
+                        <span class="item-sku">SKU: ${item.sku || ''}</span>
                         <div class="item-availability ${item.availability}">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 ${item.availability === "in-stock" 
@@ -913,7 +933,7 @@ class EgyptianLuxuryCart {
                         <div class="total-price">$${this.formatPrice(item.price * item.quantity)}</div>
                     </div>
                     <div class="item-actions">
-                        <button class="action-btn wishlist-btn" title="Move to Wishlist">
+                        <button class="action-btn add-to-wishlist-btn" data-product-id="${item.id}" title="Move to Wishlist">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                             </svg>
@@ -982,9 +1002,7 @@ class EgyptianLuxuryCart {
                 </div>
                 <h4 class="rec-name">${item.name}</h4>
                 <div class="rec-price">$${this.formatPrice(item.price)}</div>
-                <button class="add-rec-btn" data-item-id="${item.id}" onclick="console.log('Button clicked for item ${item.id}')">
-                    Add to Cart
-                </button>
+                <button class="add-to-cart-btn" data-product-id="${item.id}">Add to Cart</button>
             </div>
         `;
           console.log('[DEBUG] Generated HTML for database item:', item.id, buttonHtml);

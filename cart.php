@@ -63,89 +63,52 @@ function logApiRequest($action, $data = null) {
 }
 
 // --- API/AJAX HANDLING ---
+if (isset($_GET['action']) && $_GET['action'] === 'get_cart') {
+    header('Content-Type: application/json');
+    $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
+    if ($user_id) {
+        // Fetch cart from DB
+        $stmt = $pdo->prepare("SELECT c.product_id, c.quantity, p.name, p.price, p.product_sku, p.stock, p.product_image FROM cart_items c JOIN products p ON c.product_id = p.id WHERE c.user_id = ?");
+        $stmt->execute([$user_id]);
+        $cart = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'cart' => $cart]);
+    } else {
+        // Guest: use session cart
+        $cart = isset($_SESSION['cart']) ? $_SESSION['cart'] : [];
+        echo json_encode(['success' => true, 'cart' => $cart]);
+    }
+    exit;
+}
+
+if (isset($_GET['action']) && $_GET['action'] === 'get_products' && isset($_GET['ids'])) {
+    header('Content-Type: application/json');
+    $ids = array_filter(array_map('intval', explode(',', $_GET['ids'])));
+    if (empty($ids)) {
+        echo json_encode(['success' => false, 'products' => []]);
+        exit;
+    }
+    $in = str_repeat('?,', count($ids) - 1) . '?';
+    $stmt = $pdo->prepare("SELECT id, name, price, product_image as image FROM products WHERE id IN ($in)");
+    $stmt->execute($ids);
+    $products = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $products[] = [
+            'id' => $row['id'],
+            'name' => $row['name'],
+            'title' => $row['name'],
+            'price' => floatval($row['price']),
+            'image' => $row['image'] ?: 'images/products/placeholder.jpg'
+        ];
+    }
+    echo json_encode(['success' => true, 'products' => $products]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     $action = $_GET['action'];
     $user_id = getCurrentUserId();
     
     logApiRequest($action, ['user_id' => $user_id]);
-    
-    if ($action === 'get_cart') {
-        try {
-            if ($user_id) {
-                // Logged-in user - get from database
-                $query = "SELECT ci.id, ci.user_id, ci.product_id, ci.quantity, ci.added_at, 
-                         p.name, p.description, p.price, p.product_sku, p.stock, 
-                         c.name as category_name 
-                         FROM cart_items ci 
-                         JOIN products p ON ci.product_id = p.id 
-                         LEFT JOIN categories c ON p.category = c.id 
-                         WHERE ci.user_id = ? 
-                         ORDER BY ci.added_at DESC";
-                $stmt = $pdo->prepare($query);
-                $stmt->execute([$user_id]);
-                $cart_items = [];
-                
-                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $cart_items[] = [
-                        'id' => $row['product_id'],
-                        'cart_id' => $row['id'],
-                        'name' => $row['name'],
-                        'description' => $row['description'],
-                        'price' => floatval($row['price']),
-                        'quantity' => intval($row['quantity']),
-                        'sku' => $row['product_sku'],
-                        'category' => $row['category_name'],
-                        'inStock' => $row['stock'] > 0,
-                        'addedAt' => $row['added_at'],
-                        'image' => 'images/1-7-scaled.jpg',
-                        'features' => ['Handcrafted', 'Premium Quality'],
-                        'badges' => ['Featured'],
-                        'maxQuantity' => min($row['stock'], 10),
-                        'availability' => ($row['stock'] > 0 ? 'in-stock' : 'out-of-stock')
-                    ];
-                }
-                
-                echo json_encode(['success' => true, 'cart' => $cart_items]);
-                logApiRequest('get_cart_success', ['user_id' => $user_id, 'items_count' => count($cart_items)]);
-                
-            } else {
-                // Guest user - get from session
-                $cart = getSessionCart();
-                $cart_items = [];
-                
-                foreach ($cart as $item) {
-                    $product = getProductDetails($pdo, $item['product_id']);
-                    if ($product) {
-                        $cart_items[] = [
-                            'id' => $item['id'],
-                            'name' => $product['name'],
-                            'description' => $product['description'],
-                            'price' => floatval($product['price']),
-                            'quantity' => intval($item['quantity']),
-                            'sku' => $product['product_sku'],
-                            'category' => $product['category'],
-                            'inStock' => $product['stock'] > 0,
-                            'addedAt' => $item['added_at'],
-                            'image' => 'images/1-7-scaled.jpg',
-                            'features' => ['Handcrafted', 'Premium Quality'],
-                            'badges' => ['Featured'],
-                            'maxQuantity' => min($product['stock'], 10),
-                            'availability' => ($product['stock'] > 0 ? 'in-stock' : 'out-of-stock')
-                        ];
-                    }
-                }
-                
-                echo json_encode(['success' => true, 'cart' => $cart_items]);
-                logApiRequest('get_cart_success', ['guest' => true, 'items_count' => count($cart_items)]);
-            }
-            
-        } catch (Exception $e) {
-            error_log('Error getting cart: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to get cart items']);
-        }
-        exit;
-    }
     
     if ($action === 'get_recommended') {
         try {

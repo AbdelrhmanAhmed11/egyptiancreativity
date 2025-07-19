@@ -143,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                         p.product_sku,
                         p.stock,
                         p.has_box,
+                        p.type,
                         p.blog_id,
                         p.product_image,
                         p.box_image,
@@ -161,7 +162,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 // Use actual product image or fallback to placeholder
                 $product_image = $row['product_image'] ?: 'images/products/placeholder.jpg';
-                
+                $type = strtolower($row['type'] ?? 'featured');
+                if (!in_array($type, ['featured', 'new', 'sale'])) {
+                    $type = 'featured';
+                }
                 // Format the data to match frontend expectations
                 $products[] = [
                     'id' => $row['id'],
@@ -173,7 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                     'description' => $row['description'],
                     'rating' => 4.8, // Could be stored in separate table
                     'reviews' => rand(10, 50), // Demo data
-                    'badges' => ['featured'], // Demo data
+                    'badges' => [$type], // Use the real type as the badge
+                    'type' => $type, // Send the type to the frontend
                     'inStock' => $row['stock'] > 0,
                     'quantity' => $row['stock'],
                     'sku' => $row['product_sku'],
@@ -817,24 +822,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/shop-script.js"></script>
     <script src="js/products-data.js"></script>
     <script>
-    document.addEventListener('mousedown', (e) => {
-        const cartSidebar = document.getElementById('cartSidebar');
-        const wishlistSidebar = document.getElementById('wishlistSidebar');
-        if (cartSidebar && cartSidebar.classList.contains('active') &&
-            !cartSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !cartSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            cartSidebar.classList.remove('active');
-            document.body.style.overflow = '';
+    function updateWishlistBadge() {
+        let count = 0;
+        try {
+            // Try localStorage (for guests)
+            const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+            count = Array.isArray(wishlist) ? wishlist.length : 0;
+        } catch (e) { count = 0; }
+        var badge = document.getElementById('wishlistBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
         }
-        if (wishlistSidebar && wishlistSidebar.classList.contains('active') &&
-            !wishlistSidebar.querySelector('.sidebar-content').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-header').contains(e.target) &&
-            !wishlistSidebar.querySelector('.sidebar-footer').contains(e.target)) {
-            wishlistSidebar.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    });
+    }
+    document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+    // Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
     </script>
     <?php include 'includes/sidebar.html'; ?>
 </body>

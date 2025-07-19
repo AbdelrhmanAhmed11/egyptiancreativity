@@ -164,6 +164,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                 echo json_encode(['error' => 'Failed to get addresses']);
             }
             exit;
+        case 'get_order_details':
+            try {
+                if (!$user_id) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'User not authenticated']);
+                    exit;
+                }
+                $order_number = $_GET['order_number'] ?? '';
+                if (!$order_number) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Order number required']);
+                    exit;
+                }
+                // Find order by order number and user
+                $order_sql = "SELECT * FROM orders WHERE user_id = ? AND order_number = ?";
+                $order_stmt = $pdo->prepare($order_sql);
+                $order_stmt->execute([$user_id, $order_number]);
+                $order = $order_stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$order) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Order not found']);
+                    exit;
+                }
+                // Get order items
+                $items_sql = "SELECT oi.*, p.name FROM order_items oi LEFT JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?";
+                $items_stmt = $pdo->prepare($items_sql);
+                $items_stmt->execute([$order['id']]);
+                $items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+                $order_data = [
+                    'order_number' => $order['order_number'],
+                    'placed_on' => $order['created_at'],
+                    'status' => $order['status'],
+                    'total' => $order['total'],
+                    'items' => array_map(function($item) {
+                        return [
+                            'name' => $item['name'],
+                            'quantity' => $item['quantity'],
+                            'price' => $item['price']
+                        ];
+                    }, $items)
+                ];
+                echo json_encode(['success' => true, 'order' => $order_data]);
+            } catch (Exception $e) {
+                error_log('Error getting order details: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to get order details']);
+            }
+            exit;
+        case 'get_order_tracking':
+            try {
+                if (!$user_id) {
+                    http_response_code(401);
+                    echo json_encode(['error' => 'User not authenticated']);
+                    exit;
+                }
+                $order_number = $_GET['order_number'] ?? '';
+                if (!$order_number) {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'Order number required']);
+                    exit;
+                }
+                // Find order by order number and user
+                $order_sql = "SELECT * FROM orders WHERE user_id = ? AND order_number = ?";
+                $order_stmt = $pdo->prepare($order_sql);
+                $order_stmt->execute([$user_id, $order_number]);
+                $order = $order_stmt->fetch(PDO::FETCH_ASSOC);
+                if (!$order) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Order not found']);
+                    exit;
+                }
+                // If you have a tracking table, fetch from there. Otherwise, use order status as tracking info.
+                $tracking = [
+                    'status' => $order['status'],
+                    'details' => 'Your order is currently: ' . ucfirst($order['status']) . '.\nTracking updates will appear here.'
+                ];
+                echo json_encode(['success' => true, 'tracking' => $tracking]);
+            } catch (Exception $e) {
+                error_log('Error getting order tracking: ' . $e->getMessage());
+                http_response_code(500);
+                echo json_encode(['error' => 'Failed to get order tracking']);
+            }
+            exit;
     }
 }
 
@@ -1691,6 +1774,23 @@ $user = $stmt->fetch();
             document.body.style.overflow = '';
         }
     });
+    </script>
+    <script>
+    function updateWishlistBadge() {
+        let count = 0;
+        try {
+            // Try localStorage (for guests)
+            const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+            count = Array.isArray(wishlist) ? wishlist.length : 0;
+        } catch (e) { count = 0; }
+        var badge = document.getElementById('wishlistBadge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+    // Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
     </script>
 </body>
 </html>

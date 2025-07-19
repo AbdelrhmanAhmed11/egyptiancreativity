@@ -14,105 +14,185 @@ $message = '';
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add' || $action === 'edit') {
-        $product_sku = $_POST['product_sku'] ?? '';
-        $name = $_POST['name'] ?? '';
-        $description = $_POST['description'] ?? '';
-        $price = $_POST['price'] ?? '';
-        $stock = $_POST['stock'] ?? '';
+        $product_sku = trim($_POST['product_sku'] ?? '');
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $price = floatval($_POST['price'] ?? 0);
+        $stock = intval($_POST['stock'] ?? 0);
         $category = $_POST['category'] ?? '';
         $type = $_POST['type'] ?? 'featured';
         $has_box = isset($_POST['has_box']) ? 1 : 0;
         
-        // Handle product image upload
-        $product_image = '';
-        if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = '../images/products/';
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
-            $file_name = 'product_' . uniqid() . '.' . $file_extension;
-            $upload_path = $upload_dir . $file_name;
-            
-            if (move_uploaded_file($_FILES['product_image']['tmp_name'], $upload_path)) {
-                $product_image = 'images/products/' . $file_name;
-            }
-        }
-        
-        // Handle box image upload
-        $box_image = '';
-        if (isset($_FILES['box_image']) && $_FILES['box_image']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = '../images/products/';
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['box_image']['name'], PATHINFO_EXTENSION);
-            $file_name = 'box_' . uniqid() . '.' . $file_extension;
-            $upload_path = $upload_dir . $file_name;
-            
-            if (move_uploaded_file($_FILES['box_image']['tmp_name'], $upload_path)) {
-                $box_image = 'images/products/' . $file_name;
-            }
-        }
-        
-        if ($action === 'add') {
-            $stmt = $pdo->prepare("INSERT INTO products (product_sku, name, description, product_image, box_image, price, stock, category, type, has_box, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-            if ($stmt->execute([$product_sku, $name, $description, $product_image, $box_image, $price, $stock, $category, $type, $has_box])) {
-                $message = 'Product added successfully!';
-                header('Location: products.php?message=' . urlencode($message));
-                exit();
-            } else {
-                $message = 'Error adding product';
-            }
+        // Validation
+        if (empty($product_sku) || empty($name) || empty($description) || $price <= 0 || $stock < 0 || empty($category)) {
+            $message = 'Please fill in all required fields with valid values.';
         } else {
-            $id = $_POST['id'] ?? '';
-            $product_image_sql = $product_image ? ", product_image = ?" : "";
-            $box_image_sql = $box_image ? ", box_image = ?" : "";
-            $sql = "UPDATE products SET product_sku = ?, name = ?, description = ?, price = ?, stock = ?, category = ?, type = ?, has_box = ?" . $product_image_sql . $box_image_sql . " WHERE id = ?";
-            $params = [$product_sku, $name, $description, $price, $stock, $category, $type, $has_box];
-            if ($product_image) $params[] = $product_image;
-            if ($box_image) $params[] = $box_image;
-            $params[] = $id;
+            // Handle product image upload
+            $product_image = '';
+            if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
+                $upload_dir = '../images/products/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (in_array($_FILES['product_image']['type'], $allowed_types)) {
+                    $file_extension = pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION);
+                    $file_name = 'product_' . uniqid() . '.' . $file_extension;
+                    $upload_path = $upload_dir . $file_name;
+                    
+                    if (move_uploaded_file($_FILES['product_image']['tmp_name'], $upload_path)) {
+                        $product_image = 'images/products/' . $file_name;
+                    }
+                }
+            }
             
-            $stmt = $pdo->prepare($sql);
-            if ($stmt->execute($params)) {
-                $message = 'Product updated successfully!';
-                header('Location: products.php?message=' . urlencode($message));
-                exit();
+            // Handle box image upload
+            $box_image = '';
+            if (isset($_FILES['box_image']) && $_FILES['box_image']['error'] === UPLOAD_ERR_OK) {
+                $upload_dir = '../images/products/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                
+                $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (in_array($_FILES['box_image']['type'], $allowed_types)) {
+                    $file_extension = pathinfo($_FILES['box_image']['name'], PATHINFO_EXTENSION);
+                    $file_name = 'box_' . uniqid() . '.' . $file_extension;
+                    $upload_path = $upload_dir . $file_name;
+                    
+                    if (move_uploaded_file($_FILES['box_image']['tmp_name'], $upload_path)) {
+                        $box_image = 'images/products/' . $file_name;
+                    }
+                }
+            }
+            
+            $blog_id = !empty($_POST['blog_id']) ? $_POST['blog_id'] : null;
+            
+            if ($action === 'add') {
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO products (product_sku, name, description, product_image, box_image, price, stock, category, type, has_box, blog_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                    if ($stmt->execute([$product_sku, $name, $description, $product_image, $box_image, $price, $stock, $category, $type, $has_box, $blog_id])) {
+                        $message = 'Product added successfully!';
+                        header('Location: products.php?message=' . urlencode($message));
+                        exit();
+                    } else {
+                        $message = 'Error adding product';
+                    }
+                } catch (PDOException $e) {
+                    $message = 'Database error: ' . $e->getMessage();
+                }
             } else {
-                $message = 'Error updating product';
+                try {
+                    $id = intval($_POST['id'] ?? 0);
+                    if ($id > 0) {
+                        $sql = "UPDATE products SET product_sku = ?, name = ?, description = ?, price = ?, stock = ?, category = ?, type = ?, has_box = ?, blog_id = ?";
+                        $params = [$product_sku, $name, $description, $price, $stock, $category, $type, $has_box, $blog_id];
+                        
+                        if ($product_image) {
+                            $sql .= ", product_image = ?";
+                            $params[] = $product_image;
+                        }
+                        if ($box_image) {
+                            $sql .= ", box_image = ?";
+                            $params[] = $box_image;
+                        }
+                        
+                        $sql .= " WHERE id = ?";
+                        $params[] = $id;
+                        
+                        $stmt = $pdo->prepare($sql);
+                        if ($stmt->execute($params)) {
+                            $message = 'Product updated successfully!';
+                            header('Location: products.php?message=' . urlencode($message));
+                            exit();
+                        } else {
+                            $message = 'Error updating product';
+                        }
+                    } else {
+                        $message = 'Invalid product ID';
+                    }
+                } catch (PDOException $e) {
+                    $message = 'Database error: ' . $e->getMessage();
+                }
             }
         }
     } elseif ($action === 'delete') {
-        $id = $_POST['id'] ?? '';
-        $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
-        if ($stmt->execute([$id])) {
-            $message = 'Product deleted successfully!';
+        $id = intval($_POST['id'] ?? 0);
+        if ($id > 0) {
+            try {
+                // Get the product to delete associated images
+                $stmt = $pdo->prepare("SELECT product_image, box_image FROM products WHERE id = ?");
+                $stmt->execute([$id]);
+                $product = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                // Delete the product
+                $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
+                if ($stmt->execute([$id])) {
+                    // Delete associated image files
+                    if ($product && $product['product_image'] && file_exists('../' . $product['product_image'])) {
+                        unlink('../' . $product['product_image']);
+                    }
+                    if ($product && $product['box_image'] && file_exists('../' . $product['box_image'])) {
+                        unlink('../' . $product['box_image']);
+                    }
+                    
+                    $message = 'Product deleted successfully!';
+                    header('Location: products.php?message=' . urlencode($message));
+                    exit();
+                } else {
+                    $message = 'Error deleting product';
+                }
+            } catch (PDOException $e) {
+                $message = 'Database error: ' . $e->getMessage();
+            }
         } else {
-            $message = 'Error deleting product';
+            $message = 'Invalid product ID';
         }
     }
 }
 
 // Get products for listing
 if ($action === 'list') {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY created_at DESC");
+    $stmt = $pdo->query("
+        SELECT p.*, c.name as category_name 
+        FROM products p 
+        LEFT JOIN categories c ON p.category = c.id 
+        ORDER BY p.created_at DESC
+    ");
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // Get product for editing
 if ($action === 'edit') {
-    $id = $_GET['id'] ?? '';
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
-    $stmt->execute([$id]);
-    $product = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$product) {
-        header('Location: products.php');
+    $id = intval($_GET['id'] ?? 0);
+    if ($id > 0) {
+        $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
+        $stmt->execute([$id]);
+        $product = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$product) {
+            header('Location: products.php?message=' . urlencode('Product not found'));
+            exit();
+        }
+    } else {
+        header('Location: products.php?message=' . urlencode('Invalid product ID'));
         exit();
     }
+}
+
+// Fetch categories for dropdown
+$categories = [];
+$cat_stmt = $pdo->query("SELECT id, name FROM categories ORDER BY name");
+while ($row = $cat_stmt->fetch(PDO::FETCH_ASSOC)) {
+    $categories[] = $row;
+}
+
+// Fetch published blogs for dropdown
+$blogs = [];
+$blog_stmt = $pdo->query("SELECT id, title FROM blog_posts WHERE status = 'published' ORDER BY created_at DESC");
+while ($row = $blog_stmt->fetch(PDO::FETCH_ASSOC)) {
+    $blogs[] = $row;
 }
 
 // Get message from URL
@@ -187,7 +267,6 @@ if (isset($_GET['message'])) {
         input[type="checkbox"] {
             margin-right: 8px;
             vertical-align: middle;
-            margin-top: 8px;
         }
         
         .checkbox-label {
@@ -196,6 +275,150 @@ if (isset($_GET['message'])) {
             cursor: pointer;
             font-weight: 500;
             color: #333;
+            margin-top: 8px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .modal-content h3 {
+            margin: 0 0 15px 0;
+            color: #d32f2f;
+            font-size: 20px;
+        }
+        
+        .modal-content p {
+            margin: 0 0 25px 0;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .message {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .message.success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .message.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+        
+        .search-input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 250px;
+            font-size: 14px;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn-gold-gradient {
+            background: linear-gradient(90deg, #eac85b 0%, #8d4c13 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(168,107,28,0.08);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .btn-gold-gradient:hover {
+            background: linear-gradient(90deg, #8d4c13 0%, #eac85b 100%);
+            box-shadow: 0 4px 16px rgba(168,107,28,0.15);
         }
     </style>
 </head>
@@ -259,6 +482,12 @@ if (isset($_GET['message'])) {
                     </svg>
                     Blogs
                 </a>
+                <a href="masterpieces.php" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"></polygon>
+                    </svg>
+                    Masterpieces
+                </a>
                 <a href="orders.php" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
@@ -266,6 +495,24 @@ if (isset($_GET['message'])) {
                         <path d="M16 10a4 4 0 0 1-8 0"></path>
                     </svg>
                     Orders
+                </a>
+                <a href="analytics.php" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="17" x2="9" y2="13"></line>
+                        <line x1="15" y1="17" x2="15" y2="7"></line>
+                        <line x1="12" y1="17" x2="12" y2="10"></line>
+                    </svg>
+                    Analytics
+                </a>
+                <a href="logs.php" class="nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="8" y1="8" x2="16" y2="8"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                        <line x1="8" y1="16" x2="16" y2="16"></line>
+                    </svg>
+                    Logs
                 </a>
                 <a href="settings.php" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -294,11 +541,8 @@ if (isset($_GET['message'])) {
                 <div class="header-content">
                     <h1 class="page-title">Products Management</h1>
                     <div class="header-actions">
-                        <a href="products.php?action=add" class="btn btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
+                        <a href="products.php?action=add" class="btn btn-gold-gradient">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             Add Product
                         </a>
                     </div>
@@ -307,7 +551,7 @@ if (isset($_GET['message'])) {
 
             <div class="admin-content">
                 <?php if ($message): ?>
-                <div class="message <?php echo strpos($message, 'Error') !== false ? 'error' : 'success'; ?>">
+                <div class="message <?php echo strpos($message, 'Error') !== false || strpos($message, 'error') !== false || strpos($message, 'Invalid') !== false ? 'error' : 'success'; ?>">
                     <?php echo htmlspecialchars($message); ?>
                 </div>
                 <?php endif; ?>
@@ -318,12 +562,12 @@ if (isset($_GET['message'])) {
                     <div class="list-header">
                         <h2>All Products</h2>
                         <div class="list-actions">
-                            <input type="text" id="searchProducts" placeholder="Search products..." class="search-input">
+                            <input type="text" id="searchProducts" placeholder="Search products..." class="search-input" onkeyup="searchProducts()">
                         </div>
                     </div>
                     
                     <div class="products-table">
-                        <table>
+                        <table id="productsTable">
                             <thead>
                                 <tr>
                                     <th>Image</th>
@@ -337,36 +581,44 @@ if (isset($_GET['message'])) {
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($products as $product): ?>
-                                <tr>
-                                    <td>
-                                        <div class="product-image">
-                                            <img src="../<?php echo $product['product_image'] ?: 'images/products/placeholder.jpg'; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($product['product_sku']); ?></td>
-                                    <td>
-                                        <div class="product-info">
-                                            <h4><?php echo htmlspecialchars($product['name']); ?></h4>
-                                            <p><?php echo htmlspecialchars(substr($product['description'], 0, 50)) . '...'; ?></p>
-                                        </div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($product['category']); ?></td>
-                                    <td>$<?php echo number_format($product['price'], 2); ?></td>
-                                    <td><?php echo $product['stock']; ?></td>
-                                    <td>
-                                        <span class="status-badge <?php echo $product['type'] ?? 'featured'; ?>">
-                                            <?php echo ucfirst($product['type'] ?? 'featured'); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <a href="products.php?action=edit&id=<?php echo $product['id']; ?>" class="btn btn-small btn-secondary">Edit</a>
-                                            <button onclick="deleteProduct(<?php echo $product['id']; ?>)" class="btn btn-small btn-danger">Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
+                                <?php if (!empty($products)): ?>
+                                    <?php foreach ($products as $prodrow): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="product-image">
+                                                <img src="../<?php echo $prodrow['product_image'] ?: 'images/products/placeholder.jpg'; ?>" alt="<?php echo htmlspecialchars($prodrow['name']); ?>">
+                                            </div>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($prodrow['product_sku']); ?></td>
+                                        <td>
+                                            <div class="product-info">
+                                                <h4><?php echo htmlspecialchars($prodrow['name']); ?></h4>
+                                                <p><?php echo htmlspecialchars(substr($prodrow['description'], 0, 50)) . '...'; ?></p>
+                                            </div>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($prodrow['category_name'] ?? 'No Category'); ?></td>
+                                        <td>$<?php echo number_format($prodrow['price'], 2); ?></td>
+                                        <td><?php echo $prodrow['stock']; ?></td>
+                                        <td>
+                                            <span class="status-badge <?php echo $prodrow['type'] ?? 'featured'; ?>">
+                                                <?php echo ucfirst($prodrow['type'] ?? 'featured'); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <a href="products.php?action=edit&id=<?php echo $prodrow['id']; ?>" class="btn btn-small btn-secondary">Edit</a>
+                                                <button type="button" onclick="openDeleteModal(<?php echo $prodrow['id']; ?>, '<?php echo htmlspecialchars($prodrow['name'], ENT_QUOTES); ?>')" class="btn btn-small btn-danger">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                            No products found. <a href="products.php?action=add">Add your first product</a>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -377,7 +629,7 @@ if (isset($_GET['message'])) {
                 <!-- Add/Edit Product Form -->
                 <div class="form-container">
                     <div class="form-header">
-                        <h2><?php echo $action === 'add' ? 'Add New Product' : 'Edit Product'; ?></h2>
+                        <h2><?php echo $action === 'add' ? 'Add New Product' : 'Edit Product: ' . htmlspecialchars($product['name'] ?? ''); ?></h2>
                         <a href="products.php" class="btn btn-secondary">Back to Products</a>
                     </div>
                     
@@ -388,38 +640,38 @@ if (isset($_GET['message'])) {
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="product_sku">Product SKU</label>
+                                <label for="product_sku">Product SKU *</label>
                                 <input type="text" id="product_sku" name="product_sku" value="<?php echo $action === 'edit' ? htmlspecialchars($product['product_sku']) : ''; ?>" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="name">Product Name</label>
+                                <label for="name">Product Name *</label>
                                 <input type="text" id="name" name="name" value="<?php echo $action === 'edit' ? htmlspecialchars($product['name']) : ''; ?>" required>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="price">Price</label>
-                                <input type="number" id="price" name="price" step="0.01" value="<?php echo $action === 'edit' ? $product['price'] : ''; ?>" required>
+                                <label for="price">Price ($) *</label>
+                                <input type="number" id="price" name="price" step="0.01" min="0" value="<?php echo $action === 'edit' ? $product['price'] : ''; ?>" required>
                             </div>
                             
                             <div class="form-group">
-                                <label for="stock">Stock</label>
-                                <input type="number" id="stock" name="stock" value="<?php echo $action === 'edit' ? $product['stock'] : ''; ?>" required>
+                                <label for="stock">Stock *</label>
+                                <input type="number" id="stock" name="stock" min="0" value="<?php echo $action === 'edit' ? $product['stock'] : ''; ?>" required>
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="category">Category</label>
+                                <label for="category">Category *</label>
                                 <select id="category" name="category" required>
                                     <option value="">Select Category</option>
-                                    <option value="Accessories" <?php echo ($action === 'edit' && $product['category'] === 'Accessories') ? 'selected' : ''; ?>>Accessories</option>
-                                    <option value="Decorations" <?php echo ($action === 'edit' && $product['category'] === 'Decorations') ? 'selected' : ''; ?>>Decorations</option>
-                                    <option value="Boxes" <?php echo ($action === 'edit' && $product['category'] === 'Boxes') ? 'selected' : ''; ?>>Boxes</option>
-                                    <option value="Game Boxes" <?php echo ($action === 'edit' && $product['category'] === 'Game Boxes') ? 'selected' : ''; ?>>Game Boxes</option>
-                                    <option value="Fashion" <?php echo ($action === 'edit' && $product['category'] === 'Fashion') ? 'selected' : ''; ?>>Fashion</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?php echo $cat['id']; ?>" <?php echo ($action === 'edit' && $product['category'] == $cat['id']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($cat['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             
@@ -434,16 +686,23 @@ if (isset($_GET['message'])) {
                         </div>
                         
                         <div class="form-group">
-                            <label for="description">Description</label>
+                            <label for="has_box" class="checkbox-label">
+                                <input type="checkbox" id="has_box" name="has_box" value="1" <?php if ($action === 'edit' && !empty($product['has_box'])) echo 'checked'; ?>>
+                                Has Box (Show "Buy with the Box" option)
+                            </label>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Description *</label>
                             <textarea id="description" name="description" rows="4" required><?php echo $action === 'edit' ? htmlspecialchars($product['description']) : ''; ?></textarea>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="product_image">Product Image</label>
+                                <label for="product_image">Product Image <?php echo $action === 'add' ? '*' : ''; ?></label>
                                 <input type="file" id="product_image" name="product_image" accept="image/*" <?php echo $action === 'add' ? 'required' : ''; ?>>
-                                <small class="form-help">Upload a high-quality image of the product (JPG, PNG, GIF)</small>
-                                <?php if ($action === 'edit' && isset($product['product_image']) && $product['product_image']): ?>
+                                <small class="form-help">Upload a high-quality image of the product (JPG, PNG, GIF, WEBP)</small>
+                                <?php if ($action === 'edit' && !empty($product['product_image'])): ?>
                                 <div class="current-image">
                                     <p>Current Product Image:</p>
                                     <img src="../<?php echo $product['product_image']; ?>" alt="Current product image" style="max-width: 200px; margin-top: 10px; border-radius: 8px;">
@@ -452,23 +711,28 @@ if (isset($_GET['message'])) {
                             </div>
                             
                             <div class="form-group">
-                                <label for="has_box" class="checkbox-label">
-                                    <input type="checkbox" id="has_box" name="has_box" <?php echo ($action === 'edit' && $product['has_box']) ? 'checked' : ''; ?>>
-                                    Product has Gift Box
-                                </label>
+                                <label for="box_image">Gift Box Image</label>
+                                <input type="file" id="box_image" name="box_image" accept="image/*">
+                                <small class="form-help">Upload an image of the gift box (optional)</small>
+                                <?php if ($action === 'edit' && !empty($product['box_image'])): ?>
+                                <div class="current-image">
+                                    <p>Current Box Image:</p>
+                                    <img src="../<?php echo $product['box_image']; ?>" alt="Current box image" style="max-width: 200px; margin-top: 10px; border-radius: 8px;">
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
-                        <div class="form-group" id="box_image_section" style="display: none;">
-                            <label for="box_image">Gift Box Image</label>
-                            <input type="file" id="box_image" name="box_image" accept="image/*">
-                            <small class="form-help">Upload an image of the gift box (optional)</small>
-                            <?php if ($action === 'edit' && isset($product['box_image']) && $product['box_image']): ?>
-                            <div class="current-image">
-                                <p>Current Box Image:</p>
-                                <img src="../<?php echo $product['box_image']; ?>" alt="Current box image" style="max-width: 200px; margin-top: 10px; border-radius: 8px;">
-                            </div>
-                            <?php endif; ?>
+                        <div class="form-group">
+                            <label for="blog_id">Related Blog Post</label>
+                            <select id="blog_id" name="blog_id">
+                                <option value="">No Related Blog</option>
+                                <?php foreach ($blogs as $blog): ?>
+                                    <option value="<?php echo $blog['id']; ?>" <?php if ($action === 'edit' && !empty($product['blog_id']) && $product['blog_id'] == $blog['id']) echo 'selected'; ?>>
+                                        <?php echo htmlspecialchars($blog['title']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         
                         <div class="form-actions">
@@ -488,43 +752,28 @@ if (isset($_GET['message'])) {
     <div id="deleteModal" class="modal">
         <div class="modal-content">
             <h3>Confirm Delete</h3>
-            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+            <p id="deleteMessage">Are you sure you want to delete this product? This action cannot be undone.</p>
             <form method="POST" id="deleteForm">
                 <input type="hidden" name="id" id="deleteId">
+                <input type="hidden" name="action" value="delete">
                 <div class="modal-actions">
-                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="submit" class="btn btn-danger">Delete Product</button>
                     <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="js/admin-script.js"></script>
     <script>
-        function deleteProduct(id) {
+        function openDeleteModal(id, productName) {
             document.getElementById('deleteId').value = id;
+            document.getElementById('deleteMessage').innerHTML = `Are you sure you want to delete "<strong>${productName}</strong>"? This action cannot be undone.`;
             document.getElementById('deleteModal').style.display = 'flex';
         }
         
         function closeDeleteModal() {
             document.getElementById('deleteModal').style.display = 'none';
         }
-        
-        // Show/hide box image section based on checkbox
-        document.addEventListener('DOMContentLoaded', function() {
-            const hasBoxCheckbox = document.getElementById('has_box');
-            const boxImageSection = document.getElementById('box_image_section');
-            
-            if (hasBoxCheckbox && boxImageSection) {
-                // Show/hide on page load
-                boxImageSection.style.display = hasBoxCheckbox.checked ? 'block' : 'none';
-                
-                // Show/hide on checkbox change
-                hasBoxCheckbox.addEventListener('change', function() {
-                    boxImageSection.style.display = this.checked ? 'block' : 'none';
-                });
-            }
-        });
         
         // Close modal when clicking outside
         window.onclick = function(event) {
@@ -533,6 +782,66 @@ if (isset($_GET['message'])) {
                 closeDeleteModal();
             }
         }
+        
+        // Search functionality
+        function searchProducts() {
+            const input = document.getElementById('searchProducts');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('productsTable');
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                let found = false;
+                
+                for (let j = 0; j < cells.length - 1; j++) {
+                    const cellText = cells[j].textContent || cells[j].innerText;
+                    if (cellText.toLowerCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                rows[i].style.display = found ? '' : 'none';
+            }
+        }
+        
+        // Auto-hide success messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessages = document.querySelectorAll('.message.success');
+            successMessages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.opacity = '0';
+                    message.style.transition = 'opacity 0.5s';
+                    setTimeout(function() {
+                        message.remove();
+                    }, 500);
+                }, 5000);
+            });
+        });
+
+        // Form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.product-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const price = parseFloat(document.getElementById('price').value);
+                    const stock = parseInt(document.getElementById('stock').value);
+                    
+                    if (price <= 0) {
+                        e.preventDefault();
+                        alert('Price must be greater than 0');
+                        return false;
+                    }
+                    
+                    if (stock < 0) {
+                        e.preventDefault();
+                        alert('Stock cannot be negative');
+                        return false;
+                    }
+                });
+            }
+        });
     </script>
 </body>
-</html> 
+</html>

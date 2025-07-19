@@ -2369,3 +2369,18 @@ section {
   background: var(--pyramid-gold);
   color: var(--royal-dark-blue);
 }
+
+/* Always show cart and wishlist badges */
+#cartBadge, #wishlistBadge {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transition: opacity 0.2s;
+}
+#cartBadge.hidden, #wishlistBadge.hidden {
+  opacity: 0.3 !important;
+  /* Do not set display:none or visibility:hidden */
+}
+#cartBadge.visible, #wishlistBadge.visible {
+  opacity: 1 !important;
+}

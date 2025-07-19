@@ -36,16 +36,26 @@ $products_result = null;
 $products_sql = "SELECT * FROM products ORDER BY created_at DESC LIMIT 6";
 $products_result = $pdo->query($products_sql);
 
-// Fetch latest 3 published blog posts
-$blog_posts = [];
-$blog_sql = "SELECT bp.*, m.file_path AS image_path FROM blog_posts bp
-    LEFT JOIN media_relations mr ON mr.entity_type = 'blog_post' AND mr.entity_id = bp.id AND mr.relation_type = 'thumbnail'
-    LEFT JOIN media m ON mr.media_id = m.id
-    WHERE bp.status = 'published'
-    ORDER BY bp.published_at DESC, bp.created_at DESC LIMIT 3";
+// Fetch featured blog post
+$featured_blog = null;
+$other_blogs = [];
+$blog_sql = "SELECT * FROM blog_posts WHERE status = 'published' ORDER BY featured DESC, published_at DESC, created_at DESC LIMIT 6";
 $blog_stmt = $pdo->query($blog_sql);
 while ($row = $blog_stmt->fetch()) {
-    $blog_posts[] = $row;
+    if ($row['featured'] && !$featured_blog) {
+        $featured_blog = $row;
+    } else {
+        $other_blogs[] = $row;
+    }
+}
+// Only show 2 other blogs after the featured
+$other_blogs = array_slice($other_blogs, 0, 2);
+
+function get_blog_image($img) {
+    if (!$img) return 'images/blogs/placeholder.jpg';
+    if (strpos($img, 'images/') === 0 && file_exists($img)) return $img;
+    if (file_exists('images/blogs/' . $img)) return 'images/blogs/' . $img;
+    return 'images/blogs/placeholder.jpg';
 }
 ?>
 <!DOCTYPE html>
@@ -256,7 +266,7 @@ while ($row = $blog_stmt->fetch()) {
                                         <h3><?php echo htmlspecialchars($product['name']); ?></h3>
                                         <p class="item-price">$<?php echo number_format($product['price'], 2); ?></p>
                                         <div class="item-actions">
-                                            <button class="action-btn add-to-cart" onclick="addToCart(<?php echo (int)$product['id']; ?>)">Add to Cart</button>
+                                            <button class="action-btn add-to-cart add-to-cart-btn" data-product-id="<?php echo (int)$product['id']; ?>">Add to Cart</button>
                                             <button class="action-btn add-to-wishlist" onclick="toggleWishlist(<?php echo (int)$product['id']; ?>)">&#9825;</button>
                                         </div>
                                     </div>
@@ -405,29 +415,37 @@ while ($row = $blog_stmt->fetch()) {
                 </p>
             </div>
             <div class="blog-grid">
-                <?php if (count($blog_posts) > 0): ?>
-                    <?php foreach ($blog_posts as $i => $post): ?>
-                        <article class="blog-card<?php echo $i === 0 ? ' featured' : ''; ?>">
-                            <div class="card-image">
-                                <?php if ($i === 0): ?>
-                                    <span class="card-badge">FEATURED</span>
-                                <?php endif; ?>
-                                <img src="<?php echo htmlspecialchars($post['image_path'] ?? 'images/placeholder.jpg'); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>">
+                <?php if ($featured_blog): ?>
+                    <article class="blog-card featured">
+                        <div class="card-image">
+                            <span class="card-badge">FEATURED</span>
+                            <img src="<?php echo htmlspecialchars(get_blog_image($featured_blog['image'])); ?>" alt="<?php echo htmlspecialchars($featured_blog['title']); ?>">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-meta">
+                                <span class="card-date"><?php echo $featured_blog['published_at'] ? date('M d, Y', strtotime($featured_blog['published_at'])) : ''; ?></span>
                             </div>
-                            <div class="card-content">
-                                <div class="card-meta">
-                                    <span class="card-date"><?php echo $post['published_at'] ? date('M d, Y', strtotime($post['published_at'])) : ''; ?></span>
-                                    <span class="card-category"><?php echo htmlspecialchars($post['excerpt'] ? explode(' ', $post['excerpt'])[0] : ''); ?></span>
-                                </div>
-                                <h3 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h3>
-                                <p class="card-excerpt"><?php echo htmlspecialchars($post['excerpt']); ?></p>
-                                <a href="blog-details.php?id=<?php echo $post['id']; ?>" class="card-link">Read More &rarr;</a>
-                            </div>
-                        </article>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <p>No blog posts found.</p>
+                            <h3 class="card-title"><?php echo htmlspecialchars($featured_blog['title']); ?></h3>
+                            <p class="card-excerpt"><?php echo htmlspecialchars($featured_blog['excerpt']); ?></p>
+                            <a href="blog-details.php?id=<?php echo $featured_blog['id']; ?>" class="card-link">Read More &rarr;</a>
+                        </div>
+                    </article>
                 <?php endif; ?>
+                <?php foreach ($other_blogs as $post): ?>
+                    <article class="blog-card">
+                        <div class="card-image">
+                            <img src="<?php echo htmlspecialchars(get_blog_image($post['image'])); ?>" alt="<?php echo htmlspecialchars($post['title']); ?>">
+                        </div>
+                        <div class="card-content">
+                            <div class="card-meta">
+                                <span class="card-date"><?php echo $post['published_at'] ? date('M d, Y', strtotime($post['published_at'])) : ''; ?></span>
+                            </div>
+                            <h3 class="card-title"><?php echo htmlspecialchars($post['title']); ?></h3>
+                            <p class="card-excerpt"><?php echo htmlspecialchars($post['excerpt']); ?></p>
+                            <a href="blog-details.php?id=<?php echo $post['id']; ?>" class="card-link">Read More &rarr;</a>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
             </div>
         </div>
     </section>
@@ -694,5 +712,22 @@ document.getElementById('newsletterForm').addEventListener('submit', function(e)
     <script src="js/auth-manager.js"></script>
     <script src="js/sidebar-utils.js"></script>
     <script src="js/script.js"></script>
+    <script>
+function updateWishlistBadge() {
+    let count = 0;
+    try {
+        // Try localStorage (for guests)
+        const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+        count = Array.isArray(wishlist) ? wishlist.length : 0;
+    } catch (e) { count = 0; }
+    var badge = document.getElementById('wishlistBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+    }
+}
+document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+// Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
+</script>
 </body>
 </html>

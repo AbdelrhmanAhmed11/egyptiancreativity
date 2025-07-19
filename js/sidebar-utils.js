@@ -12,6 +12,7 @@ class SidebarManager {
         this.setupEventListeners();
         this.ensureSidebarsClosed();
         await this.fetchDataAndUpdate();
+        this.updateBadges(); // Ensure badges are updated immediately after data fetch
     }
 
     async fetchDataAndUpdate() {
@@ -19,7 +20,7 @@ class SidebarManager {
             this.fetchCart(),
             this.fetchWishlist()
         ]);
-        this.updateBadges();
+        this.updateBadges(); // Ensure badges update after data is fetched
     }
 
     async fetchCart() {
@@ -172,16 +173,34 @@ class SidebarManager {
     updateBadges() {
         const cartBadge = document.getElementById('cartBadge');
         const wishlistBadge = document.getElementById('wishlistBadge');
+        // Ensure cart and wishlist are arrays
+        const cartArr = Array.isArray(this.cart) ? this.cart : [];
+        const wishlistArr = Array.isArray(this.wishlist) ? this.wishlist : [];
         // Update cart badge
         if (cartBadge) {
-            const totalItems = this.cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            const totalItems = cartArr.reduce((sum, item) => sum + (item.quantity || 1), 0);
             cartBadge.textContent = totalItems;
-            cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+            if (totalItems > 0) {
+                cartBadge.style.display = 'flex';
+                cartBadge.style.visibility = 'visible';
+                cartBadge.style.opacity = '1';
+            } else {
+                cartBadge.style.display = 'none';
+            }
+            console.log('Cart badge updated:', totalItems);
         }
         // Update wishlist badge
         if (wishlistBadge) {
-            wishlistBadge.textContent = this.wishlist.length;
-            wishlistBadge.style.display = this.wishlist.length > 0 ? 'flex' : 'none';
+            const wishlistCount = wishlistArr.length;
+            wishlistBadge.textContent = wishlistCount;
+            if (wishlistCount > 0) {
+                wishlistBadge.style.display = 'flex';
+                wishlistBadge.style.visibility = 'visible';
+                wishlistBadge.style.opacity = '1';
+            } else {
+                wishlistBadge.style.display = 'none';
+            }
+            console.log('Wishlist badge updated:', wishlistCount);
         }
     }
 
@@ -215,7 +234,14 @@ class SidebarManager {
 
     renderCartSidebar() {
         if (typeof window.renderCartSidebar === 'function') {
-            window.renderCartSidebar(this.cart);
+            // Patch: map product_id to id for guest/session cart
+            const cartItems = Array.isArray(this.cart) ? this.cart.map(item => {
+                if (item && !item.id && item.product_id) {
+                    return { ...item, id: item.product_id };
+                }
+                return item;
+            }) : [];
+            window.renderCartSidebar(cartItems);
         }
     }
 
@@ -232,4 +258,78 @@ document.addEventListener('DOMContentLoaded', () => {
     window.sidebarManager = new SidebarManager();
 });
 
-console.log('🏺 Egyptian Creativity - Sidebar utilities loaded successfully!'); 
+// Global event delegation for add-to-cart and add-to-wishlist buttons
+// Works everywhere, even for dynamically loaded content
+document.addEventListener('click', async function(e) {
+    // Add to Cart
+    const cartBtn = e.target.closest('.add-to-cart-btn');
+    if (cartBtn) {
+        e.preventDefault();
+        const productId = cartBtn.getAttribute('data-product-id');
+        if (productId) {
+            try {
+                const response = await fetch('cart.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add_to_cart', product_id: productId, quantity: 1 })
+                });
+                const data = await response.json();
+                if (window.sidebarManager) {
+                    // Always refresh cart from backend after adding
+                    await window.sidebarManager.fetchCart();
+                    window.sidebarManager.updateBadges();
+                    window.sidebarManager.renderCartSidebar();
+                }
+                if (window.sidebarManager) {
+                    window.sidebarManager.showNotification(data.message || (data.success ? 'Added to cart!' : 'Failed to add to cart'), data.success ? 'success' : 'error');
+                }
+            } catch (err) {
+                if (window.sidebarManager) {
+                    window.sidebarManager.showNotification('Error adding to cart', 'error');
+                }
+            }
+        }
+    }
+    
+    // Add to Wishlist
+    const wishlistBtn = e.target.closest('.add-to-wishlist-btn');
+    if (wishlistBtn) {
+        e.preventDefault();
+        const productId = wishlistBtn.getAttribute('data-product-id');
+        if (productId) {
+            try {
+                const response = await fetch('wishlist.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add_to_wishlist', product_id: productId })
+                });
+                const data = await response.json();
+                
+                if (window.sidebarManager) {
+                    // Optimistically increment wishlist count for instant feedback
+                    window.sidebarManager.wishlist.push({id: productId});
+                    window.sidebarManager.updateBadges();
+                    
+                    // Refresh data from backend and update badges again
+                    await window.sidebarManager.fetchDataAndUpdate();
+                }
+                
+                if (window.sidebarManager) {
+                    window.sidebarManager.showNotification(data.message || 'Added to wishlist!', data.success ? 'success' : 'error');
+                }
+                
+                // If wishlist page is open, update it
+                if (window.wishlist && typeof window.wishlist.renderWishlist === 'function') {
+                    window.wishlist.wishlistItems = window.sidebarManager.wishlist;
+                    window.wishlist.renderWishlist();
+                }
+            } catch (err) {
+                if (window.sidebarManager) {
+                    window.sidebarManager.showNotification('Error adding to wishlist', 'error');
+                }
+            }
+        }
+    }
+});
+
+console.log('🏺 Egyptian Creativity - Sidebar utilities loaded successfully!');

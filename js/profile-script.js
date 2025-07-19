@@ -870,3 +870,83 @@ async function removeFromWishlistFromWishlist(productId) {
         }
     }
 }
+
+// --- Order History: Track Order & View Details ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Attach event listeners after DOM is loaded
+    setupOrderHistoryButtons();
+});
+
+function setupOrderHistoryButtons() {
+    // Track Order buttons
+    Array.from(document.querySelectorAll('.order-card .order-actions .btn')).filter(btn => btn.textContent.trim().toLowerCase() === 'track order').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderCard = btn.closest('.order-card');
+            const orderNumber = orderCard.querySelector('.order-info h3').textContent.trim();
+            openTrackOrderModal(orderNumber);
+        });
+    });
+    // View Details buttons
+    Array.from(document.querySelectorAll('.order-card .order-actions .btn')).filter(btn => btn.textContent.trim().toLowerCase() === 'view details').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const orderCard = btn.closest('.order-card');
+            const orderNumber = orderCard.querySelector('.order-info h3').textContent.trim();
+            openOrderDetailsModal(orderNumber);
+        });
+    });
+}
+
+function openTrackOrderModal(orderNumber) {
+    const modal = document.getElementById('orderTrackingModal');
+    const body = document.getElementById('orderTrackingBody');
+    body.innerHTML = '<div class="loading-spinner"></div> Loading tracking info...';
+    modal.classList.add('active');
+    // Fetch tracking info from backend
+    fetch(`profile.php?action=get_order_tracking&order_number=${encodeURIComponent(orderNumber)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.tracking) {
+                body.innerHTML = `<h4>Status: ${data.tracking.status}</h4><p>${data.tracking.details}</p>`;
+            } else {
+                body.innerHTML = '<p>No tracking info found for this order.</p>';
+            }
+        })
+        .catch(() => {
+            body.innerHTML = '<p>Error loading tracking info.</p>';
+        });
+    // Close modal logic
+    document.getElementById('orderTrackingClose').onclick = () => modal.classList.remove('active');
+    document.getElementById('orderTrackingBackdrop').onclick = () => modal.classList.remove('active');
+}
+
+function openOrderDetailsModal(orderNumber) {
+    const modal = document.getElementById('orderDetailsModal');
+    const body = document.getElementById('orderDetailsBody');
+    body.innerHTML = '<div class="loading-spinner"></div> Loading order details...';
+    modal.classList.add('active');
+    // Fetch order details from backend
+    fetch(`profile.php?action=get_order_details&order_number=${encodeURIComponent(orderNumber)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.order) {
+                let html = `<h4>Order #${data.order.order_number}</h4>`;
+                html += `<p>Placed on: ${data.order.placed_on}</p>`;
+                html += `<p>Status: ${data.order.status}</p>`;
+                html += '<ul>';
+                data.order.items.forEach(item => {
+                    html += `<li>${item.name} x${item.quantity} - $${item.price}</li>`;
+                });
+                html += '</ul>';
+                html += `<p>Total: $${data.order.total}</p>`;
+                body.innerHTML = html;
+            } else {
+                body.innerHTML = '<p>No details found for this order.</p>';
+            }
+        })
+        .catch(() => {
+            body.innerHTML = '<p>Error loading order details.</p>';
+        });
+    // Close modal logic
+    document.getElementById('orderDetailsClose').onclick = () => modal.classList.remove('active');
+    document.getElementById('orderDetailsBackdrop').onclick = () => modal.classList.remove('active');
+}

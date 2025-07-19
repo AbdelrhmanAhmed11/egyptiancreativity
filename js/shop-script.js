@@ -473,23 +473,17 @@ class ShopManager {
                     ${product.badges.length > 0 ? `
                         <div class="product-badges">
                             ${product.badges.map(badge => `
-                                <span class="product-badge badge-${badge}">${badge}</span>
+                                <span class="product-badge badge-${badge}">${badge.charAt(0).toUpperCase() + badge.slice(1)}</span>
                             `).join('')}
                         </div>
                     ` : ''}
                     <div class="product-actions">
-                        <button class="product-action-btn" onclick="window.shop.openQuickView(${product.id})" title="Quick View">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </button>
-                        <button class="product-action-btn" onclick="window.shop.addToWishlist(${product.id})" title="Add to Wishlist">
+                        <button class="product-action-btn add-to-wishlist-btn" data-product-id="${product.id}" title="Add to Wishlist">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                             </svg>
                         </button>
-                        <button class="product-action-btn" onclick="window.shop.addToCart(${product.id})">
+                        <button class="product-action-btn add-to-cart-btn" data-product-id="${product.id}" title="Add to Cart">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                                 <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -515,7 +509,7 @@ class ShopManager {
                             <span class="price-current">$${product.price.toLocaleString()}</span>
                             ${product.originalPrice ? `<span class="price-original">$${product.originalPrice.toLocaleString()}</span>` : ''}
                         </div>
-                        <button class="add-to-cart-btn" onclick="window.shop.addToCart(${product.id})">
+                        <button class="add-to-cart-btn" data-product-id="${product.id}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                                 <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -864,10 +858,11 @@ class ShopManager {
         // Show both main image and box image ONLY if has_box is true
         let imagesSection = '';
         if (product.has_box) {
+            const boxImg = product.box_image ? product.box_image : 'images/gift-box.jpg';
             imagesSection = `
                 <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
                     <img src="${product.image}" alt="${product.title}" style="width:320px; height:320px; border-radius:16px; box-shadow:0 4px 24px rgba(27,41,81,0.12); object-fit:cover; background:#f5f5f5;" />
-                    <img src="images/gift-box.jpg" alt="Gift Box" style="width:220px; height:220px; border-radius:16px; box-shadow:0 2px 12px rgba(27,41,81,0.12); object-fit:cover; margin-top:1rem; background:#f5f5f5;" />
+                    <img src="${boxImg}" alt="Gift Box" style="width:220px; height:220px; border-radius:16px; box-shadow:0 2px 12px rgba(27,41,81,0.12); object-fit:cover; margin-top:1rem; background:#f5f5f5;" />
                 </div>
             `;
         } else {

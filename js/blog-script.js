@@ -6,70 +6,6 @@ let currentShowcaseItem = 0;
 let displayedArticles = 6;
 let filteredArticles = [];
 
-// Blog Data
-const blogData = [
-    {
-        id: 1,
-        title: "The Senet Games of King Tutankhamun",
-        category: "history artifacts",
-        excerpt: "King Tutankhamun was buried with no fewer than five senet game boxes. Senet was an ancient Egyptian board game popular with all classes. Archaeological evidence reveals that senet was played by both royalty and commoners, and it was believed to have spiritual significance in the afterlife.",
-        image: "images/1-7-scaled.jpg",
-        author: "Admin",
-        readTime: "3 min read",
-        date: "April 15, 2025"
-    },
-    {
-        id: 2,
-        title: "The Road of Rams",
-        category: "history culture",
-        excerpt: "The Sphinx Avenue (the Rams Road) is a royal avenue that connects the Karnak Temple in the north with the Luxor Temple in the south. It was established for the purpose of witnessing the annual celebrations and religious processions in ancient Thebes.",
-        image: "images/10.jpg",
-        author: "Admin",
-        readTime: "4 min read",
-        date: "April 12, 2025"
-    },
-    {
-        id: 3,
-        title: "The Queens of Ancient Egypt",
-        category: "royalty history",
-        excerpt: "Ancient Egypt was home to numerous powerful and influential queens who left an indelible mark on the land of the pharaohs. From the Old Kingdom to the New Kingdom, these queens held significant roles in Egyptian society, politics, and religion.",
-        image: "images/4-5-scaled.jpg",
-        author: "Admin",
-        readTime: "6 min read",
-        date: "April 10, 2025"
-    },
-    {
-        id: 4,
-        title: "Queen Nefertiti: The Beautiful One",
-        category: "royalty history",
-        excerpt: "Queen Nefertiti, whose name means 'the beautiful one has come,' was the wife of King Amenhotep IV, the famous pharaoh of the Eighteenth Dynasty, and the protector of Tutankhamun. Her legacy endures through her iconic bust and her influence on Egyptian art and culture.",
-        image: "images/5-1.jpg",
-        author: "Admin",
-        readTime: "5 min read",
-        date: "April 8, 2025"
-    },
-    {
-        id: 5,
-        title: "Sandals of Tutankhamun",
-        category: "artifacts royalty",
-        excerpt: "Among the many treasures found in Tutankhamun's tomb were his golden sandals. These exquisite pieces of footwear were crafted with incredible detail, featuring golden straps and soles, and were intended to accompany the young king into the afterlife.",
-        image: "images/5-3.jpg",
-        author: "Admin",
-        readTime: "4 min read",
-        date: "April 5, 2025"
-    },
-    {
-        id: 6,
-        title: "Heka and the Hammer Nakakha",
-        category: "mythology culture",
-        excerpt: "The stick (Heka) and the hammer (Nakakha) were originally attributes of the ancient Egyptian god. The shepherd's stick symbolized royalty and the hammer symbolized the fertility of the land and power...",
-        image: "images/9-1.jpg",
-        author: "Admin",
-        readTime: "4 min read",
-        date: "April 3, 2025"
-    }
-];
-
 // Showcase items for hero section
 const showcaseItems = [
     {
@@ -118,12 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeNavigation();
     initializeHero();
     initializeSearch();
-    initializeFilters();
-    initializeArticles();
     initializeCart();
     initializeWishlist();
     initializeNewsletter();
     ensureSidebarsClosed();
+    initializeBlogPagination();
     
     console.log('🏺 Egyptian Creativity Blog initialized successfully!');
 });
@@ -344,39 +279,30 @@ function initializeSearch() {
         });
     }
     
-    // Search functionality
-    const blogSearchInput = document.getElementById('blogSearchInput');
-    if (blogSearchInput) {
-        let searchTimeout;
-        blogSearchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                searchArticles(e.target.value);
-            }, 500);
-        });
-    }
-    
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                searchArticles(e.target.value);
-                searchModal.classList.remove('active');
-            }, 500);
-        });
-    }
-    
     // Search suggestions
     const suggestions = document.querySelectorAll('.suggestion-item');
     suggestions.forEach(suggestion => {
         suggestion.addEventListener('click', () => {
-            const query = suggestion.textContent;
-            if (blogSearchInput) blogSearchInput.value = query;
-            searchArticles(query);
+            const query = suggestion.textContent.trim();
             searchModal.classList.remove('active');
+            if (query) {
+                window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+            }
         });
     });
+    
+    // Enter key in search input
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                searchModal.classList.remove('active');
+                if (query) {
+                    window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+                }
+            }
+        });
+    }
 }
 
 // Search function
@@ -399,61 +325,6 @@ function searchArticles(query) {
     });
     showNotification(`Found ${found} articles matching "${query}"`, 'info');
 }
-
-// Filter functionality
-function initializeFilters() {
-    filteredArticles = [...blogData];
-    
-    filterButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const filter = button.dataset.filter;
-            setFilter(filter);
-        });
-    });
-}
-
-function setFilter(filter) {
-    currentFilter = filter;
-    
-    if (filter === 'all') {
-        filteredArticles = [...blogData];
-    } else {
-        filteredArticles = blogData.filter(article => article.category.includes(filter));
-    }
-    
-    displayedArticles = 6;
-    
-    // Update active button
-    filterButtons.forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-    
-    renderArticles();
-}
-
-// Articles functionality
-function initializeArticles() {
-    renderArticles();
-    
-    // Load more button
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-            displayedArticles += 6;
-            renderArticles();
-            showNotification('Loaded more articles!', 'success');
-        });
-    }
-}
-
-// --- REMOVE/COMMENT OUT ALL JS THAT RENDERS ARTICLES TO #articlesGrid ---
-// Comment out renderArticles and any code that fills articlesGrid with blogData
-// function renderArticles() { ... }
-// ...
-// document.addEventListener('DOMContentLoaded', function() {
-//   renderArticles();
-//   ...
-// });
 
 // Cart functionality
 function initializeCart() {
@@ -677,4 +548,59 @@ function ensureSidebarsClosed() {
   sidebars.forEach(sidebar => {
     sidebar.classList.remove('active');
   });
+}
+
+function initializeBlogPagination() {
+    const articlesGrid = document.getElementById('articlesGrid');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (!articlesGrid || !loadMoreBtn) return;
+    const allBlogs = JSON.parse(articlesGrid.getAttribute('data-all-blogs') || '[]');
+    let shown = articlesGrid.querySelectorAll('.article-card').length;
+    const perPage = 6;
+    loadMoreBtn.addEventListener('click', function() {
+        const nextBlogs = allBlogs.slice(shown, shown + perPage);
+        nextBlogs.forEach(post => {
+            const article = document.createElement('article');
+            article.className = 'article-card';
+            article.setAttribute('data-id', post.id);
+            article.innerHTML = `
+                <div class="card-image">
+                    <img src="${post.image ? post.image : 'images/blogs/placeholder.jpg'}" alt="${escapeHtml(post.title)}" loading="lazy">
+                    <div class="card-overlay"></div>
+                </div>
+                <div class="card-content">
+                    <div class="card-meta">
+                        <span class="card-date">${post.published_at ? formatDate(post.published_at) : formatDate(post.created_at)}</span>
+                        <span class="card-author">By ${escapeHtml(post.author || '-')}</span>
+                    </div>
+                    <h3 class="card-title">${escapeHtml(post.title)}</h3>
+                    <p class="card-excerpt">${escapeHtml(post.excerpt)}</p>
+                    <a href="blog-details.php?id=${post.id}" class="card-link">
+                        <span>Read More</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12,5 19,12 12,19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            `;
+            articlesGrid.appendChild(article);
+        });
+        shown += nextBlogs.length;
+        if (shown >= allBlogs.length) {
+            loadMoreBtn.style.display = 'none';
+        }
+    });
+    if (shown >= allBlogs.length) {
+        loadMoreBtn.style.display = 'none';
+    }
+}
+function escapeHtml(text) {
+    return text.replace(/[&<>'"]/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','\'':'&#39;','"':'&quot;'}[c];
+    });
+}
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 }

@@ -591,5 +591,22 @@ try {
     <script src="js/about-script.js"></script>
     <script src="js/auth-manager.js"></script>
     <script src="js/products-data.js"></script>
+    <script>
+function updateWishlistBadge() {
+    let count = 0;
+    try {
+        // Try localStorage (for guests)
+        const wishlist = JSON.parse(localStorage.getItem('egyptianWishlist') || '[]');
+        count = Array.isArray(wishlist) ? wishlist.length : 0;
+    } catch (e) { count = 0; }
+    var badge = document.getElementById('wishlistBadge');
+    if (badge) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+    }
+}
+document.addEventListener('DOMContentLoaded', updateWishlistBadge);
+// Optionally, call updateWishlistBadge() after any wishlist action in your JS as well.
+</script>
 </body>
 </html>

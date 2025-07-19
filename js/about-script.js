@@ -569,13 +569,11 @@ function initializeSearchModal() {
       if (searchInput) searchInput.focus();
     });
   }
-  
   if (searchClose) {
     searchClose.addEventListener('click', () => {
       searchModal.classList.remove('active');
     });
   }
-  
   if (searchModal) {
     searchModal.addEventListener('click', (e) => {
       if (e.target === searchModal || e.target.classList.contains('modal-backdrop')) {
@@ -583,16 +581,31 @@ function initializeSearchModal() {
       }
     });
   }
-  
   // Search suggestions click
   const suggestions = document.querySelectorAll('.suggestion-item');
   suggestions.forEach(suggestion => {
     suggestion.addEventListener('click', () => {
-      if (searchInput) searchInput.value = suggestion.textContent;
-      searchModal.classList.remove('active');
+      if (searchInput) {
+        const query = suggestion.textContent.trim();
+        searchModal.classList.remove('active');
+        if (query) {
+          window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+        }
+      }
     });
   });
-  
+  // Enter key in search input
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const query = searchInput.value.trim();
+        searchModal.classList.remove('active');
+        if (query) {
+          window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+        }
+      }
+    });
+  }
   // ESC key closes modal
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && searchModal && searchModal.classList.contains('active')) {

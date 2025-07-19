@@ -8,49 +8,69 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-$message = '';
+// Fetch analytics data
+$stats = [
+    'orders' => 0,
+    'sales' => 0,
+    'users' => 0,
+    'products' => 0,
+    'blogs' => 0,
+];
 
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? '';
-    
-    if ($action === 'update_password') {
-        $current_password = $_POST['current_password'] ?? '';
-        $new_password = $_POST['new_password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
-        
-        // Simple password validation (in production, use proper hashing)
-        if ($current_password === 'admin123') {
-            if ($new_password === $confirm_password) {
-                $message = 'Password updated successfully!';
-            } else {
-                $message = 'New passwords do not match';
-            }
-        } else {
-            $message = 'Current password is incorrect';
-        }
-    }
+// Orders count and total sales
+$stmt = $pdo->query("SELECT COUNT(*) as count, SUM(total_price) as sales FROM orders");
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
+$stats['orders'] = $row['count'] ?? 0;
+$stats['sales'] = $row['sales'] ?? 0;
+
+// Users count
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM users");
+$stats['users'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+
+// Products count
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM products");
+$stats['products'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+
+// Blogs count
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM blog_posts");
+$stats['blogs'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'] ?? 0;
+
+// Orders per month (last 12 months)
+$orders_per_month = [];
+$stmt = $pdo->query("SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count, SUM(total_price) as sales FROM orders GROUP BY month ORDER BY month DESC LIMIT 12");
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $orders_per_month[] = $row;
+}
+$orders_per_month = array_reverse($orders_per_month);
+
+// Product category distribution
+$category_dist = [];
+$stmt = $pdo->query("SELECT c.name as category, COUNT(p.id) as count FROM products p LEFT JOIN categories c ON p.category = c.id GROUP BY c.name");
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $category_dist[] = $row;
 }
 
-function log_action($pdo, $action, $table, $record_id, $old_values = null, $new_values = null) {
-    $user_id = $_SESSION['admin_id'] ?? null;
-    $stmt = $pdo->prepare("INSERT INTO audit_logs (table_name, record_id, action, old_values, new_values, changed_by, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->execute([$table, $record_id, $action, $old_values ? json_encode($old_values) : null, $new_values ? json_encode($new_values) : null, $user_id]);
-}
-?>
-
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Egyptian Creativity</title>
+    <title>Analytics Dashboard - Egyptian Creativity</title>
     <link rel="stylesheet" href="css/admin-styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .analytics-cards { display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .analytics-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 2rem 2.5rem; min-width: 180px; flex: 1; text-align: center; }
+        .analytics-card h3 { margin: 0 0 0.5rem 0; font-size: 2.2rem; color: #8d4c13; }
+        .analytics-card p { margin: 0; color: #666; font-size: 1.1rem; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; }
+        .chart-container { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 1.5rem; }
+        .chart-title { font-size: 1.2rem; color: #333; margin-bottom: 1rem; }
+    </style>
 </head>
 <body>
     <div class="admin-container">
-        <!-- Sidebar -->
         <aside class="admin-sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -73,7 +93,6 @@ function log_action($pdo, $action, $table, $record_id, $old_values = null, $new_
                     </div>
                 </div>
             </div>
-            
             <nav class="sidebar-nav">
                 <a href="index.php" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -122,7 +141,7 @@ function log_action($pdo, $action, $table, $record_id, $old_values = null, $new_
                     </svg>
                     Orders
                 </a>
-                <a href="analytics.php" class="nav-item">
+                <a href="analytics.php" class="nav-item active">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="9" y1="17" x2="9" y2="13"></line>
@@ -140,7 +159,7 @@ function log_action($pdo, $action, $table, $record_id, $old_values = null, $new_
                     </svg>
                     Logs
                 </a>
-                <a href="settings.php" class="nav-item active">
+                <a href="settings.php" class="nav-item">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -148,7 +167,6 @@ function log_action($pdo, $action, $table, $record_id, $old_values = null, $new_
                     Settings
                 </a>
             </nav>
-            
             <div class="sidebar-footer">
                 <a href="logout.php" class="logout-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -160,128 +178,108 @@ function log_action($pdo, $action, $table, $record_id, $old_values = null, $new_
                 </a>
             </div>
         </aside>
-
-        <!-- Main Content -->
         <main class="admin-main">
             <header class="admin-header">
                 <div class="header-content">
-                    <h1 class="page-title">Settings</h1>
+                    <h1 class="page-title">Analytics Dashboard</h1>
                 </div>
             </header>
-
             <div class="admin-content">
-                <?php if ($message): ?>
-                <div class="message <?php echo strpos($message, 'Error') !== false || strpos($message, 'incorrect') !== false ? 'error' : 'success'; ?>">
-                    <?php echo htmlspecialchars($message); ?>
+                <div class="analytics-cards">
+                    <div class="analytics-card">
+                        <h3><?php echo $stats['orders']; ?></h3>
+                        <p>Total Orders</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>$<?php echo number_format($stats['sales'], 2); ?></h3>
+                        <p>Total Sales</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3><?php echo $stats['users']; ?></h3>
+                        <p>Total Users</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3><?php echo $stats['products']; ?></h3>
+                        <p>Total Products</p>
+                    </div>
+                    <div class="analytics-card">
+                        <h3><?php echo $stats['blogs']; ?></h3>
+                        <p>Total Blogs</p>
+                    </div>
                 </div>
-                <?php endif; ?>
-
-                <div class="settings-grid">
-                    <!-- Account Settings -->
-                    <div class="settings-card">
-                        <div class="settings-header">
-                            <h3>Account Settings</h3>
-                            <p>Manage your admin account settings</p>
-                        </div>
-                        
-                        <form method="POST" class="settings-form">
-                            <input type="hidden" name="action" value="update_password">
-                            
-                            <div class="form-group">
-                                <label for="current_password">Current Password</label>
-                                <input type="password" id="current_password" name="current_password" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="new_password">New Password</label>
-                                <input type="password" id="new_password" name="new_password" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="confirm_password">Confirm New Password</label>
-                                <input type="password" id="confirm_password" name="confirm_password" required>
-                            </div>
-                            
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">Update Password</button>
-                            </div>
-                        </form>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">Orders & Sales (Last 12 Months)</div>
+                        <canvas id="ordersSalesChart"></canvas>
                     </div>
-
-                    <!-- System Information -->
-                    <div class="settings-card">
-                        <div class="settings-header">
-                            <h3>System Information</h3>
-                            <p>Current system status and information</p>
-                        </div>
-                        
-                        <div class="system-info">
-                            <div class="info-item">
-                                <label>PHP Version:</label>
-                                <span><?php echo phpversion(); ?></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Server:</label>
-                                <span><?php echo $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown'; ?></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Database:</label>
-                                <span>MySQL</span>
-                            </div>
-                            <div class="info-item">
-                                <label>Admin Panel Version:</label>
-                                <span>1.0.0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions -->
-                    <div class="settings-card">
-                        <div class="settings-header">
-                            <h3>Quick Actions</h3>
-                            <p>Common administrative tasks</p>
-                        </div>
-                        
-                        <div class="quick-actions-list">
-                            <a href="products.php?action=add" class="quick-action">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>Add New Product</span>
-                            </a>
-                            
-                            <a href="gallery.php?action=add" class="quick-action">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>Add Gallery Item</span>
-                            </a>
-                            
-                            <a href="blogs.php?action=add" class="quick-action">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span>Create Blog Post</span>
-                            </a>
-                            
-                            <a href="orders.php" class="quick-action">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                                    <path d="M16 10a4 4 0 0 1-8 0"></path>
-                                </svg>
-                                <span>View Orders</span>
-                            </a>
-                        </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Product Category Distribution</div>
+                        <canvas id="categoryPieChart"></canvas>
                     </div>
                 </div>
             </div>
         </main>
     </div>
-
-    <script src="js/admin-script.js"></script>
+    <script>
+        // Orders & Sales Chart
+        const ordersSalesCtx = document.getElementById('ordersSalesChart').getContext('2d');
+        const ordersSalesChart = new Chart(ordersSalesCtx, {
+            type: 'bar',
+            data: {
+                labels: <?php echo json_encode(array_column($orders_per_month, 'month')); ?>,
+                datasets: [
+                    {
+                        label: 'Orders',
+                        data: <?php echo json_encode(array_column($orders_per_month, 'count')); ?>,
+                        backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                        borderColor: 'rgba(33, 150, 243, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Sales',
+                        data: <?php echo json_encode(array_map('floatval', array_column($orders_per_month, 'sales'))); ?>,
+                        type: 'line',
+                        fill: false,
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        backgroundColor: 'rgba(255, 193, 7, 0.3)',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                stacked: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Orders' } },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        title: { display: true, text: 'Sales ($)' }
+                    }
+                }
+            }
+        });
+        // Product Category Pie Chart
+        const categoryPieCtx = document.getElementById('categoryPieChart').getContext('2d');
+        const categoryPieChart = new Chart(categoryPieCtx, {
+            type: 'pie',
+            data: {
+                labels: <?php echo json_encode(array_column($category_dist, 'category')); ?>,
+                datasets: [{
+                    data: <?php echo json_encode(array_column($category_dist, 'count')); ?>,
+                    backgroundColor: [
+                        '#eac85b', '#8d4c13', '#2196f3', '#388e3c', '#f57c00', '#d32f2f', '#7b1fa2', '#1976d2', '#ffeb3b', '#00bcd4'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'right' } }
+            }
+        });
+    </script>
 </body>
 </html> 

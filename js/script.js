@@ -215,7 +215,7 @@ const header = document.getElementById('header');
 const notificationContainer = document.getElementById('notificationContainer');
 
 // Initialize Website
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     initializeLoading();
     initializeNavigation();
     if (document.getElementById('showcaseImage')) {
@@ -226,6 +226,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeNewsletter();
     updateCartBadge();
     updateWishlistBadge();
+    if (window.sidebarManager && typeof window.sidebarManager.fetchCart === 'function') {
+        await window.sidebarManager.fetchCart();
+        window.sidebarManager.updateBadges();
+    }
     initializeSearchModal();
     initializeStatsCounter();
     initializeTestimonials();
@@ -699,6 +703,7 @@ async function addToCart(productId) {
         if (data.success) {
             showNotification(data.message || 'Item added to cart!', 'success');
             updateCartBadge();
+            renderCartSidebar();
         } else {
             showNotification(data.error || 'Failed to add to cart', 'error');
         }
@@ -719,7 +724,13 @@ async function updateCartBadge() {
             const totalItems = items.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
             if (badge) {
                 badge.textContent = totalItems;
-                badge.style.display = totalItems > 0 ? 'flex' : 'none';
+                if (totalItems > 0) {
+                    badge.style.display = 'flex';
+                    badge.style.visibility = 'visible';
+                    badge.style.opacity = '1';
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
     } catch (error) {
@@ -773,7 +784,13 @@ async function updateWishlistBadge() {
             const items = data.wishlist || [];
             if (badge) {
                 badge.textContent = items.length;
-                badge.style.display = items.length > 0 ? 'flex' : 'none';
+                if (items.length > 0) {
+                    badge.style.display = 'flex';
+                    badge.style.visibility = 'visible';
+                    badge.style.opacity = '1';
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
     } catch (error) {
@@ -905,10 +922,27 @@ function initializeSearchModal() {
     const suggestions = document.querySelectorAll('.suggestion-item');
     suggestions.forEach(suggestion => {
         suggestion.addEventListener('click', () => {
-            if (searchInput) searchInput.value = suggestion.textContent;
-            searchModal.classList.remove('active');
+            if (searchInput) {
+                const query = suggestion.textContent.trim();
+                searchModal.classList.remove('active');
+                if (query) {
+                    window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+                }
+            }
         });
     });
+    // Enter key in search input
+    if (searchInput) {
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                searchModal.classList.remove('active');
+                if (query) {
+                    window.location.href = 'shop.php?search=' + encodeURIComponent(query);
+                }
+            }
+        });
+    }
     // ESC key closes modal
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && searchModal.classList.contains('active')) {
@@ -923,49 +957,69 @@ async function renderCartSidebar(itemsArg) {
     const cartFooter = document.getElementById('cartFooter');
     if (!cartEmpty || !cartItems || !cartFooter) return;
     let items = itemsArg;
+    if (!Array.isArray(items)) items = [];
+    // Patch: map product_id to id for guest/session cart
+    items = items.map(item => {
+        if (item && !item.id && item.product_id) {
+            return { ...item, id: item.product_id };
+        }
+        return item;
+    });
     try {
-        if (!items) {
+        if (!items || items.length === 0) {
             const response = await fetch('cart.php?action=get_cart');
             const data = await response.json();
-            items = data.cart || [];
+            items = Array.isArray(data.cart) ? data.cart : [];
+            // Patch: map product_id to id for guest/session cart
+            items = items.map(item => {
+                if (item && !item.id && item.product_id) {
+                    return { ...item, id: item.product_id };
+                }
+                return item;
+            });
+        }
+        // For guest/session cart, fetch product details if missing
+        const needsDetails = items.some(item => !item.name || !item.price);
+        if (needsDetails && items.length > 0) {
+            // Fetch details for all items
+            const ids = items.map(item => item.product_id || item.id).filter(Boolean);
+            const detailsResp = await fetch('cart.php?action=get_products&ids=' + ids.join(','));
+            const detailsData = await detailsResp.json();
+            const detailsMap = {};
+            (detailsData.products || []).forEach(prod => { detailsMap[prod.id] = prod; });
+            items = items.map(item => {
+                const prod = detailsMap[item.product_id || item.id] || {};
+                return {
+                    ...item,
+                    name: item.name || prod.title || prod.name || 'Product',
+                    price: (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : (typeof prod.price === 'number' ? prod.price : 0),
+                    image: item.image || prod.image || 'images/products/placeholder.jpg',
+                };
+            });
         }
         if (items && items.length > 0) {
             cartEmpty.style.display = 'none';
             cartItems.style.display = 'block';
             cartFooter.style.display = 'block';
             cartItems.innerHTML = items.map(item => {
-                if (item.cart_id !== undefined) {
-                    return `<div class="cart-item">
-                        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                        <div class="cart-item-details">
-                            <h4 class="cart-item-title">${item.name}</h4>
-                            <div class="cart-item-price">$${item.price.toLocaleString()} x ${item.quantity}</div>
-                        </div>
-                        <button class="cart-item-remove" onclick="removeFromCartSidebar('cart', ${item.cart_id}, ${item.id})" title="Remove item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3,6 5,6 21,6"></polyline>
-                                <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                            </svg>
-                        </button>
-                    </div>`;
-                } else {
-                    return `<div class="cart-item">
-                        <img src="${item.image}" alt="${item.name}" class="cart-item-image">
-                        <div class="cart-item-details">
-                            <h4 class="cart-item-title">${item.name}</h4>
-                            <div class="cart-item-price">$${item.price.toLocaleString()} x ${item.quantity}</div>
-                        </div>
-                        <button class="cart-item-remove" onclick="removeFromCartSidebar('product', null, ${item.id})" title="Remove item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="3,6 5,6 21,6"></polyline>
-                                <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
-                            </svg>
-                        </button>
-                    </div>`;
-                }
+                const price = (typeof item.price === 'number' && !isNaN(item.price)) ? item.price : 0;
+                const image = item.image || 'images/products/placeholder.jpg';
+                return `<div class="cart-item">
+                    <img src="${image}" alt="${item.name}" class="cart-item-image">
+                    <div class="cart-item-details">
+                        <h4 class="cart-item-title">${item.name}</h4>
+                        <div class="cart-item-price">$${price.toLocaleString()} x ${item.quantity}</div>
+                    </div>
+                    <button class="cart-item-remove" onclick="removeFromCartSidebar('product', null, ${item.product_id || item.id})" title="Remove item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"></polyline>
+                            <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1 2-2h4a2,2 0 0,1 2,2v2"></path>
+                        </svg>
+                    </button>
+                </div>`;
             }).join('');
             const subtotal = items.reduce((sum, item) => {
-                let priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^\d.]/g, ''));
+                let priceNum = typeof item.price === 'number' ? item.price : parseFloat(String(item.price).replace(/[^\\d.]/g, ''));
                 return sum + (priceNum * item.quantity);
             }, 0);
             const subtotalEl = document.getElementById('cartSubtotal');
@@ -1165,4 +1219,5 @@ function proceedToCheckout() {
         });
 }
 window.renderCartSidebar = renderCartSidebar;
+window.renderWishlistSidebar = renderWishlistSidebar;
 window.renderWishlistSidebar = renderWishlistSidebar;
